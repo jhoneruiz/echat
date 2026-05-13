@@ -22,6 +22,9 @@ ip_actual=$(curl -s http://checkip.amazonaws.com 2>/dev/null || echo "desconocid
 jwt_secret=$(openssl rand -base64 32)
 jwt_refresh_secret=$(openssl rand -base64 32)
 
+# Subcarpeta donde vive el código dentro del repositorio clonado
+CODIGO_DIR="versao codigo 0910"
+
 # ── Solo root ─────────────────────────────────────────────────
 if [ "$EUID" -ne 0 ]; then
   echo
@@ -428,9 +431,9 @@ clonar_codigo() {
   git clone "${url_con_token}" "${destino}"
   git -C "${destino}" checkout "${rama_repo}"
 
-  mkdir -p "${destino}/backend/public/"
+  mkdir -p "${destino}/${CODIGO_DIR}/backend/public/"
   chown deploy:deploy -R "${destino}"
-  chmod 775 -R "${destino}/backend/public/"
+  chmod 775 -R "${destino}/${CODIGO_DIR}/backend/public/"
 }
 
 instalar_backend() {
@@ -442,7 +445,7 @@ instalar_backend() {
   [ "$instalar_api_oficial" == "si" ] && url_api_oficial="https://${dominio_api_oficial##https://}"
 
   sudo -u deploy bash <<EOF
-cat > /home/deploy/${empresa}/backend/.env <<ENVEOF
+cat > "/home/deploy/${empresa}/${CODIGO_DIR}/backend/.env" <<ENVEOF
 NODE_ENV=
 BACKEND_URL=${url_backend}
 FRONTEND_URL=${url_frontend}
@@ -482,8 +485,9 @@ TRANSCRIBE_URL=http://localhost:4002
 ENVEOF
 EOF
 
-  sudo -u deploy bash <<'EOF'
-cd /home/deploy/${empresa}/backend
+  local codigo_dir="${CODIGO_DIR}"
+  sudo -u deploy bash <<EOF
+cd "/home/deploy/${empresa}/${codigo_dir}/backend"
 export PUPPETEER_SKIP_DOWNLOAD=true
 rm -rf node_modules package-lock.json
 npm install --force
@@ -495,11 +499,11 @@ npx sequelize db:seed:all
 pm2 start dist/server.js --name ${empresa}-backend
 EOF
   # Arreglo de ffmpeg en node_modules
-  local ffmpeg_idx="/home/deploy/${empresa}/backend/node_modules/@ffmpeg-installer/ffmpeg/index.js"
+  local ffmpeg_idx="/home/deploy/${empresa}/${CODIGO_DIR}/backend/node_modules/@ffmpeg-installer/ffmpeg/index.js"
   [ -f "$ffmpeg_idx" ] && sed -i 's|npm3Binary = .*|npm3Binary = "/usr/bin/ffmpeg";|' "$ffmpeg_idx"
-  mkdir -p "/home/deploy/${empresa}/backend/node_modules/@ffmpeg-installer/linux-x64/"
+  mkdir -p "/home/deploy/${empresa}/${CODIGO_DIR}/backend/node_modules/@ffmpeg-installer/linux-x64/"
   echo '{"version":"1.1.0","name":"@ffmpeg-installer/linux-x64"}' \
-    > "/home/deploy/${empresa}/backend/node_modules/@ffmpeg-installer/linux-x64/package.json"
+    > "/home/deploy/${empresa}/${CODIGO_DIR}/backend/node_modules/@ffmpeg-installer/linux-x64/package.json"
 }
 
 instalar_frontend() {
@@ -508,7 +512,7 @@ instalar_frontend() {
   local url_backend="https://${dominio_backend##https://}"
 
   sudo -u deploy bash <<EOF
-cat > /home/deploy/${empresa}/frontend/.env <<ENVEOF
+cat > "/home/deploy/${empresa}/${CODIGO_DIR}/frontend/.env" <<ENVEOF
 REACT_APP_BACKEND_URL=${url_backend}
 REACT_APP_FACEBOOK_APP_ID=
 REACT_APP_REQUIRE_BUSINESS_MANAGEMENT=TRUE
@@ -520,8 +524,9 @@ CI=false
 ENVEOF
 EOF
 
+  local codigo_dir="${CODIGO_DIR}"
   sudo -u deploy bash <<EOF
-cd /home/deploy/${empresa}/frontend
+cd "/home/deploy/${empresa}/${codigo_dir}/frontend"
 npm install --force
 npx browserslist@latest --update-db --yes 2>/dev/null || true
 sed -i 's/3000/${frontend_port}/g' server.js
@@ -627,7 +632,7 @@ fin_instalacion() {
 # =============================================================
 flujo_actualizar() {
   cargar_vars
-  source "/home/deploy/${empresa}/backend/.env" 2>/dev/null || true
+  source "/home/deploy/${empresa}/${CODIGO_DIR}/backend/.env" 2>/dev/null || true
 
   banner
   echo -e "${BLANCO} ── Actualizador de ${titulo_app} ──────────────────────${NC}"
@@ -683,7 +688,7 @@ EOF
   confirmar "¿Hacer un backup de la base de datos antes de actualizar (recomendado)?" && {
     banner; echo -e "${BLANCO} >> Haciendo backup de la base de datos...${NC}"; echo
     local db_pass
-    db_pass=$(grep "DB_PASS=" /home/deploy/${empresa}/backend/.env | cut -d'=' -f2)
+    db_pass=$(grep "DB_PASS=" "/home/deploy/${empresa}/${CODIGO_DIR}/backend/.env" | cut -d'=' -f2)
     mkdir -p /home/deploy/backups
     local bfile="/home/deploy/backups/${empresa}_$(date +%d-%m-%Y_%Hh%M).sql"
     PGPASSWORD="${db_pass}" pg_dump -U "${empresa}" -h localhost "${empresa}" > "${bfile}"
@@ -694,7 +699,7 @@ EOF
   # ── 4. Mantenimiento de la BD ─────────────────────────────
   banner; echo -e "${BLANCO} >> Mantenimiento de la base de datos...${NC}"; echo
   local db_pass
-  db_pass=$(grep "DB_PASS=" /home/deploy/${empresa}/backend/.env | cut -d'=' -f2)
+  db_pass=$(grep "DB_PASS=" "/home/deploy/${empresa}/${CODIGO_DIR}/backend/.env" | cut -d'=' -f2)
   PGPASSWORD="$db_pass" vacuumdb -U "${empresa}" -h localhost -d "${empresa}" --analyze || true
 
   # ── 5. Detener servicios ──────────────────────────────────
@@ -713,8 +718,9 @@ EOF
   # ── 7. Reinstalar dependencias Backend ───────────────────
   banner; echo -e "${BLANCO} >> Instalando dependencias del backend...${NC}"
   echo -e "${CYAN}   (esto incluye npm install — puede tardar 2-5 minutos)${NC}"; echo
-  sudo -u deploy bash <<'EOF'
-cd /home/deploy/${empresa}/backend
+  local codigo_dir="${CODIGO_DIR}"
+  sudo -u deploy bash <<EOF
+cd "/home/deploy/${empresa}/${codigo_dir}/backend"
 export PUPPETEER_SKIP_DOWNLOAD=true
 rm -rf node_modules package-lock.json
 npm install --force
@@ -729,7 +735,7 @@ EOF
   echo -e "${CYAN}   (puede tardar 5-10 minutos)${NC}"; echo
   local fe_port="${frontend_port:-3000}"
   sudo -u deploy bash <<EOF
-cd /home/deploy/${empresa}/frontend
+cd "/home/deploy/${empresa}/${codigo_dir}/frontend"
 npm prune --force >/dev/null 2>&1 || true
 npm install --force
 sed -i 's/3000/${fe_port}/g' server.js
@@ -781,7 +787,7 @@ flujo_api_oficial() {
   sudo -u postgres psql -c "CREATE DATABASE ${db_api} OWNER ${db_api};" 2>/dev/null || true
 
   banner; echo -e "${BLANCO} >> Configurando variables de entorno de la API Oficial...${NC}"; echo
-  cat > "/home/deploy/${empresa}/api_oficial/.env" <<ENVEOF
+  cat > "/home/deploy/${empresa}/${CODIGO_DIR}/api_oficial/.env" <<ENVEOF
 DATABASE_LINK=postgresql://${db_api}:${clave}@localhost:5432/${db_api}?schema=public
 JWT_SECRET=$(openssl rand -base64 32)
 REDIS_URI=redis://:${clave}@127.0.0.1:6379
@@ -790,11 +796,12 @@ TOKEN_ADMIN=adminpro
 PORT=${api_port}
 RABBITMQ_ENABLED_GLOBAL=false
 ENVEOF
-  chown deploy:deploy "/home/deploy/${empresa}/api_oficial/.env"
+  chown deploy:deploy "/home/deploy/${empresa}/${CODIGO_DIR}/api_oficial/.env"
 
+  local codigo_dir="${CODIGO_DIR}"
   banner; echo -e "${BLANCO} >> Instalando dependencias de la API Oficial...${NC}"; echo
   sudo -u deploy bash <<EOF
-cd /home/deploy/${empresa}/api_oficial
+cd "/home/deploy/${empresa}/${codigo_dir}/api_oficial"
 npm install --force
 npm run build
 npx prisma migrate deploy
@@ -829,8 +836,8 @@ NGINXEOF
 
   # Actualizar URL_API_OFICIAL en backend
   sed -i "s|^URL_API_OFICIAL=.*|URL_API_OFICIAL=${ofs}|" \
-    "/home/deploy/${empresa}/backend/.env"
-  sudo -u deploy bash -c "cd /home/deploy/${empresa}/backend && pm2 restart ${empresa}-backend"
+    "/home/deploy/${empresa}/${CODIGO_DIR}/backend/.env"
+  sudo -u deploy bash -c "cd \"/home/deploy/${empresa}/${CODIGO_DIR}/backend\" && pm2 restart ${empresa}-backend"
 
   banner
   echo -e "${VERDE} ╔══════════════════════════════════════════════════╗"
