@@ -49,11 +49,8 @@ import flowBuilder from "./flowBuilderRoutes";
 import flowCampaignRoutes from "./flowCampaignRoutes";
 import callRoutes from "./callRoutes";
 import companyKanbanRoutes from "./companyKanbanRoutes";
-<<<<<<< HEAD
 import metaTemplateRoutes from "./metaTemplateRoutes";
-=======
 import pushSubscriptionRoutes from "./pushSubscriptionRoutes";
->>>>>>> 3fd6af018a28fa8e5e90e195d569069f5a9c6a7d
 
 import ChatController from "../controllers/ChatController";
 
@@ -110,11 +107,8 @@ routes.use(flowBuilder);
 routes.use(flowCampaignRoutes);
 routes.use("/call", callRoutes);
 routes.use(companyKanbanRoutes);
-<<<<<<< HEAD
 routes.use(metaTemplateRoutes);
-=======
 routes.use(pushSubscriptionRoutes);
->>>>>>> 3fd6af018a28fa8e5e90e195d569069f5a9c6a7d
 
 routes.post("/chats/backfill", ChatController.backfillChats);
 

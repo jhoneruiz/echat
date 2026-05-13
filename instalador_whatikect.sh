@@ -501,7 +501,7 @@ EOF
 cd "/home/deploy/${empresa}/${codigo_dir}/backend"
 export PUPPETEER_SKIP_DOWNLOAD=true
 rm -rf node_modules package-lock.json
-npm install --force
+npm install --legacy-peer-deps
 npm install puppeteer-core --force
 npm i glob
 npm run build
@@ -538,7 +538,7 @@ EOF
   local codigo_dir="${CODIGO_DIR}"
   sudo -u deploy bash <<EOF
 cd "/home/deploy/${empresa}/${codigo_dir}/frontend"
-npm install --force
+npm install --legacy-peer-deps
 npx browserslist@latest --update-db --yes 2>/dev/null || true
 sed -i 's/3000/${frontend_port}/g' server.js
 NODE_OPTIONS="--max-old-space-size=4096 --openssl-legacy-provider" npm run build
@@ -734,7 +734,7 @@ EOF
 cd "/home/deploy/${empresa}/${codigo_dir}/backend"
 export PUPPETEER_SKIP_DOWNLOAD=true
 rm -rf node_modules package-lock.json
-npm install --force
+npm install --legacy-peer-deps
 npm install puppeteer-core --force
 npm i glob
 npm run build
@@ -748,7 +748,7 @@ EOF
   sudo -u deploy bash <<EOF
 cd "/home/deploy/${empresa}/${codigo_dir}/frontend"
 npm prune --force >/dev/null 2>&1 || true
-npm install --force
+npm install --legacy-peer-deps
 sed -i 's/3000/${fe_port}/g' server.js
 NODE_OPTIONS="--max-old-space-size=4096 --openssl-legacy-provider" npm run build
 EOF
@@ -813,7 +813,7 @@ ENVEOF
   banner; echo -e "${BLANCO} >> Instalando dependencias de la API Oficial...${NC}"; echo
   sudo -u deploy bash <<EOF
 cd "/home/deploy/${empresa}/${codigo_dir}/api_oficial"
-npm install --force
+npm install --legacy-peer-deps
 npm run build
 npx prisma migrate deploy
 pm2 start dist/main.js --name ${empresa}-api-oficial
