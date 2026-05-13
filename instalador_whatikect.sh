@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================
 #   WHATIKECT — Instalador / Actualizador
-#   Compatible: Ubuntu 20.04 / 22.04  |  x86_64 / aarch64
+#   Compatible: Ubuntu 20.04 / 22.04 / 24.04  |  x86_64 / aarch64
 # =============================================================
 
 # ── Colores ──────────────────────────────────────────────────
@@ -334,19 +334,30 @@ config_firewall() {
 }
 
 instalar_dependencias() {
-  banner; echo -e "${BLANCO} >> Instalando dependencias del sistema...${NC}"; echo
+  banner; echo -e "${BLANCO} >> Instalando dependencias del sistema (Ubuntu ${UBUNTU_VERSION})...${NC}"; echo
+
+  # Paquetes comunes a todas las versiones
   apt-get install -y \
     libaom-dev libass-dev libfreetype6-dev libfribidi-dev libharfbuzz-dev \
     libmp3lame-dev libopus-dev libvorbis-dev libvpx-dev libwebp-dev \
     libx264-dev libx265-dev libzmq3-dev build-essential yasm cmake \
     libtool libc6 libc6-dev unzip pkg-config zlib1g-dev \
-    libgcc1 libgbm-dev fontconfig locales gconf-service libasound2 \
+    libgbm-dev fontconfig locales \
     libatk1.0-0 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 \
-    libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 \
+    libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 \
     libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 \
     libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 \
     libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates \
     fonts-liberation libnss3 lsb-release xdg-utils
+
+  # Paquetes que cambiaron de nombre en Ubuntu 24.04 (Noble)
+  if dpkg --compare-versions "${UBUNTU_VERSION}" ge "24.04"; then
+    apt-get install -y \
+      libasound2t64 libgdk-pixbuf-2.0-0 libgcc-s1 || true
+  else
+    apt-get install -y \
+      libasound2 libgdk-pixbuf2.0-0 libgcc1 gconf-service || true
+  fi
 }
 
 instalar_ffmpeg() {
