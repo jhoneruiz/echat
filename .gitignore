@@ -1,0 +1,42 @@
+﻿# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment files (NUNCA subir a Git)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.code-workspace
+
+# Prisma generated
+prisma/dev.db
+prisma/*.db
+
+# Uploads / media generados
+backend/public/
+api_oficial/public/
+
+# PM2
+ecosystem.config.js.bak

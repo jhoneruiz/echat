@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Select-String -Path 'g:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\frontend\\\\src\\\\components\\\\TicketActionButtonsCustom\\\\index.js' -Pattern 'template|Template' | Select-Object -First 20\")",
+      "Bash(powershell -Command \"Select-String -Path 'g:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\frontend\\\\src\\\\components\\\\TicketActionButtonsCustom\\\\index.js' -Pattern 'QuickMessage|quickMessage|template|Template' | Select-Object LineNumber, Line | Format-Table -AutoSize\")",
+      "Bash(powershell -Command \"\\(Get-Content 'g:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\frontend\\\\src\\\\translate\\\\languages\\\\es.js' | Measure-Object -Line\\).Lines\")",
+      "Bash(powershell -Command \"Select-String -Path 'g:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\frontend\\\\src\\\\pages\\\\Connections\\\\index.js' -Pattern 'sync|template|oficial' | Select-Object LineNumber, Line | Format-Table -AutoSize\")",
+      "Bash(powershell -Command \"Select-String -Path 'g:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\backend\\\\package.json' -Pattern 'bail|whail' | Select-Object LineNumber, Line\")",
+      "Bash(powershell -Command \"npm show baileys version 2>&1\" -timeout 30000)",
+      "Bash(npm show *)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebSearch",
+      "Bash(Get-ChildItem -Path \"G:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\backend\\\\src\\\\services\" -Recurse -Filter \"*.ts\" -Exclude \"*.d.ts\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(powershell -Command \"Select-String -Path 'g:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\backend\\\\src\\\\services\\\\WbotServices\\\\ChatBotListener.ts' -Pattern 'send|Send|wbot' | Select-Object LineNumber, Line | Format-Table -AutoSize\")",
+      "Bash(powershell -Command \"Select-String -Path 'g:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\backend\\\\src\\\\services\\\\WhatsAppOficial\\\\ReceivedWhatsApp.ts' -Pattern 'SendWhatsAppMessage|sendMessage|oficial|channel' | Select-Object LineNumber, Line | Format-Table -AutoSize\")",
+      "Bash(powershell -Command \"Select-String -Path 'g:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\backend\\\\src\\\\services\\\\WebhookService\\\\ActionsWebhookService.ts' -Pattern 'SendWhatsApp|sendMessage|whatsapp_oficial|channel' | Select-Object LineNumber, Line | Select-Object -First 25 | Format-Table -AutoSize\")",
+      "Bash(powershell -Command \"Select-String -Path 'g:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\backend\\\\src\\\\services\\\\TypebotServices\\\\typebotListener.ts' -Pattern 'SendWhatsApp|wbot|channel|sendMsg' | Select-Object LineNumber, Line | Select-Object -First 30 | Format-Table -AutoSize\")",
+      "Bash(powershell -Command \"Select-String -Path 'g:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\backend\\\\src\\\\services\\\\WbotServices\\\\wbotMessageListener.ts' -Pattern 'handleMessageIntegration|channel|whatsapp_oficial' | Select-Object LineNumber, Line | Select-Object -First 20 | Format-Table -AutoSize\")",
+      "Bash(powershell -Command \"Select-String -Path 'g:\\\\Mi unidad\\\\whatikect desarrollo\\\\versao codigo 0910\\\\backend\\\\src\\\\services\\\\WbotServices\\\\wbotMessageListener.ts' -Pattern 'flowbuilderIntegration' | Select-Object LineNumber, Line | Format-Table -AutoSize\")"
+    ]
+  }
+}
