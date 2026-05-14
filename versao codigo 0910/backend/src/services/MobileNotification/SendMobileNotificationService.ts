@@ -3,7 +3,6 @@ import webpush, { PushSubscription as WebPushSubscription } from "web-push";
 import Message from "../../models/Message";
 import User from "../../models/User";
 import Queue from "../../models/Queue";
-import Whatsapp from "../../models/Whatsapp";
 import UserPushSubscription from "../../models/UserPushSubscription";
 import FindCompanySettingOneService from "../CompaniesSettings/FindCompanySettingOneService";
 import logger from "../../utils/logger";
@@ -157,11 +156,6 @@ const SendMobileNotificationService = async (message: Message): Promise<void> =>
           model: Queue,
           as: "queue",
           attributes: ["id", "name", "color"]
-        },
-        {
-          model: Whatsapp,
-          as: "whatsapp",
-          attributes: ["id", "name", "groupAsTicket"]
         },
         {
           association: "ticket",
