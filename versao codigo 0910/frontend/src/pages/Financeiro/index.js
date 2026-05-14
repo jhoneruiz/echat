@@ -253,7 +253,7 @@ const Invoices = () => {
                   <TableCell align="center">{renderUseInternalChat(invoices.useInternalChat)}</TableCell>
                   <TableCell align="center">{renderUseExternalApi(invoices.useExternalApi)}</TableCell> */}
 
-                  <TableCell style={{ fontWeight: 'bold' }} align="center">{invoices.value.toLocaleString('pt-br', { style: 'currency', currency: 'BRL' })}</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }} align="center">{invoices.value.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}</TableCell>
                   <TableCell align="center">{moment(invoices.dueDate).format("DD/MM/YYYY")}</TableCell>
                   <TableCell style={{ fontWeight: 'bold' }} align="center">{rowStatus(invoices)}</TableCell>
                   <TableCell align="center">

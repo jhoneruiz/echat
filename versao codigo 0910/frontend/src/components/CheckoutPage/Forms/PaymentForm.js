@@ -179,16 +179,16 @@ export default function Pricing(props) {
                     {
                       tier.custom ?
                         <React.Fragment>
-                          R${customValuePlans.toLocaleString('pt-br', { minimumFractionDigits: 2 })}
+                          {customValuePlans.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
                         </React.Fragment>
                         :
                         <React.Fragment>
-                          R${tier.price.toLocaleString('pt-br', { minimumFractionDigits: 2 })}
+                          {tier.price.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
                         </React.Fragment>
                     }
                   </Typography>
                   <Typography variant="h6" color="textSecondary">
-                    /mês
+                    /mes
                   </Typography>
                 </div>
                 <ul>

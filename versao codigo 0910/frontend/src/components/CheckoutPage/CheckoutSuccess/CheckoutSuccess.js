@@ -54,7 +54,7 @@ function CheckoutSuccess(props) {
     <React.Fragment>
       <Total>
         <p><span>TOTAL</span></p>
-        <strong>R$ {valorext.toLocaleString('pt-br', { minimumFractionDigits: 2 })}</strong>
+        <strong>{valorext.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}</strong>
       </Total>
 
 	

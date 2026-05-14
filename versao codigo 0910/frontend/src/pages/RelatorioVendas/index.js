@@ -122,9 +122,9 @@ const RelatorioVendas = () => {
   };
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat("pt-BR", {
+    return new Intl.NumberFormat("es-MX", {
       style: "currency",
-      currency: "BRL",
+      currency: "MXN",
     }).format(value);
   };
 

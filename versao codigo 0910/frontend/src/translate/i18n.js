@@ -1,9 +1,10 @@
 import i18n from "i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
 
 import { messages } from "./languages";
 
-i18n.use(LanguageDetector).init({
+// Sin LanguageDetector: el idioma siempre es español. El detector arrastraba
+// "ar" desde localStorage en algunos dispositivos y rompía moment/dígitos.
+i18n.init({
 	debug: false,
 	defaultNS: ["translations"],
 	fallbackLng: "es",

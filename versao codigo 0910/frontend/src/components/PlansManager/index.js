@@ -568,10 +568,10 @@ export function PlansManagerGrid(props) {
                             <TableCell align="center">{row.trialDays || '-'}</TableCell>
                             <TableCell align="left">{row.name || '-'}</TableCell>
                             <TableCell align="center">{row.users || '-'}</TableCell>
-                            <TableCell align="center">{row.isPublic ? "Sim" : "Não" || '-'}</TableCell>
+                            <TableCell align="center">{row.isPublic ? "Sí" : "No" || '-'}</TableCell>
                             <TableCell align="center">{row.connections || '-'}</TableCell>
                             <TableCell align="center">{row.queues || '-'}</TableCell>
-                            <TableCell align="center">{i18n.t("plans.form.money")} {row.amount ? row.amount.toLocaleString('pt-br', { minimumFractionDigits: 2 }) : '00.00'}</TableCell>
+                            <TableCell align="center">{row.amount ? row.amount.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) : '$0.00'}</TableCell>
                             <TableCell align="center">{renderWhatsapp(row)}</TableCell>
                             <TableCell align="center">{renderWhatsappOfficial(row)}</TableCell>
                             <TableCell align="center">{renderFacebook(row)}</TableCell>
@@ -725,7 +725,7 @@ export default function PlansManager() {
             users: data.users || 0,
             connections: data.connections || 0,
             queues: data.queues || 0,
-            amount: data.amount?.toLocaleString('pt-br', { minimumFractionDigits: 2 }) || 0,
+            amount: data.amount?.toLocaleString('es-MX', { minimumFractionDigits: 2 }) || 0,
             useWhatsapp,
             useWhatsappOfficial,
             useFacebook,

@@ -193,8 +193,8 @@ const Companies = () => {
   const renderPlanValue = (row) => {
     return row.planId !== null
       ? row.plan.amount
-        ? row.plan.amount.toLocaleString("pt-br", { minimumFractionDigits: 2 })
-        : "00.00"
+        ? row.plan.amount.toLocaleString("es-MX", { style: "currency", currency: "MXN" })
+        : "$0.00"
       : "-";
   };
 

@@ -193,7 +193,7 @@ const useAuth = () => {
       
       localStorage.setItem("profileImage", data.user.profileImage);
 
-      moment.locale("pt-br");
+      moment.locale("es-mx");
       let dueDate;
       if (data.user.company.id === 1) {
         dueDate = "2999-12-31T00:00:00.000Z";

@@ -373,13 +373,13 @@ export function CompanyForm(props) {
                   <Field
                     as={Select}
                     id="generate-invoice-selection"
-                    label="Gerar Fatura"
+                    label="Generar Factura"
                     labelId="generate-invoice-selection-label"
                     name="generateInvoice"
                     margin="dense"
                   >
-                    <MenuItem value={true}>Sim</MenuItem>
-                    <MenuItem value={false}>Não</MenuItem>
+                    <MenuItem value={true}>Sí</MenuItem>
+                    <MenuItem value={false}>No</MenuItem>
                   </Field>
                 </FormControl>
               </Grid>
@@ -468,7 +468,7 @@ export function CompaniesManagerGrid(props) {
   const theme = useTheme();
 
   const renderStatus = (row) => {
-    return row.status === false ? "Não" : "Sim";
+    return row.status === false ? "No" : "Sí";
   };
 
   const renderPlan = (row) => {
@@ -476,7 +476,7 @@ export function CompaniesManagerGrid(props) {
   };
 
   const renderPlanValue = (row) => {
-    return row.planId !== null ? row.plan.amount ? row.plan.amount.toLocaleString('pt-br', { minimumFractionDigits: 2 }) : '00.00' : "-";
+    return row.planId !== null ? row.plan.amount ? row.plan.amount.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) : '$0.00' : "-";
   };
 
   // const renderCampaignsStatus = (row) => {
@@ -620,7 +620,7 @@ export default function CompaniesManager() {
       console.log("Lista de empresas carregada:", companyList);
       setRecords(companyList);
     } catch (e) {
-      toast.error("Não foi possível carregar a lista de registros");
+      toast.error("No se pudo cargar la lista de registros.");
     }
     setLoading(false);
   };
