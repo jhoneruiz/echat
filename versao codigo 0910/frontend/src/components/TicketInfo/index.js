@@ -72,7 +72,7 @@ const TicketInfo = ({ contact, ticket, onClick }) => {
                 }
                 title={`${(contact?.name && contact.name.length > 12) ? 
                     `${contact.name.substring(0, 12)}...` : 
-                    contact?.name || '(sem contato)'} #${ticket?.id}`}
+                    contact?.name || '(sin contacto)'} #${ticket?.id}`}
                 subheader={[
                     ticket?.user && `${i18n.t("messagesList.header.assignedTo")} ${ticket?.user?.name}`,
                     contact?.contactWallets && contact.contactWallets.length > 0
@@ -108,7 +108,7 @@ const TicketInfo = ({ contact, ticket, onClick }) => {
                 <DialogContent className={classes.imageModalContent}>
                     <img 
                         src={contact?.urlPicture} 
-                        alt={contact?.name || "Foto do contato"}
+                        alt={contact?.name || "Foto del contacto"}
                         className={classes.expandedImage}
                     />
                 </DialogContent>

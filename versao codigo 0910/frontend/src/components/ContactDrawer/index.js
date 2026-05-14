@@ -433,8 +433,8 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 			const { data } = await api.get(`/contacts/${contact.id}/participants`);
 			setParticipants(data);
 		} catch (err) {
-			console.error("Erro ao buscar participantes do grupo:", err);
-			toastError("Erro ao carregar participantes do grupo");
+			console.error("Error al cargar participantes del grupo:", err);
+			toastError("Error al cargar participantes del grupo");
 			setParticipants([]);
 		} finally {
 			setLoadingParticipants(false);
@@ -500,7 +500,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 			setSearchResults(data.messages || []);
 			setShowSearchResults(true);
 		} catch (err) {
-			console.error("Erro ao buscar mensagens:", err);
+			console.error("Error al buscar mensajes:", err);
 			toastError(err);
 			setSearchResults([]);
 		} finally {
@@ -548,7 +548,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 	const handleGoToMessage = (message) => {
 		// Aqui você pode implementar a navegação para a mensagem específica
 		console.log("Navegar para mensagem:", message);
-		toast.info(`Mensagem encontrada: ${message.body.substring(0, 50)}...`);
+		toast.info(`Mensaje encontrado: ${message.body.substring(0, 50)}...`);
 		setShowSearchResults(false);
 	};
 
@@ -612,7 +612,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 			return (
 				<div className={classes.emptyState}>
 					<Typography variant="body2">
-						Nenhum participante encontrado
+						Sin participantes
 					</Typography>
 				</div>
 			);
@@ -694,7 +694,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 	const handleBlockContact = async (contactId) => {
 		try {
 			await api.put(`/contacts/block/${contactId}`, { active: false });
-			toast.success("Contato bloqueado");
+			toast.success("Contacto bloqueado");
 		} catch (err) {
 			toastError(err);
 		}
@@ -704,7 +704,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 	const handleUnBlockContact = async (contactId) => {
 		try {
 			await api.put(`/contacts/block/${contactId}`, { active: true });
-			toast.success("Contato desbloqueado");
+			toast.success("Contacto desbloqueado");
 		} catch (err) {
 			toastError(err);
 		}
@@ -735,7 +735,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 			return (
 				<div className={classes.emptySearchState}>
 					<Typography variant="caption">
-						Nenhuma mensagem encontrada
+						Sin mensajes encontrados
 					</Typography>
 				</div>
 			);
@@ -756,8 +756,8 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 							}}
 						/>
 						<Typography className={classes.searchResultDate}>
-							{new Date(message.createdAt).toLocaleString('pt-BR')}
-							{message.fromMe ? " (Você)" : ` (${contact.name})`}
+							{new Date(message.createdAt).toLocaleString('es-MX')}
+							{message.fromMe ? " (Tú)" : ` (${contact.name})`}
 						</Typography>
 					</div>
 				))}
@@ -779,9 +779,9 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 				return (
 					<div className={classes.emptyState}>
 						<Typography variant="body2">
-							{type === "images" && "Nenhuma imagem encontrada"}
-							{type === "videos" && "Nenhum vídeo encontrado"}
-							{type === "audios" && "Nenhum áudio encontrado"}
+							{type === "images" && "Sin imágenes"}
+							{type === "videos" && "Sin videos"}
+							{type === "audios" && "Sin audios"}
 						</Typography>
 					</div>
 				);
@@ -811,7 +811,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									<Box display="flex" flexDirection="column" alignItems="center">
 										<VideocamIcon className={classes.mediaIcon} />
 										<Typography variant="caption" style={{ marginTop: 4 }}>
-											{new Date(item.createdAt).toLocaleDateString('pt-BR')}
+											{new Date(item.createdAt).toLocaleDateString('es-MX')}
 										</Typography>
 									</Box>
 								)}
@@ -819,7 +819,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									<Box display="flex" flexDirection="column" alignItems="center">
 										<AudiotrackIcon className={classes.mediaIcon} />
 										<Typography variant="caption" style={{ marginTop: 4 }}>
-											{new Date(item.createdAt).toLocaleDateString('pt-BR')}
+											{new Date(item.createdAt).toLocaleDateString('es-MX')}
 										</Typography>
 									</Box>
 								)}
@@ -834,7 +834,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 			if (mediaData.documents.length === 0) {
 				return (
 					<div className={classes.emptyState}>
-						<Typography variant="body2">Nenhum documento encontrado</Typography>
+						<Typography variant="body2">Sin documentos</Typography>
 					</div>
 				);
 			}
@@ -853,7 +853,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 							</ListItemIcon>
 							<ListItemText
 								primary={doc.body || `Documento ${index + 1}`}
-								secondary={new Date(doc.createdAt).toLocaleDateString('pt-BR')}
+								secondary={new Date(doc.createdAt).toLocaleDateString('es-MX')}
 							/>
 						</ListItem>
 					))}
@@ -865,7 +865,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 			if (mediaData.links.length === 0) {
 				return (
 					<div className={classes.emptyState}>
-						<Typography variant="body2">Nenhum link encontrado</Typography>
+						<Typography variant="body2">Sin enlaces</Typography>
 					</div>
 				);
 			}
@@ -884,7 +884,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 							</ListItemIcon>
 							<ListItemText
 								primary={link.title || link.url}
-								secondary={new Date(link.createdAt).toLocaleDateString('pt-BR')}
+								secondary={new Date(link.createdAt).toLocaleDateString('es-MX')}
 							/>
 						</ListItem>
 					))}
@@ -914,7 +914,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 					<TabPanel value={tabValue} index={contact.isGroup ? 5 : 4} classes={classes}>
 						<Typography variant="h6" style={{ marginBottom: 16, display: 'flex', alignItems: 'center' }}>
 							<GroupIcon style={{ marginRight: 8 }} />
-							Participantes do Grupo ({participants.length})
+							Participantes del grupo ({participants.length})
 						</Typography>
 						{renderParticipants()}
 					</TabPanel>
@@ -1023,7 +1023,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 								>
 									{contact.number && contact.number.includes('@') && (
 										<span style={{ fontSize: 10, color: '#f44336', display: 'block' }}>
-											⚠️ Possível erro: Número parece ser LID
+											⚠️ Posible error: Número parece ser LID
 										</span>
 									)}
 									{hideNum && user.profile === "user"
@@ -1057,7 +1057,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 								</Tooltip>
 
 								<Tooltip
-									title={!contact.active ? "Desbloquear contato" : "Bloquear contato"}
+									title={!contact.active ? "Desbloquear contacto" : "Bloquear contacto"}
 									arrow
 								>
 									<IconButton
@@ -1084,7 +1084,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 							fullWidth
 							size="small"
 							variant="outlined"
-							placeholder="Pesquisar nas mensagens..."
+							placeholder="Buscar en mensajes..."
 							value={searchTerm}
 							onChange={handleSearchChange}
 							InputProps={{
@@ -1126,7 +1126,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 						<Tab
 							className={classes.tabIcon}
 							icon={<InfoIcon />}
-							aria-label="Informações"
+							aria-label="Información"
 						/>
 						<Tab
 							className={classes.tabIcon}
@@ -1138,7 +1138,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									)}
 								</Box>
 							}
-							aria-label="Imagens"
+							aria-label="Imágenes"
 						/>
 						<Tab
 							className={classes.tabIcon}
@@ -1150,7 +1150,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									)}
 								</Box>
 							}
-							aria-label="Vídeos"
+							aria-label="Videos"
 						/>
 						<Tab
 							className={classes.tabIcon}
@@ -1162,7 +1162,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									)}
 								</Box>
 							}
-							aria-label="Áudios"
+							aria-label="Audios"
 						/>
 						<Tab
 							className={classes.tabIcon}
@@ -1188,7 +1188,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									)}
 								</Box>
 							}
-							aria-label="Links"
+							aria-label="Enlaces"
 						/>
 						{contact.isGroup && (
 							<Tab
@@ -1257,7 +1257,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									) : (
 										mediaData.images.length === 0 ? (
 											<div className={classes.emptyState}>
-												<Typography variant="body2">Nenhuma imagem encontrada</Typography>
+												<Typography variant="body2">Sin imágenes</Typography>
 											</div>
 										) : (
 											<Grid container spacing={1} className={classes.mediaGrid}>
@@ -1289,7 +1289,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									) : (
 										mediaData.videos.length === 0 ? (
 											<div className={classes.emptyState}>
-												<Typography variant="body2">Nenhum vídeo encontrado</Typography>
+												<Typography variant="body2">Sin videos</Typography>
 											</div>
 										) : (
 											<Grid container spacing={1} className={classes.mediaGrid}>
@@ -1303,7 +1303,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 															<Box display="flex" flexDirection="column" alignItems="center">
 																<VideocamIcon className={classes.mediaIcon} />
 																<Typography variant="caption" style={{ marginTop: 4 }}>
-																	{new Date(item.createdAt).toLocaleDateString('pt-BR')}
+																	{new Date(item.createdAt).toLocaleDateString('es-MX')}
 																</Typography>
 															</Box>
 														</Paper>
@@ -1322,7 +1322,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									) : (
 										mediaData.audios.length === 0 ? (
 											<div className={classes.emptyState}>
-												<Typography variant="body2">Nenhum áudio encontrado</Typography>
+												<Typography variant="body2">Sin audios</Typography>
 											</div>
 										) : (
 											<Grid container spacing={1} className={classes.mediaGrid}>
@@ -1336,7 +1336,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 															<Box display="flex" flexDirection="column" alignItems="center">
 																<AudiotrackIcon className={classes.mediaIcon} />
 																<Typography variant="caption" style={{ marginTop: 4 }}>
-																	{new Date(item.createdAt).toLocaleDateString('pt-BR')}
+																	{new Date(item.createdAt).toLocaleDateString('es-MX')}
 																</Typography>
 															</Box>
 														</Paper>
@@ -1355,7 +1355,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									) : (
 										mediaData.documents.length === 0 ? (
 											<div className={classes.emptyState}>
-												<Typography variant="body2">Nenhum documento encontrado</Typography>
+												<Typography variant="body2">Sin documentos</Typography>
 											</div>
 										) : (
 											<List>
@@ -1371,7 +1371,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 														</ListItemIcon>
 														<ListItemText
 															primary={doc.body || `Documento ${index + 1}`}
-															secondary={new Date(doc.createdAt).toLocaleDateString('pt-BR')}
+															secondary={new Date(doc.createdAt).toLocaleDateString('es-MX')}
 														/>
 													</ListItem>
 												))}
@@ -1388,7 +1388,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									) : (
 										mediaData.links.length === 0 ? (
 											<div className={classes.emptyState}>
-												<Typography variant="body2">Nenhum link encontrado</Typography>
+												<Typography variant="body2">Sin enlaces</Typography>
 											</div>
 										) : (
 											<List>
@@ -1404,7 +1404,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 														</ListItemIcon>
 														<ListItemText
 															primary={link.title || link.url}
-															secondary={new Date(link.createdAt).toLocaleDateString('pt-BR')}
+															secondary={new Date(link.createdAt).toLocaleDateString('es-MX')}
 														/>
 													</ListItem>
 												))}
@@ -1418,7 +1418,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 									<TabPanel value={tabValue} index={6} classes={classes}>
 										<Typography variant="h6" style={{ marginBottom: 16, display: 'flex', alignItems: 'center' }}>
 											<GroupIcon style={{ marginRight: 8 }} />
-											Participantes do Grupo ({participants.length})
+											Participantes del grupo ({participants.length})
 										</Typography>
 										{renderParticipants()}
 									</TabPanel>
@@ -1440,7 +1440,7 @@ const ContactDrawer = ({ open, handleDrawerClose, contact, ticket, loading }) =>
 				<DialogContent className={classes.imageModalContent}>
 					<img
 						src={contact?.urlPicture}
-						alt={contact?.name || "Foto do contato"}
+						alt={contact?.name || "Foto del contacto"}
 						className={classes.expandedImage}
 					/>
 				</DialogContent>

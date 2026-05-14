@@ -3,23 +3,20 @@ import { useHistory } from "react-router-dom";
 
 import { Can } from "../Can";
 import { makeStyles } from "@material-ui/core/styles";
-import { IconButton, Menu, CircularProgress } from "@material-ui/core";
+import { IconButton, Menu, CircularProgress, Divider } from "@material-ui/core";
 import {
-  DeviceHubOutlined,
-  History,
   MoreVert,
-  PictureAsPdf,
   Replay,
   SwapHorizOutlined,
   AccountBalanceWallet,
   FileCopy as FileCopyIcon,
   FlashOn,
+  ExpandMore,
+  Apps,
 } from "@material-ui/icons";
-import { v4 as uuidv4 } from "uuid";
 
 import { i18n } from "../../translate/i18n";
 import api from "../../services/api";
-// import TicketOptionsMenu from "../TicketOptionsMenu";
 import ButtonWithSpinner from "../ButtonWithSpinner";
 import toastError from "../../errors/toastError";
 import usePlans from "../../hooks/usePlans";
@@ -37,11 +34,9 @@ import Button from "@material-ui/core/Button";
 import TransferTicketModalCustom from "../TransferTicketModalCustom";
 import AcceptTicketWithouSelectQueue from "../AcceptTicketWithoutQueueModal";
 
-//icones
 import HighlightOffIcon from "@material-ui/icons/HighlightOff";
 import UndoIcon from "@material-ui/icons/Undo";
 
-import ScheduleModal from "../ScheduleModal";
 import MenuItem from "@material-ui/core/MenuItem";
 import { Switch } from "@material-ui/core";
 import ShowTicketOpen from "../ShowTicketOpenModal";
@@ -64,37 +59,75 @@ const useStyles = makeStyles((theme) => ({
     flex: "none",
     alignSelf: "center",
     marginLeft: "auto",
-    // flexBasis: "50%",
     display: "flex",
-    "& > *": {
-      margin: theme.spacing(1),
+    alignItems: "center",
+    gap: theme.spacing(0.5),
+  },
+  resolveButton: {
+    backgroundColor: theme.palette.success.main,
+    color: "#fff",
+    borderRadius: 20,
+    padding: "4px 14px",
+    fontSize: "0.78rem",
+    fontWeight: 600,
+    textTransform: "none",
+    whiteSpace: "nowrap",
+    "&:hover": {
+      backgroundColor: theme.palette.success.dark,
     },
   },
-  bottomButtonVisibilityIcon: {
-    padding: 1,
-    color: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
+  transferButton: {
+    borderRadius: 20,
+    padding: "4px 10px",
+    fontSize: "0.78rem",
+    textTransform: "none",
+    border: `1px solid ${theme.palette.divider}`,
+    color: theme.mode === "light" ? theme.palette.text.primary : "#FFF",
+    whiteSpace: "nowrap",
+  },
+  actionsButton: {
+    borderRadius: 20,
+    padding: "4px 10px",
+    fontSize: "0.78rem",
+    textTransform: "none",
+    border: `1px solid ${theme.palette.divider}`,
+    color: theme.mode === "light" ? theme.palette.text.primary : "#FFF",
+    whiteSpace: "nowrap",
+  },
+  moreIconButton: {
+    padding: 4,
+    color: theme.mode === "light" ? theme.palette.text.secondary : "#FFF",
+  },
+  menuItem: {
+    fontSize: "0.875rem",
+    gap: theme.spacing(1.5),
+    minWidth: 190,
+    padding: theme.spacing(1, 2),
+  },
+  menuItemIcon: {
+    fontSize: "1.1rem",
+    opacity: 0.75,
+    flexShrink: 0,
+  },
+  walletActive: {
+    color: theme.palette.success.main,
   },
   botoes: {
     display: "flex",
     padding: "15px",
     justifyContent: "flex-end",
     maxWidth: "100%",
-    // alignItems: "center"
   },
 }));
 
 const SessionSchema = Yup.object().shape({
-  ratingId: Yup.string().required("Avaliação obrigatória"),
+  ratingId: Yup.string().required("Evaluación obligatoria"),
 });
 
 const TicketActionButtonsCustom = ({
   ticket,
   contact,
   onQuickMessageSelect,
-  // , showSelectMessageCheckbox,
-  // selectedMessages,
-  // forwardMessageModalOpen,
-  // setForwardMessageModalOpen
 }) => {
   const classes = useStyles();
   const theme = useTheme();
@@ -107,45 +140,33 @@ const TicketActionButtonsCustom = ({
   const formRef = React.useRef(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [transferTicketModalOpen, setTransferTicketModalOpen] = useState(false);
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [contactId, setContactId] = useState(null);
-  const [
-    acceptTicketWithouSelectQueueOpen,
-    setAcceptTicketWithouSelectQueueOpen,
-  ] = useState(false);
+  const [acceptTicketWithouSelectQueueOpen, setAcceptTicketWithouSelectQueueOpen] = useState(false);
   const [showTicketLogOpen, setShowTicketLogOpen] = useState(false);
   const [openTicketMessageDialog, setOpenTicketMessageDialog] = useState(false);
   const [disableBot, setDisableBot] = useState(ticket.contact.disableBot);
-
-  const [showSchedules, setShowSchedules] = useState(false);
-  const [enableIntegration, setEnableIntegration] = useState(
-    ticket.useIntegration
-  );
-
+  const [enableIntegration, setEnableIntegration] = useState(ticket.useIntegration);
   const [openAlert, setOpenAlert] = useState(false);
   const [userTicketOpen, setUserTicketOpen] = useState("");
   const [queueTicketOpen, setQueueTicketOpen] = useState("");
-  const [logTicket, setLogTicket] = useState([]);
-
   const [showWavoipCall, setShowWavoipCall] = useState(false);
-
   const { get: getSetting } = useCompanySettings();
   const { getPlanCompany } = usePlans();
 
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
+  // Menú "⋮ Más"
+  const [moreAnchorEl, setMoreAnchorEl] = useState(null);
+  const moreMenuOpen = Boolean(moreAnchorEl);
+
+  // Menú "Acciones"
+  const [actionsAnchorEl, setActionsAnchorEl] = useState(null);
+  const actionsMenuOpen = Boolean(actionsAnchorEl);
 
   const [showTestButton, setShowTestButton] = useState(false);
-  const [exportedToPDF, setExportedToPDF] = useState(false);
   const [linkingWallet, setLinkingWallet] = useState(false);
-
   const [openFinalizacaoVenda, setOpenFinalizacaoVenda] = useState(false);
   const [ticketDataToFinalize, setTicketDataToFinalize] = useState(null);
   const [showFinalizacaoOptions, setShowFinalizacaoOptions] = useState(false);
-  const [finalizacaoTipo, setFinalizacaoTipo] = useState(null); // 'semDespedida' ou 'comDespedida'
+  const [finalizacaoTipo, setFinalizacaoTipo] = useState(null);
   const [directTicketsToWallets, setDirectTicketsToWallets] = useState(false);
-
-  // Estados para copiar telefone e respostas rápidas
   const [quickMessageModalOpen, setQuickMessageModalOpen] = useState(false);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
 
@@ -153,19 +174,13 @@ const TicketActionButtonsCustom = ({
     fetchData();
     checkWhatsAppTriggerIntegration();
     fetchDirectTicketsToWalletsSetting();
-
-    // Cleanup function to set isMounted to false when the component unmounts
-    return () => {
-      isMounted.current = false;
-    };
+    return () => { isMounted.current = false; };
   }, []);
 
   const fetchData = async () => {
     const companyId = user.companyId;
     const planConfigs = await getPlanCompany(undefined, companyId);
-
     if (isMounted.current) {
-      setShowSchedules(planConfigs.plan.useSchedules);
       setShowWavoipCall(planConfigs.plan.wavoip);
       setOpenTicketMessageDialog(false);
       setDisableBot(ticket.contact.disableBot);
@@ -176,45 +191,25 @@ const TicketActionButtonsCustom = ({
   const checkWhatsAppTriggerIntegration = async () => {
     try {
       const { data } = await api.get(`/whatsapp/${ticket.whatsappId}`);
-      if (isMounted.current) {
-        setShowTestButton(data.triggerIntegrationOnClose === true);
-      }
+      if (isMounted.current) setShowTestButton(data.triggerIntegrationOnClose === true);
     } catch (err) {
-      console.error(err);
-      if (isMounted.current) {
-        setShowTestButton(false);
-      }
+      if (isMounted.current) setShowTestButton(false);
     }
   };
 
   const fetchDirectTicketsToWalletsSetting = async () => {
     try {
-      const setting = await getSetting({
-        column: "DirectTicketsToWallets"
-      });
-      if (isMounted.current) {
-        setDirectTicketsToWallets(setting.DirectTicketsToWallets);
-      }
+      const setting = await getSetting({ column: "DirectTicketsToWallets" });
+      if (isMounted.current) setDirectTicketsToWallets(setting.DirectTicketsToWallets);
     } catch (err) {
-      console.error(err);
-      if (isMounted.current) {
-        setDirectTicketsToWallets(false);
-      }
+      if (isMounted.current) setDirectTicketsToWallets(false);
     }
   };
 
-  // Função para copiar telefone
   const handleCopyPhone = async () => {
     try {
-      if (!contact?.number) {
-        toast.error(i18n.t("ticketInfo.noPhone"));
-        return;
-      }
-
-      // Remove todos os caracteres não numéricos e copia o número puro
+      if (!contact?.number) { toast.error(i18n.t("ticketInfo.noPhone")); return; }
       const phoneNumber = contact.number.replace(/\D/g, '');
-
-      // Verifica se tem pelo menos 8 dígitos (número mínimo válido)
       if (phoneNumber.length >= 8) {
         await navigator.clipboard.writeText(phoneNumber);
         toast.success(i18n.t("ticketInfo.phonecopied"));
@@ -222,263 +217,138 @@ const TicketActionButtonsCustom = ({
         toast.error(i18n.t("ticketInfo.invalidPhoneFormat"));
       }
     } catch (err) {
-      console.error('Erro ao copiar telefone:', err);
       toast.error(i18n.t("ticketInfo.copyError"));
     }
-  };
-
-  // Funções para respostas rápidas
-  const handleOpenQuickMessageModal = () => {
-    setQuickMessageModalOpen(true);
-  };
-
-  const handleCloseQuickMessageModal = () => {
-    setQuickMessageModalOpen(false);
+    setActionsAnchorEl(null);
   };
 
   const handleQuickMessageSelect = useCallback((selectedMessage) => {
-    console.log("🎯 Resposta rápida selecionada:", selectedMessage);
-
-    handleCloseQuickMessageModal();
-
-    if (selectedMessage.mediaPath) {
-      const event = new CustomEvent('insertQuickMessage', {
-        detail: {
-          quickMessage: {
-            id: selectedMessage.id,
-            message: selectedMessage.message || "",
-            shortcode: selectedMessage.shortcode || "",
-            mediaPath: selectedMessage.mediaPath,
-            mediaType: selectedMessage.mediaType,
-            value: selectedMessage.message || ""
-          }
-        },
-        bubbles: false
-      });
-
-      window.dispatchEvent(event);
-    } else {
-      // Para texto, também usar evento
-      const event = new CustomEvent('insertQuickMessage', {
-        detail: {
-          quickMessage: {
-            id: selectedMessage.id,
-            message: selectedMessage.message || "",
-            shortcode: selectedMessage.shortcode || "",
-            mediaPath: null,
-            mediaType: null,
-            value: selectedMessage.message || ""
-          }
-        },
-        bubbles: false
-      });
-
-      window.dispatchEvent(event);
-    }
+    setQuickMessageModalOpen(false);
+    const event = new CustomEvent('insertQuickMessage', {
+      detail: {
+        quickMessage: {
+          id: selectedMessage.id,
+          message: selectedMessage.message || "",
+          shortcode: selectedMessage.shortcode || "",
+          mediaPath: selectedMessage.mediaPath || null,
+          mediaType: selectedMessage.mediaType || null,
+          value: selectedMessage.message || ""
+        }
+      },
+      bubbles: false
+    });
+    window.dispatchEvent(event);
   }, []);
 
-  const handleClickOpen = async (e) => {
-    const setting = await getSetting({
-      column: "requiredTag",
-    });
-
+  const handleClickOpen = async () => {
+    const setting = await getSetting({ column: "requiredTag" });
     if (setting?.requiredTag === "enabled") {
-      //verificar se tem uma tag
       try {
         const contactTags = await api.get(`/contactTags/${ticket.contact.id}`);
         if (!contactTags.data.tags) {
           toast.warning(i18n.t("messagesList.header.buttons.requiredTag"));
         } else {
           setOpen(true);
-          // handleUpdateTicketStatus(e, "closed", user?.id);
         }
-      } catch (err) {
-        toastError(err);
-      }
+      } catch (err) { toastError(err); }
     } else {
       setOpen(true);
-      // handleUpdateTicketStatus(e, "closed", user?.id);
     }
   };
 
-  const handleClose = () => {
-    formRef.current.resetForm();
-    setOpen(false);
-  };
+  const handleClose = () => { formRef.current.resetForm(); setOpen(false); };
+  const handleCloseAlert = () => { setOpenAlert(false); setLoading(false); };
 
-  const handleCloseAlert = () => {
-    setOpenAlert(false);
-    setLoading(false);
-  };
-  const handleOpenAcceptTicketWithouSelectQueue = async () => {
-    setAcceptTicketWithouSelectQueueOpen(true);
-  };
+  const handleOpenAcceptTicketWithouSelectQueue = () => setAcceptTicketWithouSelectQueueOpen(true);
 
-  const handleMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-    setMenuOpen(true);
-  };
-
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-    setMenuOpen(false);
-  };
-
-  const handleOpenTransferModal = (e) => {
+  const handleOpenTransferModal = () => {
     setTransferTicketModalOpen(true);
-    if (typeof handleClose == "function") handleClose();
+    setActionsAnchorEl(null);
   };
 
-  const handleOpenConfirmationModal = (e) => {
+  const handleOpenConfirmationModal = () => {
     setConfirmationOpen(true);
-    if (typeof handleClose == "function") handleClose();
+    setMoreAnchorEl(null);
   };
 
   const handleCloseTicketWithoutFarewellMsg = async () => {
     setLoading(true);
     try {
       await api.put(`/tickets/${ticket.id}`, {
-        status: "closed",
-        userId: user?.id || null,
-        sendFarewellMessage: false,
-        amountUsedBotQueues: 0,
+        status: "closed", userId: user?.id || null,
+        sendFarewellMessage: false, amountUsedBotQueues: 0,
       });
-
       setLoading(false);
       history.push("/tickets");
-    } catch (err) {
-      setLoading(false);
-      toastError(err);
-    }
-  };
-
-  const handleExportPDF = async () => {
-    setOpenTicketMessageDialog(true);
-    handleCloseMenu();
+    } catch (err) { setLoading(false); toastError(err); }
   };
 
   const handleEnableIntegration = async () => {
     setLoading(true);
     try {
-      await api.put(`/tickets/${ticket.id}`, {
-        useIntegration: !enableIntegration,
-      });
+      await api.put(`/tickets/${ticket.id}`, { useIntegration: !enableIntegration });
       setEnableIntegration(!enableIntegration);
-
       setLoading(false);
-    } catch (err) {
-      setLoading(false);
-      toastError(err);
-    }
+    } catch (err) { setLoading(false); toastError(err); }
+    setMoreAnchorEl(null);
   };
 
-  const handleShowLogTicket = async () => {
-    setShowTicketLogOpen(true);
-  };
+  const handleShowLogTicket = () => { setShowTicketLogOpen(true); setMoreAnchorEl(null); };
 
   const handleContactToggleDisableBot = async () => {
     const { id } = ticket.contact;
-
     try {
       const { data } = await api.put(`/contacts/toggleDisableBot/${id}`);
       ticket.contact.disableBot = data.disableBot;
       setDisableBot(data.disableBot);
-    } catch (err) {
-      toastError(err);
-    }
+    } catch (err) { toastError(err); }
   };
 
-  const handleCloseTransferTicketModal = () => {
-    setTransferTicketModalOpen(false);
-  };
+  const handleCloseTransferTicketModal = () => setTransferTicketModalOpen(false);
 
   const handleDeleteTicket = async () => {
     try {
       await api.delete(`/tickets/${ticket.id}`);
       history.push("/tickets");
-    } catch (err) {
-      toastError(err);
-    }
+    } catch (err) { toastError(err); }
   };
 
   const handleSendMessage = async (id) => {
     let setting;
-
-    try {
-      setting = await getSetting({
-        column: "greetingAcceptedMessage",
-      });
-    } catch (err) {
-      toastError(err);
-    }
+    try { setting = await getSetting({ column: "greetingAcceptedMessage" }); }
+    catch (err) { toastError(err); }
     if (!setting.greetingAcceptedMessage) {
-      toast.warning(
-        i18n.t("messagesList.header.buttons.greetingAcceptedMessage")
-      );
+      toast.warning(i18n.t("messagesList.header.buttons.greetingAcceptedMessage"));
       return;
     }
-    const msg = `${setting.greetingAcceptedMessage}`; //`{{ms}} *{{name}}*, ${i18n.t("mainDrawer.appBar.user.myName")} *${user?.name}* ${i18n.t("mainDrawer.appBar.user.continuity")}.`;
-    const message = {
-      read: 1,
-      fromMe: true,
-      mediaUrl: "",
-      body: `${msg.trim()}`,
-    };
-    try {
-      await api.post(`/messages/${id}`, message);
-    } catch (err) {
-      toastError(err);
-    }
+    const message = { read: 1, fromMe: true, mediaUrl: "", body: `${setting.greetingAcceptedMessage.trim()}` };
+    try { await api.post(`/messages/${id}`, message); }
+    catch (err) { toastError(err); }
   };
 
   const handleUpdateTicketStatus = async (e, status, userId) => {
     setLoading(true);
     try {
-      await api.put(`/tickets/${ticket.id}`, {
-        status: status,
-        userId: userId || null,
-      });
-
+      await api.put(`/tickets/${ticket.id}`, { status, userId: userId || null });
       let setting;
-
-      try {
-        setting = await getSetting({
-          column: "sendGreetingAccepted",
-        });
-      } catch (err) {
-        toastError(err);
-      }
-
-      if (
-        setting?.sendGreetingAccepted === "enabled" &&
+      try { setting = await getSetting({ column: "sendGreetingAccepted" }); }
+      catch (err) { toastError(err); }
+      if (setting?.sendGreetingAccepted === "enabled" &&
         (!ticket.isGroup || ticket.whatsapp?.groupAsTicket === "enabled") &&
-        ticket.status === "pending"
-      ) {
+        ticket.status === "pending") {
         handleSendMessage(ticket.id);
       }
-
-      if (isMounted.current) {
-        setLoading(false);
-      }
-
+      if (isMounted.current) setLoading(false);
       if (status === "open" || status === "group") {
         setCurrentTicket({ ...ticket, code: "#" + status });
-        setTimeout(() => {
-          history.push("/tickets");
-        }, 0);
-
-        setTimeout(() => {
-          history.push(`/tickets/${ticket.uuid}`);
-          setTabOpen(status);
-        }, 10);
+        setTimeout(() => { history.push("/tickets"); }, 0);
+        setTimeout(() => { history.push(`/tickets/${ticket.uuid}`); setTabOpen(status); }, 10);
       } else {
         setCurrentTicket({ id: null, code: null });
         history.push("/tickets");
       }
     } catch (err) {
-      if (isMounted.current) {
-        setLoading(false);
-      }
+      if (isMounted.current) setLoading(false);
       toastError(err);
     }
   };
@@ -487,8 +357,7 @@ const TicketActionButtonsCustom = ({
     setLoading(true);
     try {
       const otherTicket = await api.put(`/tickets/${id}`, {
-        status: ticket.isGroup ? "group" : "open",
-        userId: user?.id,
+        status: ticket.isGroup ? "group" : "open", userId: user?.id,
       });
       if (otherTicket.data.id !== ticket.id) {
         if (otherTicket.data.userId !== user?.id) {
@@ -499,161 +368,77 @@ const TicketActionButtonsCustom = ({
             setTabOpen(otherTicket.isGroup ? "group" : "open");
           }
         } else {
-          if (isMounted.current) {
-            setLoading(false);
-            setTabOpen(otherTicket.isGroup ? "group" : "open");
-          }
+          if (isMounted.current) { setLoading(false); setTabOpen(otherTicket.isGroup ? "group" : "open"); }
           history.push(`/tickets/${otherTicket.data.uuid}`);
         }
       } else {
-        if (isMounted.current) {
-          setLoading(false);
-        }
+        if (isMounted.current) setLoading(false);
         history.push("/tickets");
-        setTimeout(() => {
-          history.push(`/tickets/${ticket.uuid}`);
-          setTabOpen(ticket.isGroup ? "group" : "open");
-        }, 1000);
+        setTimeout(() => { history.push(`/tickets/${ticket.uuid}`); setTabOpen(ticket.isGroup ? "group" : "open"); }, 1000);
       }
     } catch (err) {
-      if (isMounted.current) {
-        setLoading(false);
-      }
+      if (isMounted.current) setLoading(false);
       toastError(err);
     }
   };
 
-  //Wavoip historic
   const saveHistoricalLink = async (payload) => {
-    console.log('payload request historical', JSON.stringify(payload));
-    const callHistorical = await api.post(`/call/historical/wavoip`, payload);
-  }
-  //Wavoip conect
+    await api.post(`/call/historical/wavoip`, payload);
+  };
+
   const handleOpenWavoipCall = async () => {
     if (!ticket?.whatsapp?.wavoip || !ticket?.contact?.number) {
-      toastError("Erro: Token ou número de telefone não disponível.");
+      toastError("Error: Token o número de teléfono no disponible.");
       return;
     }
-
     const token = ticket.whatsapp.wavoip;
     const phone = ticket.contact.number.replace(/\D/g, "");
     const name = ticket.contact.name;
     const url = `https://app.wavoip.com/call?token=${token}&phone=${phone}&name=${name}&start_if_ready=true&close_after_call=true`;
-
     try {
       await saveHistoricalLink({
-        "user_id": ticket?.user?.id || null,
-        "token_wavoip": token,
-        "whatsapp_id": ticket?.whatsapp?.id || null,
-        "contact_id": ticket?.contact?.id || null,
-        "company_id": ticket?.company?.id || null,
-        "phone_to": phone,
-        "name": name,
-        "url": url,
-        "createdAt": new Date()
+        user_id: ticket?.user?.id || null, token_wavoip: token,
+        whatsapp_id: ticket?.whatsapp?.id || null, contact_id: ticket?.contact?.id || null,
+        company_id: ticket?.company?.id || null, phone_to: phone, name, url, createdAt: new Date()
       });
-
-    } catch (e) {
-      console.log('erro ao tentar salvar historico', e)
-    }
-
+    } catch (e) { /* silencioso */ }
     window.open(url, "wavoip", "toolbar=no,scrollbars=no,resizable=no,top=500,left=500,width=500,height=700");
+    setActionsAnchorEl(null);
   };
 
-  const handleExportToPDF = () => {
-    const messagesListElement = document.getElementById("messagesList");
-    const headerElement = document.getElementById("TicketHeader");
-
-    const pdfOptions = {
-      margin: 1,
-      filename: `${i18n.t("whatsappModalRel.form.reportFilename")}${ticket.id
-        }.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    };
-
-    if (messagesListElement && headerElement) {
-      const headerClone = headerElement.cloneNode(true);
-      const messagesListClone = messagesListElement.cloneNode(true);
-
-      const containerElement = document.createElement("div");
-      containerElement.appendChild(headerClone);
-      containerElement.appendChild(messagesListClone);
-
-      return html2pdf().from(containerElement).set(pdfOptions).output("blob");
-    } else {
-      toast.error(i18n.t("whatsappModalRel.form.elementNotFoundForExport"));
-      return null;
-    }
-  };
+  const handleExportPDF = async () => { setOpenTicketMessageDialog(true); setMoreAnchorEl(null); };
 
   const handleTestButton = async () => {
     try {
       if (ticket?.whatsapp?.integrationTypeId) {
-        const { data: integration } = await api.get(
-          `/queueIntegration/${ticket.whatsapp.integrationTypeId}`
-        );
-
+        const { data: integration } = await api.get(`/queueIntegration/${ticket.whatsapp.integrationTypeId}`);
         if (integration) {
           await api.post(`/queueIntegration/testsession`, {
-            integrationId: ticket.whatsapp.integrationTypeId,
-            ticketId: ticket.id,
-            contactId: ticket.contactId,
-            body: ticket.lastMessage?.body || "",
-            status: "closed",
+            integrationId: ticket.whatsapp.integrationTypeId, ticketId: ticket.id,
+            contactId: ticket.contactId, body: ticket.lastMessage?.body || "", status: "closed",
           });
-
-          if (isMounted.current) {
-            toast.success(i18n.t("ticketList.success.integrationTriggered"));
-          }
+          if (isMounted.current) toast.success(i18n.t("ticketList.success.integrationTriggered"));
         }
       }
-
-      await handleUpdateTicketStatus(
-        null,
-        "closed",
-        user?.id,
-        ticket?.queue?.id
-      );
-
-      if (isMounted.current) {
-        handleClose();
-      }
-    } catch (err) {
-      toastError(err);
-    }
+      await handleUpdateTicketStatus(null, "closed", user?.id, ticket?.queue?.id);
+      if (isMounted.current) handleClose();
+    } catch (err) { toastError(err); }
   };
 
   const handleLinkToWallet = async () => {
-    if (!ticket.contactId) {
-      toast.error(i18n.t("contactModal.saveFirst"));
-      return;
-    }
-
+    if (!ticket.contactId) { toast.error(i18n.t("contactModal.saveFirst")); return; }
     setLinkingWallet(true);
     try {
       if (!user.queues || user.queues.length === 0) {
-        toast.error(i18n.t("contactModal.walletError"));
-        return;
+        toast.error(i18n.t("contactModal.walletError")); return;
       }
-
-      // Usa a primeira fila do usuário
       const userQueue = user.queues[0];
-
       await api.put(`/contacts/wallet/${ticket.contactId}`, {
-        wallets: {
-          userId: user.id,
-          queueId: ticket.queueId || userQueue.id,
-        },
+        wallets: { userId: user.id, queueId: ticket.queueId || userQueue.id },
       });
-
       toast.success(i18n.t("contactModal.walletLinked"));
-    } catch (err) {
-      toastError(err);
-    } finally {
-      setLinkingWallet(false);
-    }
+    } catch (err) { toastError(err); }
+    finally { setLinkingWallet(false); setActionsAnchorEl(null); }
   };
 
   const handleUnlinkWallet = async () => {
@@ -662,35 +447,22 @@ const TicketActionButtonsCustom = ({
     try {
       await api.delete(`/contacts/wallet/${ticket.contactId}`);
       toast.success(i18n.t("contactModal.walletUnlinked"));
-    } catch (err) {
-      toastError(err);
-    } finally {
-      setLinkingWallet(false);
-    }
+    } catch (err) { toastError(err); }
+    finally { setLinkingWallet(false); setActionsAnchorEl(null); }
   };
 
   const handleFinalizarTicket = async (tipo) => {
-    if (
-      user.finalizacaoComValorVendaAtiva === true ||
-      user.finalizacaoComValorVendaAtiva === "true"
-    ) {
+    if (user.finalizacaoComValorVendaAtiva === true || user.finalizacaoComValorVendaAtiva === "true") {
       setFinalizacaoTipo(tipo);
       setOpenFinalizacaoVenda(true);
     } else {
-      if (tipo === "semDespedida") {
-        handleCloseTicketWithoutFarewellMsg();
-      } else {
-        handleUpdateTicketStatus(null, "closed", user?.id, ticket?.queue?.id);
-      }
+      if (tipo === "semDespedida") { handleCloseTicketWithoutFarewellMsg(); }
+      else { handleUpdateTicketStatus(null, "closed", user?.id, ticket?.queue?.id); }
     }
   };
 
   const handleClickResolver = () => {
-    console.log("DEBUG handleClickResolver chamado");
-    if (
-      user.finalizacaoComValorVendaAtiva === true ||
-      user.finalizacaoComValorVendaAtiva === "true"
-    ) {
+    if (user.finalizacaoComValorVendaAtiva === true || user.finalizacaoComValorVendaAtiva === "true") {
       setFinalizacaoTipo("comDespedida");
       setOpenFinalizacaoVenda(true);
     } else {
@@ -698,260 +470,183 @@ const TicketActionButtonsCustom = ({
     }
   };
 
-  const handleUpdateTicketStatusWithData = async (
-    ticketData,
-    sendFarewellMessage,
-    finalizacaoMessage
-  ) => {
+  const handleUpdateTicketStatusWithData = async (ticketData, sendFarewellMessage, finalizacaoMessage) => {
     try {
-      await api.put(`/tickets/${ticket.id}`, {
-        ...ticketData,
-        sendFarewellMessage,
-        finalizacaoMessage,
-      });
-      toast.success("Ticket finalizado com sucesso!");
-      // Atualize o estado conforme necessário
-    } catch (err) {
-      toastError(err);
-    }
+      await api.put(`/tickets/${ticket.id}`, { ...ticketData, sendFarewellMessage, finalizacaoMessage });
+      toast.success("Ticket finalizado con éxito.");
+    } catch (err) { toastError(err); }
   };
 
-  // Tooltip dinâmico para copiar telefone
-  const getCopyPhoneTooltip = () => {
-    const usePrefixWhenCopy = localStorage.getItem('usePrefixWhenCopy') === 'true';
-    const prefix = localStorage.getItem('contactCopyPrefix') || '';
-
-    let copyTooltip = i18n.t("ticketInfo.copyPhone");
-    if (usePrefixWhenCopy && prefix) {
-      copyTooltip = `Copiar telefone com prefixo (${prefix})`;
-    }
-    return copyTooltip;
-  };
+  const hasWallet = ticket.contact?.contactWallets && ticket.contact.contactWallets.length > 0;
 
   return (
     <>
       {openAlert && (
-        <ShowTicketOpen
-          isOpen={openAlert}
-          handleClose={handleCloseAlert}
-          user={userTicketOpen}
-          queue={queueTicketOpen}
-        />
+        <ShowTicketOpen isOpen={openAlert} handleClose={handleCloseAlert}
+          user={userTicketOpen} queue={queueTicketOpen} />
       )}
       {acceptTicketWithouSelectQueueOpen && (
         <AcceptTicketWithouSelectQueue
           modalOpen={acceptTicketWithouSelectQueueOpen}
-          onClose={(e) => setAcceptTicketWithouSelectQueueOpen(false)}
-          ticketId={ticket.id}
-          ticket={ticket}
+          onClose={() => setAcceptTicketWithouSelectQueueOpen(false)}
+          ticketId={ticket.id} ticket={ticket}
         />
       )}
       {showTicketLogOpen && (
-        <ShowTicketLogModal
-          isOpen={showTicketLogOpen}
-          handleClose={(e) => setShowTicketLogOpen(false)}
-          ticketId={ticket.id}
-        />
+        <ShowTicketLogModal isOpen={showTicketLogOpen}
+          handleClose={() => setShowTicketLogOpen(false)} ticketId={ticket.id} />
       )}
       {openTicketMessageDialog && (
-        <TicketMessagesDialog
-          open={openTicketMessageDialog}
-          handleClose={() => setOpenTicketMessageDialog(false)}
-          ticketId={ticket.id}
-        />
+        <TicketMessagesDialog open={openTicketMessageDialog}
+          handleClose={() => setOpenTicketMessageDialog(false)} ticketId={ticket.id} />
       )}
-
       {quickMessageModalOpen && (
-        <QuickMessageModal
-          open={quickMessageModalOpen}
-          onClose={handleCloseQuickMessageModal}
+        <QuickMessageModal open={quickMessageModalOpen}
+          onClose={() => setQuickMessageModalOpen(false)}
           onSelect={handleQuickMessageSelect}
-          companyId={user?.companyId}
-          userId={user?.id}
+          companyId={user?.companyId} userId={user?.id}
         />
       )}
-
       {templateModalOpen && (
-        <TemplateMetaModal
-          open={templateModalOpen}
+        <TemplateMetaModal open={templateModalOpen}
           handleClose={() => setTemplateModalOpen(false)}
-          ticketId={ticket.id}
-          whatsappId={ticket.whatsappId}
+          ticketId={ticket.id} whatsappId={ticket.whatsappId}
         />
       )}
 
       <div className={classes.actionButtons}>
-        {showWavoipCall && (
-          <IconButton color="secondary" onClick={handleOpenWavoipCall}>
-            <Phone />
-          </IconButton>
-        )}
-        {ticket.status === "closed" &&
-          (ticket.queueId === null || ticket.queueId === undefined) && (
-            <ButtonWithSpinner
-              loading={loading}
-              startIcon={<Replay />}
-              size="small"
-              onClick={(e) => handleOpenAcceptTicketWithouSelectQueue()}
-            >
-              {i18n.t("messagesList.header.buttons.reopen")}
-            </ButtonWithSpinner>
-          )}
-        {ticket.status === "closed" && ticket.queueId !== null && (
-          <ButtonWithSpinner
-            startIcon={<Replay />}
-            loading={loading}
-            onClick={(e) => handleAcepptTicket(ticket.id)}
-          >
+
+        {/* ── Tickets CERRADOS: botón Reabrir ── */}
+        {ticket.status === "closed" && (ticket.queueId === null || ticket.queueId === undefined) && (
+          <ButtonWithSpinner loading={loading} startIcon={<Replay />} size="small"
+            onClick={handleOpenAcceptTicketWithouSelectQueue}>
             {i18n.t("messagesList.header.buttons.reopen")}
           </ButtonWithSpinner>
         )}
-        {/* <IconButton
-                    className={classes.bottomButtonVisibilityIcon}
-                    onClick={handleShowLogTicket}
-                >
-                    <Tooltip title={i18n.t("messagesList.header.buttons.logTicket")}>
-                        <History />
+        {ticket.status === "closed" && ticket.queueId !== null && (
+          <ButtonWithSpinner startIcon={<Replay />} loading={loading}
+            onClick={() => handleAcepptTicket(ticket.id)}>
+            {i18n.t("messagesList.header.buttons.reopen")}
+          </ButtonWithSpinner>
+        )}
 
-                    </Tooltip>
-                </IconButton> */}
+        {/* ── Tickets PENDING: botón Aceptar ── */}
+        {ticket.status === "pending" && (ticket.queueId === null || ticket.queueId === undefined) && (
+          <ButtonWithSpinner loading={loading} size="small" variant="contained"
+            onClick={handleOpenAcceptTicketWithouSelectQueue}>
+            {i18n.t("messagesList.header.buttons.accept")}
+          </ButtonWithSpinner>
+        )}
+        {ticket.status === "pending" && ticket.queueId !== null && (
+          <ButtonWithSpinner loading={loading} size="small" variant="contained"
+            onClick={(e) => handleUpdateTicketStatus(e, "open", user?.id)}>
+            {i18n.t("messagesList.header.buttons.accept")}
+          </ButtonWithSpinner>
+        )}
+
+        {/* ── Tickets ABIERTOS: barra de acciones moderna ── */}
         {(ticket.status === "open" || ticket.status === "group") && (
           <>
-            {/* {!showSelectMessageCheckbox ? ( */}
-            <>
-              {/* <IconButton
-                                className={classes.bottomButtonVisibilityIcon}
-                                onClick={handleEnableIntegration}
-                            >
-                                <Tooltip title={i18n.t("messagesList.header.buttons.enableIntegration")}>
-                                    {enableIntegration === true ? <DeviceHubOutlined style={{ color: "green" }} /> : <DeviceHubOutlined />}
+            {/* Botón Resolver (verde prominente) */}
+            <Button
+              className={classes.resolveButton}
+              onClick={handleClickResolver}
+              disabled={loading}
+              endIcon={<ExpandMore style={{ fontSize: 16 }} />}
+            >
+              Resolver
+            </Button>
 
-                                </Tooltip>
-                            </IconButton> */}
-
-              {/* Ícone para copiar telefone */}
-              <IconButton
-                className={classes.bottomButtonVisibilityIcon}
-                onClick={handleCopyPhone}
-                disabled={!contact?.number}
+            {/* Botón Transferir */}
+            <Tooltip title="Transferir ticket">
+              <Button
+                className={classes.transferButton}
+                onClick={handleOpenTransferModal}
+                startIcon={<SwapHorizOutlined style={{ fontSize: 16 }} />}
               >
-                <Tooltip title={getCopyPhoneTooltip()}>
-                  <FileCopyIcon />
-                </Tooltip>
-              </IconButton>
+                Transferir
+              </Button>
+            </Tooltip>
 
-              {/* Ícone para respostas rápidas */}
-              <IconButton
-                className={classes.bottomButtonVisibilityIcon}
-                onClick={handleOpenQuickMessageModal}
-              >
-                <Tooltip title={i18n.t("ticketInfo.quickMessages")}>
-                  <FlashOn />
-                </Tooltip>
-              </IconButton>
-
-              {/* Botón de plantillas Meta — solo para canal oficial */}
-              {ticket.channel === 'whatsapp_oficial' && (
-                <IconButton
-                  className={classes.bottomButtonVisibilityIcon}
-                  onClick={() => setTemplateModalOpen(true)}
-                >
-                  <Tooltip title="Enviar plantilla">
-                    <AssignmentIcon />
-                  </Tooltip>
-                </IconButton>
+            {/* Menú Acciones (agrupa: teléfono, rápidos, wavoip, plantilla, regresar, wallet, bot) */}
+            <Button
+              className={classes.actionsButton}
+              onClick={(e) => setActionsAnchorEl(e.currentTarget)}
+              endIcon={<ExpandMore style={{ fontSize: 16 }} />}
+              startIcon={<Apps style={{ fontSize: 16 }} />}
+            >
+              Acciones
+            </Button>
+            <Menu
+              anchorEl={actionsAnchorEl}
+              open={actionsMenuOpen}
+              onClose={() => setActionsAnchorEl(null)}
+              getContentAnchorEl={null}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+            >
+              {/* Comunicación */}
+              <MenuItem className={classes.menuItem} onClick={handleCopyPhone} disabled={!contact?.number}>
+                <FileCopyIcon className={classes.menuItemIcon} />
+                Copiar teléfono
+              </MenuItem>
+              <MenuItem className={classes.menuItem} onClick={() => { setQuickMessageModalOpen(true); setActionsAnchorEl(null); }}>
+                <FlashOn className={classes.menuItemIcon} />
+                Mensajes rápidos
+              </MenuItem>
+              {showWavoipCall && (
+                <MenuItem className={classes.menuItem} onClick={handleOpenWavoipCall}>
+                  <Phone className={classes.menuItemIcon} />
+                  Llamada Wavoip
+                </MenuItem>
+              )}
+              {ticket.channel === "whatsapp_oficial" && (
+                <MenuItem className={classes.menuItem} onClick={() => { setTemplateModalOpen(true); setActionsAnchorEl(null); }}>
+                  <AssignmentIcon className={classes.menuItemIcon} />
+                  Enviar plantilla
+                </MenuItem>
               )}
 
-              <IconButton className={classes.bottomButtonVisibilityIcon}>
-                <Tooltip title={i18n.t("messagesList.header.buttons.resolve")}>
-                  <HighlightOffIcon onClick={handleClickResolver} />
-                </Tooltip>
-              </IconButton>
+              <Divider style={{ margin: "4px 0" }} />
 
-              <IconButton className={classes.bottomButtonVisibilityIcon}>
-                <Tooltip title={i18n.t("tickets.buttons.returnQueue")}>
-                  <UndoIcon
-                    // color="primary"
-                    onClick={(e) =>
-                      handleUpdateTicketStatus(e, "pending", null)
-                    }
-                  />
-                </Tooltip>
-              </IconButton>
+              {/* Gestión del ticket */}
+              <MenuItem className={classes.menuItem} onClick={() => { handleUpdateTicketStatus(null, "pending", null); setActionsAnchorEl(null); }}>
+                <UndoIcon className={classes.menuItemIcon} />
+                Regresar a cola
+              </MenuItem>
 
-              <IconButton className={classes.bottomButtonVisibilityIcon}>
-                <Tooltip title="Transferir Ticket">
-                  <SwapHorizOutlined
-                    // color="primary"
-                    onClick={handleOpenTransferModal}
-                  />
-                </Tooltip>
-              </IconButton>
-
-              {/* Botón "Mantener conmigo": asigna este contacto al agente actual + cola del ticket */}
               {directTicketsToWallets && (
-                ticket.contact?.contactWallets &&
-                ticket.contact.contactWallets.length > 0
-              ) ? (
-                <IconButton
-                  className={classes.bottomButtonVisibilityIcon}
-                  onClick={handleUnlinkWallet}
-                  disabled={linkingWallet}
-                >
-                  <Tooltip title="Quitar asignación fija">
-                    {linkingWallet ? (
-                      <CircularProgress size={20} />
-                    ) : (
-                      <AccountBalanceWallet style={{ color: "#4caf50" }} />
+                hasWallet ? (
+                  <MenuItem className={classes.menuItem} onClick={handleUnlinkWallet} disabled={linkingWallet}>
+                    {linkingWallet ? <CircularProgress size={16} /> : (
+                      <AccountBalanceWallet className={`${classes.menuItemIcon} ${classes.walletActive}`} />
                     )}
-                  </Tooltip>
-                </IconButton>
-              ) : directTicketsToWallets && (
-                <IconButton
-                  className={classes.bottomButtonVisibilityIcon}
-                  onClick={handleLinkToWallet}
-                  disabled={linkingWallet}
-                >
-                  <Tooltip title="Mantener conmigo">
-                    {linkingWallet ? (
-                      <CircularProgress size={20} />
-                    ) : (
-                      <AccountBalanceWallet />
+                    Quitar asignación fija
+                  </MenuItem>
+                ) : (
+                  <MenuItem className={classes.menuItem} onClick={handleLinkToWallet} disabled={linkingWallet}>
+                    {linkingWallet ? <CircularProgress size={16} /> : (
+                      <AccountBalanceWallet className={classes.menuItemIcon} />
                     )}
-                  </Tooltip>
-                </IconButton>
+                    Mantener conmigo
+                  </MenuItem>
+                )
               )}
-            </>
 
-            {/* {showSchedules && (
-                            <>
-                                <IconButton className={classes.bottomButtonVisibilityIcon}>
-                                    <Tooltip title={i18n.t("tickets.buttons.scredule")}>
-                                        <EventIcon
-                                            // color="primary"
-                                            onClick={handleOpenScheduleModal}
-                                        />
-                                    </Tooltip>
-                                </IconButton>
-                            </>
-                        )} */}
+              <Divider style={{ margin: "4px 0" }} />
 
-            <MenuItem className={classes.bottomButtonVisibilityIcon}>
-              <Tooltip title={i18n.t("contactModal.form.chatBotContact")}>
-                <Switch
-                  size="small"
-                  // color="primary"
-                  checked={disableBot}
-                  onChange={() => handleContactToggleDisableBot()}
-                />
-              </Tooltip>
-            </MenuItem>
+              {/* Bot toggle inline */}
+              <MenuItem className={classes.menuItem} onClick={handleContactToggleDisableBot}>
+                <Switch size="small" checked={disableBot} color="primary"
+                  onChange={() => {}} style={{ marginRight: 4, pointerEvents: "none" }} />
+                {disableBot ? "Bot desactivado" : "Desactivar bot"}
+              </MenuItem>
+            </Menu>
 
+            {/* Confirmación de eliminar */}
             {confirmationOpen && (
               <ConfirmationModal
-                title={`${i18n.t(
-                  "ticketOptionsMenu.confirmationModal.title"
-                )} #${ticket.id}?`}
+                title={`${i18n.t("ticketOptionsMenu.confirmationModal.title")} #${ticket.id}?`}
                 open={confirmationOpen}
                 onClose={setConfirmationOpen}
                 onConfirm={handleDeleteTicket}
@@ -963,153 +658,93 @@ const TicketActionButtonsCustom = ({
               <TransferTicketModalCustom
                 modalOpen={transferTicketModalOpen}
                 onClose={handleCloseTransferTicketModal}
-                ticketid={ticket.id}
-                ticket={ticket}
+                ticketid={ticket.id} ticket={ticket}
               />
             )}
           </>
         )}
-        {ticket.status === "pending" &&
-          (ticket.queueId === null || ticket.queueId === undefined) && (
-            <ButtonWithSpinner
-              loading={loading}
-              size="small"
-              variant="contained"
-              onClick={(e) => handleOpenAcceptTicketWithouSelectQueue()}
-            >
-              {i18n.t("messagesList.header.buttons.accept")}
-            </ButtonWithSpinner>
-          )}
-        {ticket.status === "pending" && ticket.queueId !== null && (
-          <ButtonWithSpinner
-            loading={loading}
-            size="small"
-            variant="contained"
-            // color="primary"
-            onClick={(e) => handleUpdateTicketStatus(e, "open", user?.id)}
-          >
-            {i18n.t("messagesList.header.buttons.accept")}
-          </ButtonWithSpinner>
-        )}
+
+        {/* ── Menú "⋮ Más" (siempre visible) ── */}
         <IconButton
-          aria-label="account of current user"
-          aria-controls="menu-appbar"
-          aria-haspopup="true"
-          onClick={handleMenu}
-          color="inherit"
-          style={{ paddingHorizontal: 3, paddingTop: 10 }}
+          className={classes.moreIconButton}
+          onClick={(e) => setMoreAnchorEl(e.currentTarget)}
+          size="small"
         >
-          <MoreVert style={{ fontSize: 16, padding: 0 }} />
+          <MoreVert style={{ fontSize: 18 }} />
         </IconButton>
         <Menu
-          id="menu-appbar"
-          anchorEl={anchorEl}
+          anchorEl={moreAnchorEl}
+          open={moreMenuOpen}
+          onClose={() => setMoreAnchorEl(null)}
           getContentAnchorEl={null}
-          anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "right",
-          }}
-          keepMounted
-          transformOrigin={{
-            vertical: "top",
-            horizontal: "right",
-          }}
-          open={menuOpen}
-          onClose={handleCloseMenu}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
         >
-          <MenuItem onClick={handleOpenConfirmationModal}>
-            <Can
-              role={user.profile}
-              perform="ticket-options:deleteTicket"
-              yes={() => i18n.t("tickets.buttons.deleteTicket")}
-            />
-          </MenuItem>
-          <MenuItem onClick={handleEnableIntegration}>
-            {enableIntegration === true
+          <Can
+            role={user.profile}
+            perform="ticket-options:deleteTicket"
+            yes={() => (
+              <MenuItem className={classes.menuItem} onClick={handleOpenConfirmationModal}>
+                {i18n.t("tickets.buttons.deleteTicket")}
+              </MenuItem>
+            )}
+          />
+          <MenuItem className={classes.menuItem} onClick={handleEnableIntegration}>
+            {enableIntegration
               ? i18n.t("messagesList.header.buttons.disableIntegration")
               : i18n.t("messagesList.header.buttons.enableIntegration")}
           </MenuItem>
-          <MenuItem onClick={handleShowLogTicket}>
+          <MenuItem className={classes.menuItem} onClick={handleShowLogTicket}>
             {i18n.t("messagesList.header.buttons.logTicket")}
           </MenuItem>
-          <MenuItem onClick={handleExportPDF}>
+          <MenuItem className={classes.menuItem} onClick={handleExportPDF}>
             {i18n.t("ticketsList.buttons.exportAsPDF")}
           </MenuItem>
         </Menu>
       </div>
+
+      {/* ── Modal de confirmación de cierre ── */}
       <>
         {(!user.finalizacaoComValorVendaAtiva ||
           user.finalizacaoComValorVendaAtiva === false ||
           user.finalizacaoComValorVendaAtiva === "false") && (
-            <Formik
-              enableReinitialize={true}
-              validationSchema={SessionSchema}
-              innerRef={formRef}
-              onSubmit={(values, actions) => {
-                setTimeout(() => {
-                  actions.setSubmitting(false);
-                  actions.resetForm();
-                }, 400);
-              }}
-            >
-              {({
-                values,
-                touched,
-                errors,
-                isSubmitting,
-                setFieldValue,
-                resetForm,
-              }) => (
-                <Dialog
-                  open={open}
-                  onClose={handleClose}
-                  aria-labelledby="alert-dialog-title"
-                  aria-describedby="alert-dialog-description"
-                >
-                  <Form>
-                    <DialogActions className={classes.botoes}>
-                      <Button
-                        onClick={() => handleFinalizarTicket("semDespedida")}
-                        style={{
-                          background: theme.palette.primary.main,
-                          color: "white",
-                        }}
-                      >
-                        {i18n.t(
-                          "messagesList.header.dialogRatingWithoutFarewellMsg"
-                        )}
+          <Formik
+            enableReinitialize={true}
+            validationSchema={SessionSchema}
+            innerRef={formRef}
+            onSubmit={(values, actions) => {
+              setTimeout(() => { actions.setSubmitting(false); actions.resetForm(); }, 400);
+            }}
+          >
+            {({ resetForm }) => (
+              <Dialog open={open} onClose={handleClose}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+              >
+                <Form>
+                  <DialogActions className={classes.botoes}>
+                    <Button onClick={() => handleFinalizarTicket("semDespedida")}
+                      style={{ background: theme.palette.primary.main, color: "white" }}>
+                      {i18n.t("messagesList.header.dialogRatingWithoutFarewellMsg")}
+                    </Button>
+                    <Button onClick={() => handleFinalizarTicket("comDespedida")}
+                      style={{ background: theme.palette.primary.main, color: "white" }}>
+                      {i18n.t("messagesList.header.dialogRatingCancel")}
+                    </Button>
+                    {showTestButton && (
+                      <Button onClick={handleTestButton}
+                        style={{ background: theme.palette.primary.main, color: "white" }}>
+                        {i18n.t("whatsappModalRel.form.resolveAndTriggerIntegration")}
                       </Button>
-
-                      <Button
-                        onClick={() => handleFinalizarTicket("comDespedida")}
-                        style={{
-                          background: theme.palette.primary.main,
-                          color: "white",
-                        }}
-                      >
-                        {i18n.t("messagesList.header.dialogRatingCancel")}
-                      </Button>
-
-                      {showTestButton && (
-                        <Button
-                          onClick={handleTestButton}
-                          style={{
-                            background: theme.palette.primary.main,
-                            color: "white",
-                          }}
-                        >
-                          {i18n.t(
-                            "whatsappModalRel.form.resolveAndTriggerIntegration"
-                          )}
-                        </Button>
-                      )}
-                    </DialogActions>
-                  </Form>
-                </Dialog>
-              )}
-            </Formik>
-          )}
+                    )}
+                  </DialogActions>
+                </Form>
+              </Dialog>
+            )}
+          </Formik>
+        )}
       </>
+
       {openFinalizacaoVenda && (
         <FinalizacaoVendaModal
           open={openFinalizacaoVenda}
@@ -1122,24 +757,16 @@ const TicketActionButtonsCustom = ({
           }}
         />
       )}
+
       {showFinalizacaoOptions && (
-        <Dialog
-          open={showFinalizacaoOptions}
-          onClose={() => setShowFinalizacaoOptions(false)}
-          aria-labelledby="finalizacao-options-title"
-        >
-          <DialogTitle id="finalizacao-options-title">
-            Como deseja finalizar?
-          </DialogTitle>
+        <Dialog open={showFinalizacaoOptions} onClose={() => setShowFinalizacaoOptions(false)}
+          aria-labelledby="finalizacao-options-title">
+          <DialogTitle id="finalizacao-options-title">¿Cómo deseas finalizar?</DialogTitle>
           <DialogActions className={classes.botoes}>
             <Button
               onClick={async () => {
                 setShowFinalizacaoOptions(false);
-                await handleUpdateTicketStatusWithData(
-                  ticketDataToFinalize,
-                  false,
-                  null
-                );
+                await handleUpdateTicketStatusWithData(ticketDataToFinalize, false, null);
               }}
               style={{ background: theme.palette.primary.main, color: "white" }}
             >
@@ -1148,11 +775,7 @@ const TicketActionButtonsCustom = ({
             <Button
               onClick={async () => {
                 setShowFinalizacaoOptions(false);
-                await handleUpdateTicketStatusWithData(
-                  ticketDataToFinalize,
-                  true,
-                  null
-                );
+                await handleUpdateTicketStatusWithData(ticketDataToFinalize, true, null);
               }}
               style={{ background: theme.palette.primary.main, color: "white" }}
             >
