@@ -210,7 +210,7 @@ const SendMobileNotificationService = async (message: Message): Promise<void> =>
           });
         } catch (err: any) {
           const statusCode = err?.statusCode || err?.status || err?.code;
-          logger.error(`[MobilePush] Error sending notification: ${statusCode}`, err?.body || err?.message || err);
+          logger.error({ err, statusCode, body: err?.body }, "[MobilePush] Error sending notification");
 
           if ([404, 410].includes(statusCode)) {
             await RemoveUserPushSubscriptionService({
@@ -223,7 +223,7 @@ const SendMobileNotificationService = async (message: Message): Promise<void> =>
       }
     }
   } catch (err) {
-    logger.error("[MobilePush] Unexpected error while sending push notification", err);
+    logger.error({ err }, "[MobilePush] Unexpected error while sending push notification");
   }
 };
 
