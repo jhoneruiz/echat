@@ -450,7 +450,8 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
   };
 
   const handleSaveWhatsApp = async (values) => {
-    if (!whatsAppId) setAutoToken(generateRandomCode(30));
+    const newToken = !whatsAppId ? generateRandomCode(30) : autoToken;
+    if (!whatsAppId) setAutoToken(newToken);
 
     if (NPSEnabled) {
       if (isNil(values.ratingMessage)) {
@@ -498,7 +499,7 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
       closedTicketsPostImported: closedTicketsPostImported
         ? closedTicketsPostImported
         : null,
-      token: autoToken ? autoToken : null,
+      token: newToken || null,
       schedules,
       promptId: selectedPrompt ? selectedPrompt : null,
       channel,

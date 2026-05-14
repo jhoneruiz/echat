@@ -220,20 +220,22 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     try {
       const company: ICreateConnectionWhatsAppOficialCompany = {
         companyId: String(whatsapp.companyId),
-        companyName: whatsapp.company.name
+        companyName: whatsapp.company?.name || ""
       };
       const whatsappOficial: ICreateConnectionWhatsAppOficialWhatsApp = {
-        token_mult100: whatsapp.token,
-        phone_number_id: whatsapp.phone_number_id,
-        waba_id: whatsapp.waba_id,
-        send_token: whatsapp.send_token,
-        business_id: whatsapp.business_id,
-        phone_number: whatsapp.phone_number,
+        token_mult100: whatsapp.token || "",
+        phone_number_id: phone_number_id || whatsapp.phone_number_id,
+        waba_id: waba_id || whatsapp.waba_id,
+        send_token: send_token || whatsapp.send_token,
+        business_id: business_id || whatsapp.business_id,
+        phone_number: phone_number || whatsapp.phone_number,
         idEmpresaMult100: whatsapp.companyId
       };
 
+      logger.info(`[WhatsAppOficial store] phone_number_id=${whatsappOficial.phone_number_id} waba_id=${whatsappOficial.waba_id}`);
+
       const data = {
-        email: whatsapp.company.email,
+        email: whatsapp.company?.email || "",
         company,
         whatsApp: whatsappOficial
       };
