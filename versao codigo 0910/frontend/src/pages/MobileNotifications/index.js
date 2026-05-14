@@ -23,8 +23,6 @@ import CloudDoneIcon from "@material-ui/icons/CloudDone";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import WarningIcon from "@material-ui/icons/Warning";
-import IosShareIcon from "@material-ui/icons/IosShare";
-
 import { toast } from "react-toastify";
 
 import { AuthContext } from "../../context/Auth/AuthContext";
