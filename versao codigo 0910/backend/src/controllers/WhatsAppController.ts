@@ -434,19 +434,55 @@ export const update = async (
 
   if (["whatsapp_oficial"].includes(whatsapp.channel)) {
     try {
-      const whatsappOficial: IUpdateonnectionWhatsAppOficialWhatsApp = {
-        token_mult100: whatsapp.token,
-        phone_number_id: whatsapp.phone_number_id,
-        waba_id: whatsapp.waba_id,
-        send_token: whatsapp.send_token,
-        business_id: whatsapp.business_id,
-        phone_number: whatsapp.phone_number
-      };
+      const pnId = whatsappData.phone_number_id || whatsapp.phone_number_id;
+      const wabaId = whatsappData.waba_id || whatsapp.waba_id;
+      const sndToken = whatsappData.send_token || whatsapp.send_token;
+      const bizId = whatsappData.business_id || whatsapp.business_id;
+      const pn = whatsappData.phone_number || whatsapp.phone_number;
 
-      await UpdateConnectionWhatsAppOficial(
-        whatsapp.waba_webhook_id,
-        whatsappOficial
-      );
+      if (whatsapp.waba_webhook_id) {
+        const whatsappOficial: IUpdateonnectionWhatsAppOficialWhatsApp = {
+          token_mult100: whatsapp.token,
+          phone_number_id: pnId,
+          waba_id: wabaId,
+          send_token: sndToken,
+          business_id: bizId,
+          phone_number: pn
+        };
+        await UpdateConnectionWhatsAppOficial(
+          whatsapp.waba_webhook_id,
+          whatsappOficial
+        );
+      } else {
+        // waba_webhook_id es null: la conexión nunca se creó en api_oficial → crear ahora
+        const comp = await ShowCompanyService(companyId);
+        const companyPayload: ICreateConnectionWhatsAppOficialCompany = {
+          companyId: String(whatsapp.companyId),
+          companyName: comp.name || ""
+        };
+        const whatsappOficial: ICreateConnectionWhatsAppOficialWhatsApp = {
+          token_mult100: whatsapp.token || "",
+          phone_number_id: pnId,
+          waba_id: wabaId,
+          send_token: sndToken,
+          business_id: bizId,
+          phone_number: pn,
+          idEmpresaMult100: whatsapp.companyId
+        };
+        logger.info(`[WhatsAppOficial update-as-create] phone_number_id=${pnId} waba_id=${wabaId}`);
+        const data = {
+          email: comp.email || "",
+          company: companyPayload,
+          whatsApp: whatsappOficial
+        };
+        const { webhookLink, connectionId } = await CreateCompanyConnectionOficial(data);
+        if (webhookLink) {
+          whatsapp.waba_webhook = webhookLink;
+          whatsapp.waba_webhook_id = connectionId;
+          whatsapp.status = "CONNECTED";
+          await whatsapp.save();
+        }
+      }
     } catch (error) {
       logger.info("ERROR", error);
     }
