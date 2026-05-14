@@ -636,10 +636,13 @@ export default function CompaniesManager() {
       }
       await loadPlans();
       handleCancel();
-      toast.success("Operação realizada com sucesso!");
+      toast.success("Operación realizada con éxito.");
     } catch (e) {
       toast.error(
-        "Não foi possível realizar a operação. Verifique se já existe uma empresa com o mesmo nome ou se os campos foram preenchidos corretamente"
+        e?.response?.data?.error ||
+          e?.response?.data?.message ||
+          e?.message ||
+          "No se pudo completar la operación. Verifica que no exista otra empresa con el mismo nombre o que los campos estén llenos correctamente."
       );
     }
     setLoading(false);
@@ -651,9 +654,14 @@ export default function CompaniesManager() {
       await remove(record.id);
       await loadPlans();
       handleCancel();
-      toast.success("Operação realizada com sucesso!");
+      toast.success("Operación realizada con éxito.");
     } catch (e) {
-      toast.error("Não foi possível realizar a operação");
+      toast.error(
+        e?.response?.data?.error ||
+          e?.response?.data?.message ||
+          e?.message ||
+          "No se pudo completar la operación."
+      );
     }
     setLoading(false);
   };

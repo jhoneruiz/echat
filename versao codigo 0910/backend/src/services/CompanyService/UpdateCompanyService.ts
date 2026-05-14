@@ -43,28 +43,25 @@ const UpdateCompanyService = async (
     throw new AppError("ERR_NO_COMPANY_FOUND", 404);
   }
 
-  const existUser = await User.findOne({
-    where: {
-      companyId: company.id,
-      email: email
-    }
-  });
-
-  if (existUser && existUser.email !== company.email) {
-    throw new AppError("Usuário já existe com esse e-mail!", 404)
-  }
-
   const user = await User.findOne({
     where: {
       companyId: company.id,
-      email: company.email
-    }
+      profile: "admin"
+    },
+    order: [["id", "ASC"]]
   });
 
   if (!user) {
-    throw new AppError("ERR_NO_USER_FOUND", 404)
+    throw new AppError("ERR_NO_USER_FOUND", 404);
   }
-  
+
+  if (email && email !== user.email) {
+    const existUser = await User.findOne({ where: { email } });
+    if (existUser && existUser.id !== user.id) {
+      throw new AppError("Ya existe un usuario con ese correo.", 400);
+    }
+  }
+
   await user.update({ email, password });
 
   await company.update({
