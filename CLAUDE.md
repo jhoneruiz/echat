@@ -39,11 +39,20 @@ El código base principal se encuentra en la subcarpeta `versao codigo 0910`.
 - NO elimines la estructura de la base de datos sin crear las migraciones de Sequelize correspondientes.
 
 ## Tarea 2: Traducción a Español de México (es-MX)
-- Revisa los archivos de internacionalización (i18n) en el frontend. Si no existen, créalos o extrae los textos "hardcodeados" a un archivo de idioma centralizado.
-- Traduce todos los términos del portugués al español de México de forma profesional (ej. "Atendimentos" -> "Chats" o "Atenciones", "Fila" -> "Cola", "Configurações" -> "Configuración").
-- Asegúrate de traducir también los mensajes de error, respuestas del bot en el backend y logs de la consola.
+- **Frontend COMPLETADO (2026-05-13):** `i18n.js` ya tiene `fallbackLng: "es"` y `lng: "es"`. `es.js` está totalmente traducido al español. Si aparece texto en portugués es que falta la clave en `es.js`.
+- Términos estándar: "Fila" → "Cola", "Atendimento" → "Atención/Chat", "Excluir" → "Eliminar", "Historico" → "Historial".
+- Pendiente: mensajes de error del backend (AppError, console.log en servicios).
+- Nuevas claves de UI deben agregarse directamente en español (no en portugués).
 
 ## Metodología de Trabajo
 - Antes de modificar archivos grandes, explícame la estrategia que vas a utilizar.
 - Trabaja de forma incremental: primero la base de datos de conexiones, luego los Webhooks de recepción, después el envío de mensajes, y finalmente la traducción.
 - Proporciona comandos de npm o yarn para instalar nuevas dependencias necesarias (como librerías para manejar Meta API) y desinstalar las obsoletas (como `@adiwajshing/baileys`).
+
+## Entorno de Desarrollo y VPS
+- **Directorio de trabajo local:** `g:\Mi unidad\whatikect desarrollo\echat\` (aquí se editan los archivos).
+- **Repositorio git:** `C:\Users\ruiz_\echat-fix\` — copiar archivos modificados aquí antes de `git commit && git push`.
+- **VPS (Ubuntu 24.04):** proyecto en `/home/deploy/Equipechat/`. Procesos PM2: `Equipechat-backend` y `Equipechat-frontend`.
+- **Rebuild frontend en VPS:** `cd /home/deploy/Equipechat && git pull origin main && cd "versao codigo 0910/frontend" && npm run build && pm2 restart Equipechat-frontend`
+- **Rebuild backend en VPS:** `cd /home/deploy/Equipechat/"versao codigo 0910/backend" && npm install --legacy-peer-deps && npm run build && pm2 restart Equipechat-backend`
+- **Git ownership en VPS:** si `git pull` falla con "dubious ownership", ejecutar `git config --global --add safe.directory /home/deploy/Equipechat`.
