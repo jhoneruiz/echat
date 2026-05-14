@@ -174,11 +174,31 @@ const FindOrCreateTicketService = async (
 
     if (ticket && ticket.status !== "nps") {
       console.log(`[RDS-TICKET] Reativando ticket recente ID=${ticket.id} como 'pending'`);
-      await ticket.update({
-        status: "pending",
-        unreadMessages,
-        companyId,
-      });
+
+      const updateData: any = { status: "pending", unreadMessages, companyId };
+
+      // Re-aplicar wallet al reabrir ticket cerrado, por si cambió desde que se creó
+      if (DirectTicketsToWallets) {
+        try {
+          const contactWallet = await ContactWallet.findOne({
+            where: {
+              contactId: groupContact ? groupContact.id : contactId,
+              companyId
+            }
+          });
+          if (contactWallet?.walletId && contactWallet?.queueId) {
+            updateData.userId = contactWallet.walletId;
+            updateData.queueId = contactWallet.queueId;
+            updateData.isBot = false;
+            updateData.useIntegration = false;
+            updateData.integrationId = null;
+          }
+        } catch (error) {
+          console.log("[RDS-TICKET] Error al aplicar wallet en reapertura:", error);
+        }
+      }
+
+      await ticket.update(updateData);
     }
   }
 

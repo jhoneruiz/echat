@@ -149,12 +149,6 @@ const TicketActionButtonsCustom = ({
   const [quickMessageModalOpen, setQuickMessageModalOpen] = useState(false);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
 
-  console.log("DEBUG user:", user);
-  console.log(
-    "DEBUG user.finalizacaoComValorVendaAtiva:",
-    user?.finalizacaoComValorVendaAtiva
-  );
-
   useEffect(() => {
     fetchData();
     checkWhatsAppTriggerIntegration();
@@ -166,20 +160,10 @@ const TicketActionButtonsCustom = ({
     };
   }, []);
 
-  useEffect(() => {
-    console.log("DEBUG openFinalizacaoVenda:", openFinalizacaoVenda);
-  }, [openFinalizacaoVenda]);
-
-  useEffect(() => {
-    console.log("DEBUG open (modal avaliação):", open);
-  }, [open]);
-
   const fetchData = async () => {
     const companyId = user.companyId;
     const planConfigs = await getPlanCompany(undefined, companyId);
 
-    console.log("DEBUG planConfigs:", planConfigs);
-    
     if (isMounted.current) {
       setShowSchedules(planConfigs.plan.useSchedules);
       setShowWavoipCall(planConfigs.plan.wavoip);
@@ -672,6 +656,19 @@ const TicketActionButtonsCustom = ({
     }
   };
 
+  const handleUnlinkWallet = async () => {
+    if (!ticket.contactId) return;
+    setLinkingWallet(true);
+    try {
+      await api.delete(`/contacts/wallet/${ticket.contactId}`);
+      toast.success(i18n.t("contactModal.walletUnlinked"));
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setLinkingWallet(false);
+    }
+  };
+
   const handleFinalizarTicket = async (tipo) => {
     if (
       user.finalizacaoComValorVendaAtiva === true ||
@@ -891,25 +888,39 @@ const TicketActionButtonsCustom = ({
                 </Tooltip>
               </IconButton>
 
-              {/* Botão de vincular à carteira só aparece se NÃO houver carteira vinculada E se a configuração DirectTicketsToWallets estiver ativa */}
-              {directTicketsToWallets && !(
+              {/* Botón "Mantener conmigo": asigna este contacto al agente actual + cola del ticket */}
+              {directTicketsToWallets && (
                 ticket.contact?.contactWallets &&
                 ticket.contact.contactWallets.length > 0
-              ) && (
-                  <IconButton
-                    className={classes.bottomButtonVisibilityIcon}
-                    onClick={handleLinkToWallet}
-                    disabled={linkingWallet}
-                  >
-                    <Tooltip title="Vincular à minha carteira">
-                      {linkingWallet ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <AccountBalanceWallet />
-                      )}
-                    </Tooltip>
-                  </IconButton>
-                )}
+              ) ? (
+                <IconButton
+                  className={classes.bottomButtonVisibilityIcon}
+                  onClick={handleUnlinkWallet}
+                  disabled={linkingWallet}
+                >
+                  <Tooltip title="Quitar asignación fija">
+                    {linkingWallet ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <AccountBalanceWallet style={{ color: "#4caf50" }} />
+                    )}
+                  </Tooltip>
+                </IconButton>
+              ) : directTicketsToWallets && (
+                <IconButton
+                  className={classes.bottomButtonVisibilityIcon}
+                  onClick={handleLinkToWallet}
+                  disabled={linkingWallet}
+                >
+                  <Tooltip title="Mantener conmigo">
+                    {linkingWallet ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <AccountBalanceWallet />
+                    )}
+                  </Tooltip>
+                </IconButton>
+              )}
             </>
 
             {/* {showSchedules && (
@@ -1099,20 +1110,18 @@ const TicketActionButtonsCustom = ({
             </Formik>
           )}
       </>
-      {openFinalizacaoVenda &&
-        (console.log("DEBUG JSX: Renderizando FinalizacaoVendaModal"),
-          (
-            <FinalizacaoVendaModal
-              open={openFinalizacaoVenda}
-              onClose={() => setOpenFinalizacaoVenda(false)}
-              ticket={ticket}
-              onFinalizar={(ticketData) => {
-                setOpenFinalizacaoVenda(false);
-                setTicketDataToFinalize(ticketData);
-                setShowFinalizacaoOptions(true);
-              }}
-            />
-          ))}
+      {openFinalizacaoVenda && (
+        <FinalizacaoVendaModal
+          open={openFinalizacaoVenda}
+          onClose={() => setOpenFinalizacaoVenda(false)}
+          ticket={ticket}
+          onFinalizar={(ticketData) => {
+            setOpenFinalizacaoVenda(false);
+            setTicketDataToFinalize(ticketData);
+            setShowFinalizacaoOptions(true);
+          }}
+        />
+      )}
       {showFinalizacaoOptions && (
         <Dialog
           open={showFinalizacaoOptions}
