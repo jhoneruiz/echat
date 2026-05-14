@@ -398,7 +398,7 @@ export const storeFacebook = async (
         });
       }
     }
-    return res.status(200);
+    return res.status(200).json({ success: true });
   } catch (error) {
     console.log(error);
     return res.status(400).json({
