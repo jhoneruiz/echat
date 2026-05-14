@@ -22,45 +22,52 @@ export const list = async (req: Request, res: Response): Promise<Response> => {
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
+  logger.info({ userId: req.user?.id, companyId: req.user?.companyId, hasSub: !!req.body?.subscription, platform: req.body?.platform }, "[MobilePush][store] POST received");
+
   const { id, companyId } = req.user;
   const userId = Number(id);
 
   if (Number.isNaN(userId)) {
+    logger.warn({ rawId: req.user?.id }, "[MobilePush][store] invalid user identifier");
     return res.status(400).json({ error: "Invalid user identifier" });
   }
   const { subscription, platform, deviceInfo, oldEndpoint } = req.body;
 
   if (!subscription || !subscription.endpoint || !subscription.keys) {
+    logger.warn({ userId, body: req.body }, "[MobilePush][store] invalid subscription payload");
     return res.status(400).json({ error: "Invalid subscription payload" });
   }
 
-  const saved = await SaveUserPushSubscriptionService({
-    userId,
-    companyId,
-    endpoint: subscription.endpoint,
-    expirationTime: subscription.expirationTime,
-    keys: subscription.keys,
-    platform,
-    deviceInfo
-  });
+  try {
+    const saved = await SaveUserPushSubscriptionService({
+      userId,
+      companyId,
+      endpoint: subscription.endpoint,
+      expirationTime: subscription.expirationTime,
+      keys: subscription.keys,
+      platform,
+      deviceInfo
+    });
 
-  if (oldEndpoint && oldEndpoint !== subscription.endpoint) {
-    try {
-      await RemoveUserPushSubscriptionService({
-        userId,
-        companyId,
-        endpoint: oldEndpoint
-      });
-    } catch (err) {
-      logger.warn("[MobilePush] Failed to clean old push subscription endpoint", {
-        userId,
-        companyId,
-        err
-      });
+    logger.info({ userId, companyId, subscriptionId: saved.id, endpoint: subscription.endpoint?.slice(0, 60) }, "[MobilePush][store] subscription saved");
+
+    if (oldEndpoint && oldEndpoint !== subscription.endpoint) {
+      try {
+        await RemoveUserPushSubscriptionService({
+          userId,
+          companyId,
+          endpoint: oldEndpoint
+        });
+      } catch (err) {
+        logger.warn({ userId, companyId, err }, "[MobilePush] Failed to clean old push subscription endpoint");
+      }
     }
-  }
 
-  return res.status(201).json(saved);
+    return res.status(201).json(saved);
+  } catch (err: any) {
+    logger.error({ err, userId, companyId, endpoint: subscription.endpoint?.slice(0, 60) }, "[MobilePush][store] failed to save subscription");
+    return res.status(500).json({ error: err?.message || "Failed to save subscription" });
+  }
 };
 
 export const remove = async (req: Request, res: Response): Promise<Response> => {
