@@ -160,82 +160,19 @@ const handlePushSubscriptionChange = async event => {
   try {
     const metadata = (await getCachedSubscriptionMetadata()) || {};
     const oldEndpoint = event.oldSubscription?.endpoint || metadata.subscription?.endpoint || null;
-    let subscription = event.newSubscription || null;
 
-    if (!subscription) {
-      const existing = await self.registration.pushManager.getSubscription();
-      if (existing) {
-        subscription = existing;
-      }
-    }
-
-    if (!subscription) {
-      const applicationServerKeyBuffer = event.oldSubscription?.options?.applicationServerKey || null;
-      let applicationServerKey = null;
-
-      if (applicationServerKeyBuffer) {
-        applicationServerKey = new Uint8Array(applicationServerKeyBuffer);
-      } else {
-        const cachedKey = await getCachedPublicKey();
-        if (cachedKey) {
-          applicationServerKey = urlBase64ToUint8Array(cachedKey);
-        }
-      }
-
-      if (!applicationServerKey) {
-        console.warn("[ServiceWorker] Missing VAPID key for push re-subscription");
-        await notifyClients({
-          type: "PUSH_SUBSCRIPTION_ERROR",
-          message: "Não foi possível renovar a assinatura de notificações automaticamente."
-        });
-        return;
-      }
-
-      subscription = await self.registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey
-      });
-    }
-
-    const subscriptionJson = subscription.toJSON();
-    const payload = {
-      subscription: subscriptionJson,
-      platform: metadata.platform || "web",
-      deviceInfo: metadata.deviceInfo || { autoRenewed: true },
-      oldEndpoint: oldEndpoint && oldEndpoint !== subscriptionJson.endpoint ? oldEndpoint : null
-    };
-
-    const response = await fetch(`${self.location.origin}/push/subscriptions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include",
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to refresh push subscription (${response.status}): ${errorText}`);
-    }
-
-    await setCachedSubscriptionMetadata({
-      subscription: subscriptionJson,
-      platform: payload.platform,
-      deviceInfo: payload.deviceInfo,
-      storedAt: Date.now()
-    });
-
+    // El service worker no puede adjuntar el token JWT de auth, así que delega
+    // el re-registro a la app cliente mediante postMessage.
     await notifyClients({
-      type: "PUSH_SUBSCRIPTION_CHANGE",
-      subscription: subscriptionJson,
-      autoRenewed: true
+      type: "PUSH_SUBSCRIPTION_NEEDS_RENEWAL",
+      oldEndpoint,
+      platform: metadata.platform || "web"
     });
   } catch (error) {
     console.error("[ServiceWorker] pushsubscriptionchange handling failed", error);
     await notifyClients({
       type: "PUSH_SUBSCRIPTION_ERROR",
-      message: error?.message || "Falha ao atualizar a assinatura de notificações."
+      message: "Error al actualizar la suscripción de notificaciones."
     });
   }
 };

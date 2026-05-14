@@ -206,8 +206,7 @@ const SendMobileNotificationService = async (message: Message): Promise<void> =>
         const webPushSubscription = mapSubscription(subscription);
         try {
           await webpush.sendNotification(webPushSubscription, JSON.stringify(payload), {
-            TTL: 60,
-            vapidDetails: undefined
+            TTL: 86400
           });
         } catch (err: any) {
           const statusCode = err?.statusCode || err?.status || err?.code;

@@ -13,7 +13,8 @@ import {
   ListItemText,
   Typography,
   makeStyles,
-  Chip
+  Chip,
+  Paper
 } from "@material-ui/core";
 import CheckCircleIcon from "@material-ui/icons/CheckCircle";
 import NotificationsActiveIcon from "@material-ui/icons/NotificationsActive";
@@ -21,6 +22,8 @@ import PhoneIphoneIcon from "@material-ui/icons/PhoneIphone";
 import CloudDoneIcon from "@material-ui/icons/CloudDone";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import RefreshIcon from "@material-ui/icons/Refresh";
+import WarningIcon from "@material-ui/icons/Warning";
+import IosShareIcon from "@material-ui/icons/IosShare";
 
 import { toast } from "react-toastify";
 
@@ -64,31 +67,58 @@ const useStyles = makeStyles(theme => ({
   },
   mutedText: {
     color: theme.palette.text.secondary
+  },
+  installBanner: {
+    border: `2px solid ${theme.palette.warning.main}`,
+    backgroundColor: theme.palette.warning.light + "22",
+    padding: theme.spacing(2),
+    borderRadius: theme.shape.borderRadius,
+    marginBottom: theme.spacing(2)
+  },
+  installSteps: {
+    paddingLeft: theme.spacing(3),
+    marginTop: theme.spacing(1),
+    "& li": {
+      marginBottom: theme.spacing(0.5)
+    }
+  },
+  shareIcon: {
+    verticalAlign: "middle",
+    fontSize: "1.1em"
   }
 }));
 
-const isSafariIOS = () => {
+// Detecta si el UA corresponde a un dispositivo iOS (iPhone, iPad, iPod)
+const isIOSDevice = () => {
   if (typeof window === "undefined") return false;
-  const ua = window.navigator.userAgent;
-  return /iphone|ipad|ipod/i.test(ua) && /safari/i.test(ua) && !/crios|fxios/i.test(ua);
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 };
 
+// Detecta si la app está corriendo como PWA instalada
+// iOS: navigator.standalone === true
+// Android/Chrome: display-mode standalone via matchMedia
+const isStandalonePWA = () => {
+  if (typeof window === "undefined") return false;
+  if (window.navigator.standalone === true) return true;
+  if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return true;
+  return false;
+};
+
+// Detecta la plataforma para guardar en los metadatos de la suscripción
 const detectPlatform = () => {
   if (typeof window === "undefined") return "web";
-  if (isSafariIOS()) return "ios";
+  if (isIOSDevice()) return "ios";
   if (/android/i.test(window.navigator.userAgent)) return "android";
   return "web";
 };
 
-const urlBase64ToUint8Array = (base64String) => {
+const urlBase64ToUint8Array = base64String => {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
     .replace(/-/g, "+")
     .replace(/_/g, "/");
-
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
-
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
@@ -107,13 +137,21 @@ const MobileNotifications = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+
+  // Estado de plataforma/modo — se calcula una sola vez al montar
+  const [isIOS] = useState(() => isIOSDevice());
+  const [isStandalone] = useState(() => isStandalonePWA());
+
   const support = useMemo(() => ({
     notifications: typeof Notification !== "undefined",
     serviceWorker: typeof navigator !== "undefined" && "serviceWorker" in navigator,
-    pushManager: typeof navigator !== "undefined" && navigator?.serviceWorker && "PushManager" in window
+    pushManager: typeof window !== "undefined" && "PushManager" in window
   }), []);
 
   const hasActiveSubscription = subscriptions.length > 0;
+
+  // El botón "Activar" se deshabilita si el usuario está en iOS sin haber instalado la PWA
+  const needsInstall = isIOS && !isStandalone;
 
   const fetchSubscriptions = useCallback(async () => {
     try {
@@ -149,61 +187,7 @@ const MobileNotifications = () => {
     };
 
     loadInitialData();
-  }, [fetchSubscriptions, sendMessageToServiceWorker]);
-
-  useEffect(() => {
-    const onSwMessage = (event) => {
-      if (event.data?.type === "PUSH_SUBSCRIPTION_CHANGE") {
-        fetchSubscriptions();
-      }
-
-      if (event.data?.type === "PUSH_SUBSCRIPTION_ERROR") {
-        const message = event.data?.message || i18n.t("notifications.mobile.genericError");
-        toast.error(message);
-        setError(new Error(message));
-      }
-    };
-
-    if (support.serviceWorker) {
-      navigator.serviceWorker.addEventListener("message", onSwMessage);
-    }
-
-    return () => {
-      if (support.serviceWorker) {
-        navigator.serviceWorker.removeEventListener("message", onSwMessage);
-      }
-    };
-  }, [fetchSubscriptions, support.serviceWorker]);
-
-  const ensureServiceWorkerReady = useCallback(async () => {
-    if (!support.serviceWorker) {
-      throw new Error("Este navegador no soporta Service Workers.");
-    }
-
-    const registration = await navigator.serviceWorker.ready;
-    return registration;
-  }, [support.serviceWorker]);
-
-  const subscribePush = useCallback(async () => {
-    if (!publicKey) {
-      throw new Error("La clave pública de notificaciones no está disponible.");
-    }
-
-    const registration = await ensureServiceWorkerReady();
-    const existing = await registration.pushManager.getSubscription();
-    let oldEndpoint = null;
-    if (existing) {
-      oldEndpoint = existing.endpoint;
-      await existing.unsubscribe();
-    }
-
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey)
-    });
-
-    return { subscription, oldEndpoint };
-  }, [ensureServiceWorkerReady, publicKey]);
+  }, [fetchSubscriptions]);
 
   const handleActivate = useCallback(async () => {
     try {
@@ -218,6 +202,10 @@ const MobileNotifications = () => {
         throw new Error(i18n.t("notifications.mobile.unsupported"));
       }
 
+      if (needsInstall) {
+        throw new Error("Primero instala la app en tu pantalla de inicio.");
+      }
+
       const permissionResult = await Notification.requestPermission();
       setPermission(permissionResult);
 
@@ -225,14 +213,30 @@ const MobileNotifications = () => {
         throw new Error("Permiso de notificaciones denegado.");
       }
 
-      const { subscription, oldEndpoint } = await subscribePush();
-      const platform = detectPlatform();
+      if (!publicKey) {
+        throw new Error("La clave pública de notificaciones no está disponible. Contacta al administrador.");
+      }
 
+      const registration = await navigator.serviceWorker.ready;
+      const existing = await registration.pushManager.getSubscription();
+      let oldEndpoint = null;
+      if (existing) {
+        oldEndpoint = existing.endpoint;
+        await existing.unsubscribe();
+      }
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+
+      const platform = detectPlatform();
       const deviceInfo = {
         userAgent: navigator.userAgent,
         language: navigator.language,
         platform: navigator.platform,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        standalone: isStandalone
       };
 
       await saveSubscription({
@@ -266,13 +270,43 @@ const MobileNotifications = () => {
     }
   }, [
     fetchSubscriptions,
-    subscribePush,
+    isStandalone,
+    needsInstall,
+    publicKey,
     support.notifications,
     support.pushManager,
     support.serviceWorker,
-    user,
-    sendMessageToServiceWorker
+    user
   ]);
+
+  useEffect(() => {
+    const onSwMessage = event => {
+      if (event.data?.type === "PUSH_SUBSCRIPTION_CHANGE") {
+        fetchSubscriptions();
+      }
+
+      // El service worker delega el re-registro a la app cuando la suscripción cambia
+      if (event.data?.type === "PUSH_SUBSCRIPTION_NEEDS_RENEWAL") {
+        handleActivate().catch(console.error);
+      }
+
+      if (event.data?.type === "PUSH_SUBSCRIPTION_ERROR") {
+        const message = event.data?.message || i18n.t("notifications.mobile.genericError");
+        toast.error(message);
+        setError(new Error(message));
+      }
+    };
+
+    if (support.serviceWorker) {
+      navigator.serviceWorker.addEventListener("message", onSwMessage);
+    }
+
+    return () => {
+      if (support.serviceWorker) {
+        navigator.serviceWorker.removeEventListener("message", onSwMessage);
+      }
+    };
+  }, [fetchSubscriptions, handleActivate, support.serviceWorker]);
 
   const handleDeactivate = useCallback(async () => {
     try {
@@ -311,7 +345,6 @@ const MobileNotifications = () => {
     }
   }, [
     fetchSubscriptions,
-    sendMessageToServiceWorker,
     subscriptions,
     support.serviceWorker,
     user
@@ -338,6 +371,9 @@ const MobileNotifications = () => {
     if (!support.notifications || !support.serviceWorker || !support.pushManager) {
       return i18n.t("notifications.mobile.unsupported");
     }
+    if (needsInstall) {
+      return "Requiere instalar app";
+    }
     if (permission === "granted" && hasActiveSubscription) {
       return i18n.t("notifications.mobile.enabled");
     }
@@ -345,7 +381,7 @@ const MobileNotifications = () => {
       return i18n.t("notifications.mobile.blocked");
     }
     return i18n.t("notifications.mobile.disabled");
-  }, [hasActiveSubscription, permission, support.notifications, support.pushManager, support.serviceWorker]);
+  }, [hasActiveSubscription, needsInstall, permission, support.notifications, support.pushManager, support.serviceWorker]);
 
   return (
     <MainContainer className={classes.root}>
@@ -359,6 +395,53 @@ const MobileNotifications = () => {
         />
       </MainHeader>
 
+      {/* Banner de instalación — solo visible en iOS fuera de modo standalone */}
+      {needsInstall && (
+        <Paper className={classes.installBanner} elevation={0}>
+          <Box display="flex" alignItems="center" mb={1} style={{ gap: 8 }}>
+            <WarningIcon style={{ color: "#f59e0b" }} />
+            <Typography variant="h6" style={{ color: "#92400e", fontWeight: 700 }}>
+              Instala la app primero para recibir notificaciones
+            </Typography>
+          </Box>
+          <Typography variant="body2" style={{ color: "#78350f" }} gutterBottom>
+            En iPhone e iPad las notificaciones push solo funcionan cuando la app está instalada en la pantalla de inicio. Sigue estos pasos:
+          </Typography>
+          <ol className={classes.installSteps}>
+            <li>
+              <Typography variant="body2">
+                Abre esta página en <strong>Safari</strong> (no Chrome ni otro navegador)
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                Toca el botón <strong>Compartir</strong> (□↑) en la barra inferior de Safari
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                Desplázate y selecciona <strong>"Añadir a pantalla de inicio"</strong>
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                Toca <strong>"Añadir"</strong> en la esquina superior derecha
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                <strong>Abre la app desde el ícono</strong> en tu pantalla de inicio (no desde Safari)
+              </Typography>
+            </li>
+            <li>
+              <Typography variant="body2">
+                Vuelve a esta página y toca <strong>"Activar notificaciones"</strong>
+              </Typography>
+            </li>
+          </ol>
+        </Paper>
+      )}
+
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Card className={classes.infoCard}>
@@ -371,7 +454,7 @@ const MobileNotifications = () => {
               <List className={classes.stepList}>
                 <ListItem>
                   <ListItemIcon>
-                    <CheckCircleIcon color="primary" />
+                    <CheckCircleIcon color={isStandalone ? "primary" : "disabled"} />
                   </ListItemIcon>
                   <ListItemText
                     primary={i18n.t("notifications.mobile.steps.install")}
@@ -380,7 +463,7 @@ const MobileNotifications = () => {
                 </ListItem>
                 <ListItem>
                   <ListItemIcon>
-                    <CheckCircleIcon color="primary" />
+                    <CheckCircleIcon color={isStandalone ? "primary" : "disabled"} />
                   </ListItemIcon>
                   <ListItemText
                     primary={i18n.t("notifications.mobile.steps.open")}
@@ -389,7 +472,7 @@ const MobileNotifications = () => {
                 </ListItem>
                 <ListItem>
                   <ListItemIcon>
-                    <CheckCircleIcon color="primary" />
+                    <CheckCircleIcon color={permission === "granted" ? "primary" : "disabled"} />
                   </ListItemIcon>
                   <ListItemText
                     primary={i18n.t("notifications.mobile.steps.enable")}
@@ -417,6 +500,12 @@ const MobileNotifications = () => {
                   ? i18n.t("notifications.mobile.status.permissionHint")
                   : i18n.t("notifications.mobile.status.permissionUnsupported")}
               </Typography>
+
+              {isIOS && (
+                <Typography variant="body2" className={classes.mutedText} gutterBottom>
+                  Modo PWA: {isStandalone ? "✅ Instalada (modo app)" : "⚠️ Navegador (debe instalarse)"}
+                </Typography>
+              )}
 
               <Typography variant="body1" gutterBottom>
                 {i18n.t("notifications.mobile.status.subscriptions", { total: subscriptions.length })}
@@ -452,7 +541,8 @@ const MobileNotifications = () => {
                 permission === "denied" ||
                 !support.notifications ||
                 !support.serviceWorker ||
-                !support.pushManager
+                !support.pushManager ||
+                needsInstall
               }
               onClick={handleActivate}
             >
