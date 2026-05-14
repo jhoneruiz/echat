@@ -7,7 +7,7 @@ const WavoipPhoneWidget = ({
   token,
   position = 'bottom-right',
   name = 'MultiFlow Phone',
-  country = 'BR',
+  country = 'MX',
   autoConnect = true,
   onCallStart,
   onCallEnd,
@@ -363,13 +363,13 @@ const WavoipPhoneWidget = ({
       return { isValid: false, error: '', canType: true };
     }
     if (cleanNumber.length < 7) {
-      return { isValid: false, error: 'Número muito curto', canType: true };
+      return { isValid: false, error: 'Número muy corto', canType: true };
     }
     if (cleanNumber.length > 15) {
-      return { isValid: false, error: 'Número muito longo', canType: false };
+      return { isValid: false, error: 'Número muy largo', canType: false };
     }
     if (!/^[1-9][0-9]+$/.test(cleanNumber)) {
-      return { isValid: false, error: 'Número inválido', canType: true };
+      return { isValid: false, error: 'Número no válido', canType: true };
     }
     return { isValid: true, error: '', formatted: cleanNumber, canType: cleanNumber.length < 15 };
   };
@@ -392,11 +392,17 @@ const WavoipPhoneWidget = ({
     }
   };
 
-  // Conectar ao Wavoip
+  // Conectar al servidor Wavoip
   const connectToWavoip = useCallback(async () => {
+    if (!token || typeof token !== 'string' || !token.trim()) {
+      const err = new Error('Token Wavoip vacío. Pega tu token en la conexión de WhatsApp.');
+      console.warn(err.message);
+      if (onError) onError(err);
+      return;
+    }
     try {
       const WAV = new Wavoip();
-      const instance = WAV.connect(token);
+      const instance = WAV.connect(token.trim());
       wavoipInstanceRef.current = instance;
 
       instance.socket.on('connect', () => {
@@ -420,10 +426,10 @@ const WavoipPhoneWidget = ({
           unlockAudio();
           playRinging()
           setIncomingCall({
-            number: data.content?.from_tag || 'Número desconhecido',
+            number: data.content?.from_tag || 'Número desconocido',
             data: data
           });
-          setCallerName(data.content?.from_tag || 'Número desconhecido');
+          setCallerName(data.content?.from_tag || 'Número desconocido');
           if (isMinimized) {
             setIsMinimized(false);
           }
@@ -432,7 +438,7 @@ const WavoipPhoneWidget = ({
         
         if (data.tag === 'answer' || data.tag == 'accept_elsewhere' || data.tag == 'accept') {
           setIsInCall(true);
-          setCallStatus('Em chamada');
+          setCallStatus('En llamada');
           setCallStartTime(Date.now());
           startDurationTimer();
           stopRinging()
@@ -474,10 +480,10 @@ const WavoipPhoneWidget = ({
       instance.deviceEmitter.on('incoming_call', (data) => {
         console.log('Incoming call event:', data);
         setIncomingCall({
-          number: data.content?.from_tag || 'Número desconhecido',
+          number: data.content?.from_tag || 'Número desconocido',
           data: data
         });
-        setCallerName(data.content?.from_tag || 'Número desconhecido');
+        setCallerName(data.content?.from_tag || 'Número desconocido');
         if (isMinimized) {
           setIsMinimized(false);
         }
@@ -504,7 +510,7 @@ const WavoipPhoneWidget = ({
         whatsappid: validation.formatted
       });
       setIsInCall(true);
-      setCallStatus('Chamando...');
+      setCallStatus('Llamando...');
       setCallerName(validation.formatted);
       setCallStartTime(Date.now());
       startDurationTimer();
@@ -541,7 +547,7 @@ const WavoipPhoneWidget = ({
       wavoipInstanceRef.current.acceptCall();
       setIncomingCall(null);
       setIsInCall(true);
-      setCallStatus('Em chamada');
+      setCallStatus('En llamada');
       setCallStartTime(Date.now());
       startDurationTimer();
        stopCalling()
@@ -756,9 +762,9 @@ const WavoipPhoneWidget = ({
             <div style={styles.idleDisplay}>
               <div style={styles.welcomeText}>{name}</div>
               <div style={styles.phoneNumberDisplay}>
-                {currentNumber || 'Digite um número'}
+                {currentNumber || 'Marca un número'}
               </div>
-              <div style={styles.subtitle}>Faça chamadas via WhatsApp</div>
+              <div style={styles.subtitle}>Llamadas vía WhatsApp</div>
               {numberError && (
                 <div style={styles.numberError}>{numberError}</div>
               )}
@@ -820,7 +826,7 @@ const WavoipPhoneWidget = ({
               </div>
               <div style={styles.incomingCallInfo}>
                 <div style={styles.incomingNumber}>{incomingCall.number}</div>
-                <div style={styles.incomingLabel}>Chamada recebida</div>
+                <div style={styles.incomingLabel}>Llamada entrante</div>
               </div>
               <div style={styles.incomingCallActions}>
                 <button style={styles.answerBtn} onClick={answerCall}>

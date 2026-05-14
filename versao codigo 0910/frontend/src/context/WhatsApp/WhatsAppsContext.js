@@ -20,18 +20,10 @@ const WhatsAppsProvider = ({ children }) => {
     const fetchSession = async () => {
       try {
         const { data } = await api.get("/call/historical/user/whatsapp");
-
-        // let wavoipToken  = "";
-        // for(const d of data){
-        //   if(d?.wavoip){
-        //     wavoipToken = d.wavoip;
-        //     break;
-        //   }
-        // }
-        console.log('whavoip token', data)
-        setWavoipToken(data?.whatsapp?.wavoip || null);
+        const token = (data?.whatsapp?.wavoip || "").trim();
+        setWavoipToken(token || null);
       } catch (err) {
-        console.error("Erro fetchSession:", err);
+        console.error("Error fetchSession:", err);
         setWavoipToken(null);
       } finally {
         setLoadingSession(false);

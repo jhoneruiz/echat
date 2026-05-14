@@ -1272,11 +1272,24 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                       <div>
                         <Field
                           as={TextField}
-                          label="Wavoip"
+                          label="Token Wavoip"
                           fullWidth
                           name="wavoip"
                           variant="outlined"
                           margin="dense"
+                          helperText={
+                            <span>
+                              Obtén tu token en{" "}
+                              <a
+                                href="https://app.wavoip.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                wavoip.com
+                              </a>{" "}
+                              (servicio externo de pago). Sin token no funcionarán las llamadas.
+                            </span>
+                          }
                         />
                       </div>
                     )}

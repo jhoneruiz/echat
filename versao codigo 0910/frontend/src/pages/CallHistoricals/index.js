@@ -199,12 +199,16 @@ const CallHistoricals = () => {
   };
 
   const handleMakeCall = (callUrl) => {
+    if (!callUrl) {
+      toast.error("Esta llamada no tiene una URL disponible.");
+      return;
+    }
     window.open(callUrl, '_blank');
   };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleString('pt-BR', {
+    return date.toLocaleString('es-MX', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -214,18 +218,21 @@ const CallHistoricals = () => {
   };
 
   const formatPhone = (phone) => {
-    // Formato brasileiro: +55 (11) 99999-9999
-    if (phone && phone.length >= 10) {
-      const cleaned = phone.replace(/\D/g, '');
-      if (cleaned.startsWith('55')) {
-        const ddd = cleaned.substring(2, 4);
-        const number = cleaned.substring(4);
-        if (number.length === 9) {
-          return `+55 (${ddd}) ${number.substring(0, 5)}-${number.substring(5)}`;
-        } else if (number.length === 8) {
-          return `+55 (${ddd}) ${number.substring(0, 4)}-${number.substring(4)}`;
-        }
-      }
+    if (!phone) return phone;
+    const cleaned = phone.replace(/\D/g, '');
+    // México: +52 (LADA) NNNN-NNNN, normalmente 12 dígitos (52 + 10).
+    if (cleaned.startsWith('52') && cleaned.length >= 12) {
+      const lada = cleaned.substring(2, 4);
+      const num = cleaned.substring(4);
+      if (num.length === 8) return `+52 (${lada}) ${num.substring(0, 4)}-${num.substring(4)}`;
+      return `+52 (${lada}) ${num}`;
+    }
+    // Brasil: compatibilidad con números legados +55.
+    if (cleaned.startsWith('55') && cleaned.length >= 12) {
+      const ddd = cleaned.substring(2, 4);
+      const num = cleaned.substring(4);
+      if (num.length === 9) return `+55 (${ddd}) ${num.substring(0, 5)}-${num.substring(5)}`;
+      if (num.length === 8) return `+55 (${ddd}) ${num.substring(0, 4)}-${num.substring(4)}`;
     }
     return phone;
   };

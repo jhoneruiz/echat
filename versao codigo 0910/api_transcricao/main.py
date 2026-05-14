@@ -25,29 +25,22 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-# Obtém o token e a porta das variáveis de ambiente
-# API_TOKEN = os.environ.get('API_TOKEN')
-# PORT = int(os.environ.get('PORT', 4003))  # Converte para int, com valor padrão 4003
+API_KEY = os.environ.get('API_KEY')
+PORT = int(os.environ.get('PORT', 4002))
+TRANSCRIBE_LANGUAGE = os.environ.get('TRANSCRIBE_LANGUAGE', 'es-MX')
 
-# Verifica se o token está definido
-# if not API_TOKEN:
-#     logging.warning("API_TOKEN não encontrado no arquivo .env ou nas variáveis de ambiente!")
-#     API_TOKEN = "token_padrao_para_desenvolvimento"  # Fallback para desenvolvimento
-#     logging.warning(f"Usando token padrão: {API_TOKEN}")
+if not API_KEY:
+    logging.warning("API_KEY no definida en .env. El endpoint queda accesible sin autenticación.")
 
-# Função para verificar a autenticação
-# def verify_token(request):
-#     """Verifica se o token de autorização é válido"""
-#     # Verifica o header de autorização
-#     auth_header = request.headers.get('Authorization')
-#     if not auth_header:
-#         return False
-#     
-#     # Verifica se o header tem o formato correto (Bearer <token>)
-#     parts = auth_header.split()
-#     if len(parts) != 2 or parts[0].lower() != 'bearer':
-#         return False
-#     
+def verify_token(req):
+    if not API_KEY:
+        return True
+    auth_header = req.headers.get('Authorization', '')
+    parts = auth_header.split()
+    if len(parts) != 2 or parts[0].lower() != 'bearer':
+        return False
+    return parts[1] == API_KEY
+
 #     # Verifica se o token é válido
 #     token = parts[1]
 #     return token == API_TOKEN
@@ -244,12 +237,12 @@ def convert_audio_to_wav(audio_data, content_type):
 @app.route('/transcrever', methods=['POST'])
 def transcrever():
     request_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    
-    # Verifica a autenticação
-    # if not verify_token(request):
-    #     logging.warning(f"{request_time} - Tentativa de acesso não autorizado.")
-    #     return {'erro': 'Não autorizado. Forneça um token válido no header Authorization.'}, 401
-    
+
+    if not verify_token(request):
+        logging.warning(f"{request_time} - Intento de acceso no autorizado.")
+        return {'error': 'No autorizado. Envía un token válido en el header Authorization Bearer.'}, 401
+
+
     try:
         # Verifica se foi enviado um arquivo ou uma URL
         if 'audio' in request.files and request.files['audio']:
@@ -304,7 +297,7 @@ def transcrever():
             
             # Transcreve o segmento
             try:
-                return recognizer.recognize_google(audio_data, language='pt-BR')
+                return recognizer.recognize_google(audio_data, language=TRANSCRIBE_LANGUAGE)
             except sr.UnknownValueError:
                 logging.warning(f"{request_time} - Segmento {i + 1}: Não foi possível reconhecer o áudio.")
                 return ""
@@ -329,5 +322,5 @@ def transcrever():
         return {'erro': f'Erro interno no servidor: {str(e)}'}, 500
 
 if __name__ == '__main__':
-    logging.info(f"Servidor iniciado na porta 4002")
-    app.run(host='0.0.0.0', port=4002, debug=True)
+    logging.info(f"Servidor de transcripción iniciado en el puerto {PORT} (idioma: {TRANSCRIBE_LANGUAGE})")
+    app.run(host='0.0.0.0', port=PORT, debug=False)

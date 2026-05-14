@@ -1,51 +1,35 @@
 import path from "path";
 import fs from "fs";
-import Message from "../../models/Message";
-
 import axios from "axios";
 import FormData from "form-data";
-import { Transcription } from "openai/resources/audio/transcriptions";
 
-type Response = Transcription | string;
+import Message from "../../models/Message";
+import logger from "../../utils/logger";
 
-const TranscribeAudioMessageToText = async (wid: string, companyId: string): Promise<Response> => {
+const TranscribeAudioMessageToText = async (wid: string, companyId: string): Promise<string> => {
+  const transcribeUrl = process.env.TRANSCRIBE_URL;
+  const transcribeApiKey = process.env.TRANSCRIBE_API_KEY;
+
+  if (!transcribeUrl || !transcribeApiKey) {
+    logger.warn("[Transcribe] TRANSCRIBE_URL o TRANSCRIBE_API_KEY no configurados.");
+    return "El servicio de transcripción no está configurado.";
+  }
+
   try {
-    // Busca a mensagem com os detalhes do arquivo de áudio
-    const msg = await Message.findOne({
-      where: {
-        wid: wid,
-        companyId: companyId,
-      },
-    });
+    const msg = await Message.findOne({ where: { wid, companyId } });
 
     if (!msg) {
       throw new Error("Mensaje no encontrado");
     }
 
     const data = new FormData();
-    let config;
 
-    // Verifica se a mediaUrl é uma URL válida
-    if (msg.mediaUrl.startsWith('http')) {
-      // Se for uma URL, usa diretamente
-      data.append('url', msg.mediaUrl);
-      config = {
-        method: 'post',
-        maxBodyLength: Infinity,
-        url: `${process.env.TRANSCRIBE_URL}/transcrever`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.TRANSCRIBE_API_KEY}`,
-          ...data.getHeaders(),
-        },
-        data: data,
-      };
+    if (msg.mediaUrl.startsWith("http")) {
+      data.append("url", msg.mediaUrl);
     } else {
-      // Se não for URL, mantém o comportamento atual
       const urlParts = new URL(msg.mediaUrl);
-      const pathParts = urlParts.pathname.split('/');
+      const pathParts = urlParts.pathname.split("/");
       const fileName = pathParts[pathParts.length - 1];
-
       const publicFolder = path.resolve(__dirname, "..", "..", "..", "public");
       const filePath = path.join(publicFolder, `company${companyId}`, fileName);
 
@@ -53,32 +37,26 @@ const TranscribeAudioMessageToText = async (wid: string, companyId: string): Pro
         throw new Error(`Archivo no encontrado: ${filePath}`);
       }
 
-      data.append('audio', fs.createReadStream(filePath));
-      config = {
-        method: 'post',
-        maxBodyLength: Infinity,
-        url: `${process.env.TRANSCRIBE_URL}/transcrever`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.TRANSCRIBE_API_KEY}`,
-          ...data.getHeaders(),
-        },
-        data: data,
-      };
+      data.append("audio", fs.createReadStream(filePath));
     }
 
-    // Faz a requisição para o endpoint
-    const res = await axios.request(config);
-
-    await msg.update({
-      body: res.data,
-      transcrito: true,
+    const res = await axios.request({
+      method: "post",
+      maxBodyLength: Infinity,
+      url: `${transcribeUrl.replace(/\/$/, "")}/transcrever`,
+      headers: {
+        Authorization: `Bearer ${transcribeApiKey}`,
+        ...data.getHeaders()
+      },
+      data
     });
 
+    await msg.update({ body: res.data, transcrito: true });
+
     return res.data;
-  } catch (error) {
-    console.error("Error durante la transcripción:", error);
-    return "La conversión a texto falló";
+  } catch (err) {
+    logger.error({ err }, "[Transcribe] failed");
+    return "La conversión a texto falló.";
   }
 };
 

@@ -1,60 +1,71 @@
-# API de Transcrição de Áudio para Texto
+# API de Transcripción de Audio a Texto
 
-Uma API simples criada com Python Flask e a biblioteca SpeechRecognition para transcrever arquivos de áudio em texto.
+Microservicio Flask que transcribe archivos/URLs de audio usando Google Speech Recognition. El backend de Equipechat lo consume desde `TranscribeAudioMessageService.ts`.
 
-## Uso
-
-### Requisitos
-
-Antes de usar a API, certifique-se de ter instalado as dependências do projeto usando o seguinte comando:
-
-```pip install -r requirements.txt```
-
-**Também instale o FFMPEG!**
-
-### Endpoint
-
-A API possui um único endpoint em `/transcrever`, que pode ser usado para enviar arquivos de áudio para transcrição.
-
-Para enviar um arquivo de áudio para transcrição, faça uma solicitação HTTP POST para o endpoint `/transcrever` com o arquivo de áudio como dados do formulário multipart.
-
-Por exemplo, usando o comando `curl` no terminal:
+## Variables de entorno (.env)
 
 ```
-curl -X POST -F 'audio=@/path/to/audio.wav' http://localhost:5000/transcrever
+PORT=4002
+TRANSCRIBE_LANGUAGE=es-MX
+API_KEY=token-largo-y-aleatorio
 ```
 
+- `API_KEY`: si está definida, se exige header `Authorization: Bearer <API_KEY>`. Si está vacía, el endpoint queda abierto (no recomendado en producción).
+- `TRANSCRIBE_LANGUAGE`: código BCP-47 (`es-MX`, `es-ES`, `pt-BR`, `en-US`, etc.).
 
-ou usando NodeJS Axios:
-```js
-var axios = require('axios');
-var FormData = require('form-data');
-var fs = require('fs');
-var data = new FormData();
-data.append('audio', fs.createReadStream('@/path/to/audio.wav'));
+## Endpoint
 
-var config = {
-    method: 'post',
-    maxBodyLength: Infinity,
-    url: 'http://localhost:5000/transcrever',
-    headers: { 
-        ...data.getHeaders()
-    },
-    data : data
-};
+`POST /transcrever` — multipart/form-data con uno de estos campos:
+- `audio`: archivo (WAV, OGG, MP3, MP4, M4A, AAC o FLAC).
+- `url`: URL HTTP a un audio remoto (se descarga y procesa).
 
-axios(config)
-    .then(function (response) {
-        console.log(JSON.stringify(response.data));
-    })
-    .catch(function (error) {
-        console.log(error);
-    });
+Responde texto plano (200) con la transcripción, o JSON `{ "error": "..." }` con código de error.
+
+## Despliegue en VPS Ubuntu (PM2 + gunicorn)
+
+```bash
+# 1. Dependencias del sistema
+sudo apt-get update && sudo apt-get install -y python3 python3-pip ffmpeg
+
+# 2. Instalar dependencias Python
+cd /home/deploy/Equipechat/"versao codigo 0910/api_transcricao"
+pip3 install -r requirements.txt
+pip3 install gunicorn
+
+# 3. Configurar .env
+cp .env.example .env
+nano .env  # editar API_KEY con un valor largo y aleatorio
+
+# 4. Lanzar con PM2
+pm2 start "gunicorn --bind 0.0.0.0:4002 --workers 4 --timeout 150 main:app" --name Equipechat-transcribe
+pm2 save
+pm2 startup  # seguir las instrucciones que imprime
 ```
 
+## Configurar el backend de Equipechat
 
-Isso enviará um arquivo de áudio `audio.wav` localizado em `/path/to/` para o endpoint `/transcrever` da API. Se o arquivo for um arquivo WAV válido, a API transcreverá o áudio em texto e retornará a transcrição como uma resposta HTTP 200 OK. Se o arquivo enviado não for um arquivo válido, a API retornará um JSON com uma mensagem de erro indicando que apenas arquivos WAV, OGG e MP3 são permitidos.
+Editar `backend/.env` y agregar:
 
-## Contribuindo
+```
+TRANSCRIBE_URL=http://localhost:4002
+TRANSCRIBE_API_KEY=el-mismo-valor-de-API_KEY-de-arriba
+```
 
-Sinta-se à vontade para copiar ou contribuir com a API criando pull requests.
+Reiniciar PM2: `pm2 restart Equipechat-backend`.
+
+## Probar
+
+```bash
+curl -X POST http://localhost:4002/transcrever \
+  -H "Authorization: Bearer <API_KEY>" \
+  -F 'audio=@/tmp/test.ogg'
+```
+
+Debe responder con el texto transcrito.
+
+## Notas
+
+- Procesa el audio en chunks de 12 s en paralelo (ThreadPoolExecutor).
+- Convierte cualquier formato a WAV 16 kHz mono usando ffmpeg.
+- Usa `recognize_google` (servicio gratuito con cuota razonable, sin necesidad de API key de Google).
+- Para producción intensiva, considera Google Cloud Speech-to-Text o Whisper (cambios en `process_chunk`).

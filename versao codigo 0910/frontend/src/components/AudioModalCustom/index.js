@@ -223,7 +223,7 @@ const AudioModalCustom = ({
         console.error("Invalid response data:", data);
       }
     } catch (error) {
-      console.error("Erro ao transcrever áudio:", error);
+      console.error("Error al transcribir audio:", error);
     } finally {
       setIsTranscribing(false);
     }
@@ -263,7 +263,7 @@ const AudioModalCustom = ({
             {!transcrito ? (
               transcription ? (
                 <Typography className={classes.transcriptionText} variant="body2">
-                  <strong>Transcrição:</strong> {transcription}
+                  <strong>Transcripción:</strong> {transcription}
                 </Typography>
               ) : (
                 <Button
@@ -278,12 +278,12 @@ const AudioModalCustom = ({
                     color: "#fff",
                   }}
                 >
-                  {isTranscribing ? "Transcrevendo..." : "Transcrever"}
+                  {isTranscribing ? "Transcribiendo..." : "Transcribir"}
                 </Button>
               )
             ) : (
               <Typography className={classes.transcriptionText} variant="body2">
-                <strong>Transcrição:</strong> {body}
+                <strong>Transcripción:</strong> {body}
               </Typography>
             )}
           </div>
