@@ -64,22 +64,27 @@ const shouldNotifyUser = async (
   showNotificationPending: boolean
 ): Promise<boolean> => {
   const ticket = message.ticket;
+  const ctx = { userId: user.id, ticketId: ticket?.id, ticketStatus: ticket?.status, ticketUserId: ticket?.userId, ticketQueueId: ticket?.queueId };
 
   if (!ticket) {
+    logger.info(ctx, "[MobilePush] skip: ticket missing on message");
     return false;
   }
 
   if (!user.mobileNotifications) {
+    logger.info(ctx, "[MobilePush] skip: user.mobileNotifications=false");
     return false;
   }
 
   const hasSubscriptions = Array.isArray(user.pushSubscriptions) && user.pushSubscriptions.length > 0;
   if (!hasSubscriptions) {
+    logger.info(ctx, "[MobilePush] skip: user has no pushSubscriptions");
     return false;
   }
 
   const assignmentMatch = ticket.userId ? ticket.userId === user.id : true;
   if (!assignmentMatch) {
+    logger.info(ctx, "[MobilePush] skip: ticket assigned to another user");
     return false;
   }
 
@@ -91,20 +96,24 @@ const shouldNotifyUser = async (
   }
 
   if (!queueMatch) {
+    logger.info({ ...ctx, userQueues: user.queues?.map(q => q.id), userAllTicket: user.allTicket }, "[MobilePush] skip: queue mismatch");
     return false;
   }
 
   if (["lgpd", "nps"].includes(ticket.status)) {
+    logger.info(ctx, "[MobilePush] skip: ticket status is lgpd/nps");
     return false;
   }
 
   if (ticket.status === "pending" && !showNotificationPending) {
+    logger.info(ctx, "[MobilePush] skip: pending ticket and showNotificationPending disabled");
     return false;
   }
 
   if (ticket.status === "group") {
     const isGroupTicketEnabled = ticket.whatsapp?.groupAsTicket === "enabled";
     if (!isGroupTicketEnabled || user.allowGroup !== true) {
+      logger.info(ctx, "[MobilePush] skip: group ticket and group notifications disabled");
       return false;
     }
   }
@@ -140,13 +149,17 @@ const SendMobileNotificationService = async (message: Message): Promise<void> =>
   try {
     if (!message) return;
 
+    logger.info({ messageId: message.id, fromMe: message.fromMe, isPrivate: message.isPrivate }, "[MobilePush] invoked");
+
     if (message.fromMe || message.isPrivate) {
+      logger.info("[MobilePush] skip: message fromMe or isPrivate");
       return;
     }
 
     configureWebPush();
 
     if (!configured) {
+      logger.warn("[MobilePush] skip: webpush not configured (missing VAPID keys?)");
       return;
     }
 
@@ -166,6 +179,7 @@ const SendMobileNotificationService = async (message: Message): Promise<void> =>
 
     const ticket = message.ticket;
     if (!ticket) {
+      logger.warn({ messageId: message.id }, "[MobilePush] skip: no ticket after reload");
       return;
     }
 
@@ -187,6 +201,18 @@ const SendMobileNotificationService = async (message: Message): Promise<void> =>
       ]
     });
 
+    logger.info({
+      ticketId: ticket.id,
+      ticketStatus: ticket.status,
+      ticketUserId: ticket.userId,
+      ticketQueueId: ticket.queueId,
+      companyId: ticket.companyId,
+      candidateUsers: users.length,
+      userIds: users.map(u => u.id),
+      subscriptionCounts: users.map(u => ({ id: u.id, subs: u.pushSubscriptions?.length || 0 }))
+    }, "[MobilePush] candidate users loaded");
+
+    let dispatched = 0;
     for (const user of users) {
       const shouldNotify = await shouldNotifyUser(user, message, showNotificationPending);
       if (!shouldNotify) {
@@ -202,9 +228,11 @@ const SendMobileNotificationService = async (message: Message): Promise<void> =>
           await webpush.sendNotification(webPushSubscription, JSON.stringify(payload), {
             TTL: 86400
           });
+          dispatched += 1;
+          logger.info({ userId: user.id, subscriptionId: subscription.id, endpoint: subscription.endpoint?.slice(0, 60) }, "[MobilePush] sent OK");
         } catch (err: any) {
           const statusCode = err?.statusCode || err?.status || err?.code;
-          logger.error({ err, statusCode, body: err?.body }, "[MobilePush] Error sending notification");
+          logger.error({ err, statusCode, body: err?.body, endpoint: subscription.endpoint?.slice(0, 60) }, "[MobilePush] Error sending notification");
 
           if ([404, 410].includes(statusCode)) {
             await RemoveUserPushSubscriptionService({
@@ -216,6 +244,8 @@ const SendMobileNotificationService = async (message: Message): Promise<void> =>
         }
       }
     }
+
+    logger.info({ ticketId: ticket.id, dispatched }, "[MobilePush] finished");
   } catch (err) {
     logger.error({ err }, "[MobilePush] Unexpected error while sending push notification");
   }
