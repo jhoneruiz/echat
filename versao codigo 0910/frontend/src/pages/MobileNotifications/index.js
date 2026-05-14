@@ -187,17 +187,10 @@ const MobileNotifications = () => {
     loadInitialData();
   }, [fetchSubscriptions]);
 
-  const [diagnostic, setDiagnostic] = useState([]);
-  const log = useCallback((step, info) => {
-    setDiagnostic(prev => [...prev, { step, info, ts: new Date().toLocaleTimeString() }]);
-  }, []);
-
   const handleActivate = useCallback(async () => {
-    setDiagnostic([]);
     try {
       setLoading(true);
       setError(null);
-      log("1. inicio", `iOS=${isIOS} standalone=${isStandalone} permission=${permission}`);
 
       if (!support.notifications) {
         throw new Error("Este navegador no permite notificaciones.");
@@ -211,10 +204,8 @@ const MobileNotifications = () => {
         throw new Error("Primero instala la app en tu pantalla de inicio.");
       }
 
-      log("2. solicitando permiso", "esperando diálogo del sistema...");
       const permissionResult = await Notification.requestPermission();
       setPermission(permissionResult);
-      log("2. permiso", permissionResult);
 
       if (permissionResult !== "granted") {
         throw new Error("Permiso de notificaciones denegado.");
@@ -223,28 +214,19 @@ const MobileNotifications = () => {
       if (!publicKey) {
         throw new Error("La clave pública de notificaciones no está disponible. Contacta al administrador.");
       }
-      log("3. publicKey", publicKey.slice(0, 20) + "...");
 
-      log("4. esperando SW", "navigator.serviceWorker.ready");
       const registration = await navigator.serviceWorker.ready;
-      log("4. SW listo", `scope=${registration.scope} active=${!!registration.active}`);
-
       const existing = await registration.pushManager.getSubscription();
       let oldEndpoint = null;
       if (existing) {
         oldEndpoint = existing.endpoint;
-        log("5. desuscribiendo previa", existing.endpoint.slice(0, 60));
         await existing.unsubscribe();
-      } else {
-        log("5. sin suscripción previa", "OK");
       }
 
-      log("6. suscribiendo", "pushManager.subscribe()...");
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
-      log("6. suscrito", subscription.endpoint.slice(0, 60) + "...");
 
       const platform = detectPlatform();
       const deviceInfo = {
@@ -255,14 +237,12 @@ const MobileNotifications = () => {
         standalone: isStandalone
       };
 
-      log("7. POST /push/subscriptions", "enviando al backend...");
-      const saveResp = await saveSubscription({
+      await saveSubscription({
         subscription: subscription.toJSON(),
         platform,
         deviceInfo,
         oldEndpoint
       });
-      log("7. backend respondió", `id=${saveResp?.data?.id}`);
 
       await sendMessageToServiceWorker({
         type: "SYNC_PUSH_SUBSCRIPTION",
@@ -272,29 +252,24 @@ const MobileNotifications = () => {
       });
 
       if (!user.mobileNotifications) {
-        log("8. PUT user.mobileNotifications", "true");
         await api.put(`/users/${user.id}`, { mobileNotifications: true });
       }
 
       await fetchSubscriptions();
-      log("9. listo", "notificaciones activas");
       toast.success(i18n.t("notifications.mobile.activated"));
     } catch (err) {
       console.error("Error enabling push", err);
-      const msg = err?.response?.data?.error || err?.message || err?.name || "Error desconocido";
-      log("ERROR", msg);
-      toast.error(msg);
+      toast.error(
+        err?.response?.data?.error || err?.message || i18n.t("notifications.mobile.genericError")
+      );
       setError(err);
     } finally {
       setLoading(false);
     }
   }, [
     fetchSubscriptions,
-    isIOS,
     isStandalone,
-    log,
     needsInstall,
-    permission,
     publicKey,
     support.notifications,
     support.pushManager,
@@ -593,20 +568,6 @@ const MobileNotifications = () => {
         </CardContent>
       </Card>
 
-      {diagnostic.length > 0 && (
-        <Card>
-          <CardHeader title="Diagnóstico (último intento de activación)" />
-          <CardContent>
-            <Box style={{ fontFamily: "monospace", fontSize: 12, whiteSpace: "pre-wrap", background: "#f5f5f5", padding: 12, borderRadius: 4, color: "#333", maxHeight: 320, overflow: "auto" }}>
-              {diagnostic.map((d, i) => (
-                <div key={i} style={{ color: d.step === "ERROR" ? "#c62828" : "#333" }}>
-                  [{d.ts}] {d.step}: {String(d.info)}
-                </div>
-              ))}
-            </Box>
-          </CardContent>
-        </Card>
-      )}
     </MainContainer>
   );
 };

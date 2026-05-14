@@ -22,19 +22,15 @@ export const list = async (req: Request, res: Response): Promise<Response> => {
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
-  logger.info({ userId: req.user?.id, companyId: req.user?.companyId, hasSub: !!req.body?.subscription, platform: req.body?.platform }, "[MobilePush][store] POST received");
-
   const { id, companyId } = req.user;
   const userId = Number(id);
 
   if (Number.isNaN(userId)) {
-    logger.warn({ rawId: req.user?.id }, "[MobilePush][store] invalid user identifier");
     return res.status(400).json({ error: "Invalid user identifier" });
   }
   const { subscription, platform, deviceInfo, oldEndpoint } = req.body;
 
   if (!subscription || !subscription.endpoint || !subscription.keys) {
-    logger.warn({ userId, body: req.body }, "[MobilePush][store] invalid subscription payload");
     return res.status(400).json({ error: "Invalid subscription payload" });
   }
 
@@ -48,8 +44,6 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       platform,
       deviceInfo
     });
-
-    logger.info({ userId, companyId, subscriptionId: saved.id, endpoint: subscription.endpoint?.slice(0, 60) }, "[MobilePush][store] subscription saved");
 
     if (oldEndpoint && oldEndpoint !== subscription.endpoint) {
       try {
@@ -65,7 +59,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
     return res.status(201).json(saved);
   } catch (err: any) {
-    logger.error({ err, userId, companyId, endpoint: subscription.endpoint?.slice(0, 60) }, "[MobilePush][store] failed to save subscription");
+    logger.error({ err, userId, companyId }, "[MobilePush][store] failed to save subscription");
     return res.status(500).json({ error: err?.message || "Failed to save subscription" });
   }
 };
