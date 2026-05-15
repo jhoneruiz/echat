@@ -33,6 +33,7 @@ interface PromptData {
     charLimit?: number;
     humanize?: boolean;
     useAudio?: boolean;
+    knowledge?: string;
 }
 
 interface Request {
@@ -56,7 +57,7 @@ const UpdatePromptService = async ({
         maxMessages: Yup.number().required("ERR_PROMPT_MAX_MESSAGES_INVALID")
     });
 
-    const { name, apiKey, prompt, maxTokens, temperature, promptTokens, completionTokens, totalTokens, queueId, maxMessages, voice, voiceKey, voiceRegion, model, agentFunction, tone, languages, isActive, initialMessage, responseRules, allowTransfer, transferKeywords, transferMessage, responseDelay, charLimit, humanize, useAudio } = promptData;
+    const { name, apiKey, prompt, maxTokens, temperature, promptTokens, completionTokens, totalTokens, queueId, maxMessages, voice, voiceKey, voiceRegion, model, agentFunction, tone, languages, isActive, initialMessage, responseRules, allowTransfer, transferKeywords, transferMessage, responseDelay, charLimit, humanize, useAudio, knowledge } = promptData;
 
     try {
         await promptSchema.validate({ name, apiKey, prompt, maxTokens, temperature, promptTokens, completionTokens, totalTokens, queueId, maxMessages });
@@ -64,7 +65,7 @@ const UpdatePromptService = async ({
         throw new AppError(`${JSON.stringify(err, undefined, 2)}`);
     }
 
-    await promptTable.update({ name, apiKey, prompt, maxTokens, temperature, promptTokens, completionTokens, totalTokens, queueId, maxMessages, voice, voiceKey, voiceRegion, model, agentFunction, tone, languages, isActive, initialMessage, responseRules, allowTransfer, transferKeywords, transferMessage, responseDelay, charLimit, humanize, useAudio });
+    await promptTable.update({ name, apiKey, prompt, maxTokens, temperature, promptTokens, completionTokens, totalTokens, queueId, maxMessages, voice, voiceKey, voiceRegion, model, agentFunction, tone, languages, isActive, initialMessage, responseRules, allowTransfer, transferKeywords, transferMessage, responseDelay, charLimit, humanize, useAudio, knowledge });
     await promptTable.reload();
     return promptTable;
 };

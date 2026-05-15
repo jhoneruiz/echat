@@ -32,6 +32,7 @@ interface PromptData {
     charLimit?: number;
     humanize?: boolean;
     useAudio?: boolean;
+    knowledge?: string;
 }
 
 const CreatePromptService = async (promptData: PromptData): Promise<Prompt> => {

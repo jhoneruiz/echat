@@ -40,8 +40,10 @@ import ForbiddenPage from "../../components/ForbiddenPage";
 const MODEL_PRICING = {
   "gpt-4o-mini": { input: 0.00015 / 1000, output: 0.0006 / 1000 },
   "gpt-4o": { input: 0.0025 / 1000, output: 0.01 / 1000 },
-  "gpt-4-turbo": { input: 0.01 / 1000, output: 0.03 / 1000 },
-  "gpt-4.1-mini": { input: 0.00015 / 1000, output: 0.0006 / 1000 },
+  "gpt-4.1": { input: 0.002 / 1000, output: 0.008 / 1000 },
+  "gpt-4.1-mini": { input: 0.0004 / 1000, output: 0.0016 / 1000 },
+  "gpt-5.1": { input: 0.005 / 1000, output: 0.015 / 1000 },
+  "gpt-5.1-mini": { input: 0.0005 / 1000, output: 0.002 / 1000 },
   "gpt-3.5-turbo": { input: 0.0005 / 1000, output: 0.0015 / 1000 },
 };
 

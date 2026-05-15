@@ -201,8 +201,16 @@ const PromptSchema = Yup.object().shape({
   name: Yup.string().min(3, "Demasiado corto").max(100, "Demasiado largo").required("Nombre obligatorio"),
   prompt: Yup.string().min(10, "La personalidad debe tener al menos 10 caracteres").required("Personalidad obligatoria"),
   apiKey: Yup.string().required("API Key obligatoria"),
-  queueId: Yup.number().required("Selecciona una cola").nullable(),
+  queueId: Yup.number().typeError("Selecciona una cola").required("Selecciona una cola").nullable(),
 });
+
+// Mapeo de cada campo del schema al tab donde aparece, para auto-saltar al tab con error.
+const FIELD_TO_TAB = {
+  name: 0,
+  prompt: 0,
+  apiKey: 0,
+  queueId: 1,
+};
 
 const FUNCTIONS = [
   { value: "general", label: "General — Asistente multiusos" },
@@ -221,11 +229,13 @@ const TONES = [
 ];
 
 const MODELS = [
-  { value: "gpt-4o-mini", label: "GPT-4o Mini", desc: "Recomendado — Equilibrio entre velocidad y calidad" },
-  { value: "gpt-4o", label: "GPT-4o", desc: "Más capaz, mayor costo" },
-  { value: "gpt-4-turbo", label: "GPT-4 Turbo", desc: "Generación anterior, calidad alta" },
-  { value: "gpt-4.1-mini", label: "GPT-4.1 Mini", desc: "Mini estable" },
-  { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo", desc: "Más rápido, menor calidad" },
+  { value: "gpt-4o-mini", label: "GPT-4o Mini", desc: "Recomendado — Económico, rápido y multilingüe" },
+  { value: "gpt-4.1-mini", label: "GPT-4.1 Mini", desc: "Mini de nueva generación, mejor seguimiento de instrucciones" },
+  { value: "gpt-4o", label: "GPT-4o", desc: "Más capaz, multimodal" },
+  { value: "gpt-4.1", label: "GPT-4.1", desc: "Última generación 4.x, mayor calidad" },
+  { value: "gpt-5.1-mini", label: "GPT-5.1 Mini", desc: "Última generación 5.x económica" },
+  { value: "gpt-5.1", label: "GPT-5.1", desc: "Razonamiento avanzado (costo mayor)" },
+  { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo", desc: "Legado — más rápido, calidad menor" },
 ];
 
 const LANGUAGES = [
@@ -268,6 +278,7 @@ const initialState = {
   charLimit: 2000,
   humanize: true,
   useAudio: false,
+  knowledge: "",
 };
 
 const PromptModal = ({ open, onClose, promptId }) => {
@@ -277,6 +288,10 @@ const PromptModal = ({ open, onClose, promptId }) => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [prompt, setPrompt] = useState(initialState);
   const [queues, setQueues] = useState([]);
+  // Test chat
+  const [testMessages, setTestMessages] = useState([]);
+  const [testInput, setTestInput] = useState("");
+  const [testLoading, setTestLoading] = useState(false);
 
   useEffect(() => {
     const loadQueues = async () => {
@@ -310,7 +325,43 @@ const PromptModal = ({ open, onClose, promptId }) => {
   const handleClose = () => {
     setPrompt(initialState);
     setTab(0);
+    setTestMessages([]);
+    setTestInput("");
     onClose();
+  };
+
+  const handleSendTestMessage = async (values) => {
+    if (!testInput.trim()) return;
+    if (!values.apiKey || !values.prompt) {
+      toast.error("Configura API Key y Personalidad en la pestaña 'Básico' antes de probar.");
+      setTab(0);
+      return;
+    }
+    const userMsg = testInput.trim();
+    setTestMessages((prev) => [...prev, { role: "user", content: userMsg }]);
+    setTestInput("");
+    setTestLoading(true);
+    try {
+      const { data } = await api.post("/prompt/test", {
+        apiKey: values.apiKey,
+        model: values.model,
+        prompt: values.prompt,
+        message: userMsg,
+        maxTokens: values.maxTokens,
+        temperature: values.temperature,
+        tone: values.tone,
+        agentFunction: values.agentFunction,
+        languages: values.languages,
+        responseRules: values.responseRules,
+        knowledge: values.knowledge,
+      });
+      setTestMessages((prev) => [...prev, { role: "assistant", content: data.response || "(sin respuesta)" }]);
+    } catch (err) {
+      const errMsg = err?.response?.data?.error || err.message || "Error desconocido";
+      setTestMessages((prev) => [...prev, { role: "error", content: errMsg }]);
+    } finally {
+      setTestLoading(false);
+    }
   };
 
   const handleSavePrompt = async (values) => {
@@ -362,7 +413,7 @@ const PromptModal = ({ open, onClose, promptId }) => {
           }, 300);
         }}
       >
-        {({ values, setFieldValue, isSubmitting, touched, errors }) => (
+        {({ values, setFieldValue, isSubmitting, touched, errors, submitForm, validateForm, setTouched }) => (
           <Form>
             <Box className={classes.header}>
               <Box className={classes.headerIcon}>
@@ -627,8 +678,13 @@ const PromptModal = ({ open, onClose, promptId }) => {
                 )}
 
                 <Box className={classes.fieldBlock}>
-                  <Typography className={classes.fieldLabel}>Cola</Typography>
-                  <FormControl variant="outlined" fullWidth size="small">
+                  <Typography className={classes.fieldLabel}>Cola *</Typography>
+                  <FormControl
+                    variant="outlined"
+                    fullWidth
+                    size="small"
+                    error={touched.queueId && Boolean(errors.queueId)}
+                  >
                     <Field
                       as={Select}
                       name="queueId"
@@ -644,6 +700,11 @@ const PromptModal = ({ open, onClose, promptId }) => {
                         </MenuItem>
                       ))}
                     </Field>
+                    {touched.queueId && errors.queueId && (
+                      <Typography variant="caption" style={{ color: "#f44336", marginTop: 4 }}>
+                        {errors.queueId}
+                      </Typography>
+                    )}
                   </FormControl>
                 </Box>
               </TabPanel>
@@ -774,14 +835,22 @@ const PromptModal = ({ open, onClose, promptId }) => {
               <TabPanel value={tab} index={3}>
                 <Typography className={classes.fieldLabel}>Base de Conocimiento</Typography>
                 <Typography className={classes.helperText} style={{ marginBottom: 12 }}>
-                  Agregue textos, URLs, PDFs, audios y videos para que el agente use como
-                  referencia.
+                  Pega aquí información de referencia (precios, políticas, FAQs, catálogo,
+                  horarios, etc.) que el agente usará como contexto para responder.
                 </Typography>
-                <Box className={classes.knowledgeBox}>
-                  {promptId
-                    ? "Próximamente: subida de archivos y URLs como contexto del agente."
-                    : "Guarda el agente primero para agregar elementos a la base de conocimiento"}
-                </Box>
+                <Field
+                  as={TextField}
+                  name="knowledge"
+                  placeholder="Ejemplo:&#10;HORARIO DE ATENCIÓN: Lunes a Viernes 9:00 a 18:00, Sábados 9:00 a 14:00.&#10;DIRECCIÓN: Av. Reforma 123, CDMX.&#10;PRECIOS:&#10;  - Servicio básico: $500&#10;  - Servicio premium: $1,200&#10;FAQ:&#10;  - ¿Aceptan tarjetas? Sí, todas las marcas.&#10;  - ¿Hacen envíos? Sí, a toda la república."
+                  multiline
+                  rows={12}
+                  variant="outlined"
+                  fullWidth
+                />
+                <Typography className={classes.helperText} style={{ marginTop: 8 }}>
+                  💡 Se incluye automáticamente en cada conversación. Mantén el texto conciso
+                  (máx ~2000 palabras). Subida de archivos PDF/URLs próximamente.
+                </Typography>
               </TabPanel>
 
               {/* TAB 5: PROBAR */}
@@ -798,26 +867,96 @@ const PromptModal = ({ open, onClose, promptId }) => {
                     </Field>
                   </FormControl>
                   <Typography variant="caption" color="textSecondary">
-                    Usando API Key y prompt de la pestaña "Básico"
+                    Usa la config actual del formulario (sin necesidad de guardar)
                   </Typography>
                 </Box>
-                <Box className={classes.testChat}>
-                  ✉️ Envíe un mensaje para probar su Agente de IA
+
+                <Box
+                  className={classes.testChat}
+                  style={{
+                    maxHeight: 280,
+                    overflowY: "auto",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    padding: 12,
+                    background: theme.palette.type === "dark" ? "rgba(255,255,255,0.03)" : "#F8FAFC",
+                    borderRadius: 10,
+                  }}
+                >
+                  {testMessages.length === 0 ? (
+                    <Typography variant="caption" color="textSecondary" align="center">
+                      ✉️ Envía un mensaje para probar tu Agente de IA
+                    </Typography>
+                  ) : (
+                    testMessages.map((m, idx) => (
+                      <Box
+                        key={idx}
+                        style={{
+                          alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                          maxWidth: "85%",
+                          padding: "8px 12px",
+                          borderRadius: 12,
+                          background:
+                            m.role === "user"
+                              ? "#FF6B35"
+                              : m.role === "error"
+                              ? "#FEE2E2"
+                              : theme.palette.type === "dark"
+                              ? "rgba(255,255,255,0.08)"
+                              : "#fff",
+                          color:
+                            m.role === "user"
+                              ? "#fff"
+                              : m.role === "error"
+                              ? "#B91C1C"
+                              : theme.palette.text.primary,
+                          border:
+                            m.role === "assistant"
+                              ? `1px solid ${theme.palette.divider}`
+                              : undefined,
+                          whiteSpace: "pre-wrap",
+                          fontSize: "0.85rem",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {m.content}
+                      </Box>
+                    ))
+                  )}
+                  {testLoading && (
+                    <Box style={{ alignSelf: "flex-start", padding: 8 }}>
+                      <CircularProgress size={18} style={{ color: "#FF6B35" }} />
+                    </Box>
+                  )}
                 </Box>
-                <Box className={classes.testInput}>
+
+                <Box className={classes.testInput} display="flex" alignItems="center" gap={1} mt={2}>
                   <TextField
-                    placeholder="Escriba su mensaje de prueba..."
+                    placeholder="Escribe tu mensaje de prueba..."
                     variant="outlined"
                     fullWidth
                     size="small"
-                    disabled
+                    value={testInput}
+                    onChange={(e) => setTestInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendTestMessage(values);
+                      }
+                    }}
+                    disabled={testLoading}
                   />
-                  <IconButton style={{ color: "#FF6B35" }} disabled>
+                  <IconButton
+                    style={{ color: "#FF6B35" }}
+                    onClick={() => handleSendTestMessage(values)}
+                    disabled={testLoading || !testInput.trim()}
+                  >
                     <SendIcon />
                   </IconButton>
                 </Box>
                 <Typography className={classes.helperText} style={{ marginTop: 8 }}>
-                  Función disponible próximamente.
+                  El test usa la API Key y configuración que tengas en este momento — sin necesidad de guardar.
                 </Typography>
               </TabPanel>
             </DialogContent>
@@ -832,10 +971,26 @@ const PromptModal = ({ open, onClose, promptId }) => {
                 Cancelar
               </Button>
               <Button
-                type="submit"
+                type="button"
                 variant="contained"
                 className={classes.saveButton}
                 disabled={isSubmitting}
+                onClick={async () => {
+                  const validationErrors = await validateForm();
+                  if (Object.keys(validationErrors).length > 0) {
+                    // Marcar todos los campos como tocados para que se vean errores inline
+                    setTouched(
+                      Object.keys(validationErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {})
+                    );
+                    // Saltar al tab del primer error y mostrar toast
+                    const firstField = Object.keys(validationErrors)[0];
+                    const targetTab = FIELD_TO_TAB[firstField] ?? 0;
+                    setTab(targetTab);
+                    toast.error(`${validationErrors[firstField]}`);
+                    return;
+                  }
+                  submitForm();
+                }}
               >
                 {isSubmitting ? <CircularProgress size={20} color="inherit" /> : "Guardar"}
               </Button>

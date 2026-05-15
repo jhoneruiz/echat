@@ -3199,6 +3199,107 @@ const checkTemporaryAI = async (
   }
 };
 
+// Marcador de transferencia que el modelo debe colocar al inicio de la respuesta cuando detecta intención de transferir.
+const TRANSFER_MARKER = "[TRANSFERIR]";
+
+// Construye el system prompt enriquecido con todos los campos configurables del agente.
+const buildAgentSystemPrompt = (prompt: any, contact: Contact): string => {
+  const parts: string[] = [];
+
+  const tones: Record<string, string> = {
+    friendly: "amigable y cercano",
+    professional: "profesional y serio",
+    formal: "formal y respetuoso",
+    casual: "casual y relajado",
+    empathetic: "empático y comprensivo",
+  };
+
+  const functions: Record<string, string> = {
+    general: "asistente multiusos",
+    sales: "agente de ventas para calificar leads",
+    support: "agente de soporte técnico",
+    scheduling: "agente de agendamiento y reservas",
+    qualification: "agente para cualificar prospectos",
+  };
+
+  // Identidad y personalidad
+  parts.push(`Eres un ${functions[prompt.agentFunction] || "asistente"}.`);
+  parts.push(`Tu personalidad: ${prompt.prompt}`);
+  if (prompt.tone && tones[prompt.tone]) {
+    parts.push(`Tono de voz: ${tones[prompt.tone]}.`);
+  }
+
+  // Idiomas
+  if (prompt.languages) {
+    const langs = prompt.languages.split(",").map((s: string) => s.trim()).filter(Boolean);
+    if (langs.includes("auto")) {
+      parts.push("Responde siempre en el mismo idioma que el cliente.");
+    } else if (langs.length > 0) {
+      const map: Record<string, string> = { es: "Español", en: "Inglés", "pt-BR": "Portugués", fr: "Francés", de: "Alemán", it: "Italiano" };
+      const names = langs.map((c: string) => map[c] || c);
+      parts.push(`Responde solo en: ${names.join(", ")}.`);
+    }
+  }
+
+  // Reglas adicionales del usuario
+  if (prompt.responseRules) {
+    parts.push(`Reglas adicionales:\n${prompt.responseRules}`);
+  }
+
+  // Base de conocimiento (texto de referencia)
+  if (prompt.knowledge && prompt.knowledge.trim()) {
+    parts.push(`Información de referencia que puedes usar para responder (NO la copies literalmente; úsala como contexto):\n${prompt.knowledge}`);
+  }
+
+  // Personalización con nombre
+  parts.push(`Usa el nombre "${sanitizeName(contact.name || "amigo")}" para dirigirte al cliente cuando sea apropiado.`);
+
+  // Límite de tokens
+  parts.push(`Tu respuesta debe usar máximo ${prompt.maxTokens} tokens y nunca cortar el final de una oración.`);
+
+  // Transfer / escalado a humano
+  if (prompt.allowTransfer !== false) {
+    const keywords = (prompt.transferKeywords || "agente, humano, hablar con persona")
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+    parts.push(
+      `Si el cliente pide hablar con un humano, agente real, o usa estas palabras clave: ${keywords.join(", ")}, ` +
+      `o si la conversación supera tus capacidades, responde EXACTAMENTE iniciando con el marcador "${TRANSFER_MARKER}" seguido del mensaje de despedida. ` +
+      `Mensaje a usar al transferir: "${prompt.transferMessage || "Te transferiré con un agente que podrá ayudarte mejor."}"`
+    );
+  }
+
+  return parts.join("\n\n");
+};
+
+// Aplica post-procesamiento a la respuesta de OpenAI: detecta transfer y aplica límite de caracteres.
+const processAgentResponse = async (
+  response: string,
+  prompt: any,
+  ticket: Ticket,
+  contact: Contact
+): Promise<{ text: string; transferred: boolean }> => {
+  let text = response || "";
+  let transferred = false;
+
+  // Detectar marcador de transferencia
+  if (text.includes(TRANSFER_MARKER)) {
+    transferred = true;
+    text = text.replace(TRANSFER_MARKER, "").trim();
+    if (prompt.queueId) {
+      await transferQueue(prompt.queueId, ticket, contact);
+    }
+  }
+
+  // Aplicar límite de caracteres si está configurado
+  if (prompt.charLimit && prompt.charLimit > 0 && text.length > prompt.charLimit) {
+    text = text.substring(0, prompt.charLimit - 3).trim() + "...";
+  }
+
+  return { text, transferred };
+};
+
 const handleOpenAi = async (
   msg: proto.IWebMessageInfo,
   wbot: Session,
@@ -3220,6 +3321,9 @@ const handleOpenAi = async (
 
   if (!prompt) return;
 
+  // Si el agente está desactivado, no procesar.
+  if (prompt.isActive === false) return;
+
   if (msg.messageStubType) return;
 
   const publicFolder: string = path.resolve(
@@ -3235,9 +3339,6 @@ const handleOpenAi = async (
   const openAiIndex = sessionsOpenAi.findIndex(s => s.id === ticket.id);
 
   if (openAiIndex === -1) {
-    // const configuration = new Configuration({
-    //   apiKey: prompt.apiKey
-    // });
     openai = new OpenAI({ apiKey: prompt.apiKey });
     openai.id = ticket.id;
     sessionsOpenAi.push(openai);
@@ -3251,11 +3352,15 @@ const handleOpenAi = async (
     limit: prompt.maxMessages
   });
 
-  const promptSystem = `Nas respostas utilize o nome ${sanitizeName(
-    contact.name || "Amigo(a)"
-  )} para identificar o cliente.\nSua resposta deve usar no máximo ${prompt.maxTokens
-    } tokens e cuide para não truncar o final.\nSempre que possível, mencione o nome dele para ser mais personalizado o atendimento e mais educado. Quando a resposta requer uma transferência para o setor de atendimento, comece sua resposta com 'Ação: Transferir para o setor de atendimento'.\n
-  ${prompt.prompt}\n`;
+  // Si es la primera interacción del cliente y hay mensaje inicial configurado, envíalo antes de procesar con OpenAI.
+  const isFirstUserMessage = messages.filter(m => !m.fromMe).length <= 1;
+  if (isFirstUserMessage && prompt.initialMessage && prompt.initialMessage.trim()) {
+    const initial = prompt.initialMessage.replace(/\{nombre\}/gi, sanitizeName(contact.name || "amigo"));
+    const sentInitial = await wbot.sendMessage(msg.key.remoteJid!, { text: `‎ ${initial}` });
+    await verifyMessage(sentInitial!, ticket, contact);
+  }
+
+  const promptSystem = buildAgentSystemPrompt(prompt, contact);
 
   let messagesOpenAi = [];
 
@@ -3285,13 +3390,11 @@ const handleOpenAi = async (
       temperature: prompt.temperature
     });
 
-    let response = chat.choices[0].message?.content;
+    const rawResponseText = chat.choices[0].message?.content || "";
+    const { text: response } = await processAgentResponse(rawResponseText, prompt, ticket, contact);
 
-    if (response?.includes("Ação: Transferir para o setor de atendimento")) {
-      await transferQueue(prompt.queueId, ticket, contact);
-      response = response
-        .replace("Ação: Transferir para o setor de atendimento", "")
-        .trim();
+    if (prompt.responseDelay && prompt.responseDelay > 0) {
+      await new Promise(resolve => setTimeout(resolve, prompt.responseDelay * 1000));
     }
 
     if (prompt.voice === "texto") {
@@ -3355,13 +3458,11 @@ const handleOpenAi = async (
       max_tokens: prompt.maxTokens,
       temperature: prompt.temperature
     });
-    let response = chat.choices[0].message?.content;
+    const rawResponseText = chat.choices[0].message?.content || "";
+    const { text: response } = await processAgentResponse(rawResponseText, prompt, ticket, contact);
 
-    if (response?.includes("Ação: Transferir para o setor de atendimento")) {
-      await transferQueue(prompt.queueId, ticket, contact);
-      response = response
-        .replace("Ação: Transferir para o setor de atendimento", "")
-        .trim();
+    if (prompt.responseDelay && prompt.responseDelay > 0) {
+      await new Promise(resolve => setTimeout(resolve, prompt.responseDelay * 1000));
     }
     if (prompt.voice === "texto") {
       const sentMessage = await wbot.sendMessage(msg.key.remoteJid!, {

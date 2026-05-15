@@ -4,6 +4,7 @@ import {
   BelongsTo,
   Column,
   CreatedAt,
+  DataType,
   ForeignKey,
   Model,
   PrimaryKey,
@@ -107,6 +108,10 @@ class Prompt extends Model<Prompt> {
 
   @Column({ defaultValue: false })
   useAudio: boolean;
+
+  @AllowNull(true)
+  @Column(DataType.TEXT)
+  knowledge: string;
 
   @AllowNull
   @ForeignKey(() => Queue)
