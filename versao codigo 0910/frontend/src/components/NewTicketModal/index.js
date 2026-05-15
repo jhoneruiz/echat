@@ -17,20 +17,73 @@ import ButtonWithSpinner from "../ButtonWithSpinner";
 import ContactModal from "../ContactModal";
 import toastError from "../../errors/toastError";
 import { AuthContext } from "../../context/Auth/AuthContext";
-import { Grid, ListItemText, MenuItem, Select } from "@material-ui/core";
+import { Box, Grid, IconButton, ListItemText, MenuItem, Select } from "@material-ui/core";
 import { toast } from "react-toastify";
-import { Facebook, Instagram, WhatsApp } from "@material-ui/icons";
+import { Close, Facebook, Instagram, WhatsApp, AddComment } from "@material-ui/icons";
 import ShowTicketOpen from "../ShowTicketOpenModal";
 
 const useStyles = makeStyles((theme) => ({
   online: {
     fontSize: 11,
-    color: "#25d366"
+    color: "#25d366",
+    margin: 0,
   },
   offline: {
     fontSize: 11,
-    color: "#e1306c"
-  }
+    color: "#e1306c",
+    margin: 0,
+  },
+  dialogPaper: {
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1.5),
+    padding: theme.spacing(2),
+    borderBottom: `1px solid ${theme.palette.divider}`,
+  },
+  headerIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    background: theme.palette.primary.main,
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: "1.05rem",
+    fontWeight: 600,
+    lineHeight: 1.2,
+  },
+  headerSubtitle: {
+    fontSize: "0.78rem",
+    color: theme.palette.text.secondary,
+    marginTop: 2,
+  },
+  fieldLabel: {
+    fontSize: "0.8rem",
+    fontWeight: 600,
+    marginBottom: 4,
+    color: theme.palette.text.primary,
+  },
+  fieldHint: {
+    fontSize: "0.72rem",
+    color: theme.palette.text.secondary,
+    marginTop: 4,
+    lineHeight: 1.3,
+  },
+  content: {
+    padding: theme.spacing(2.5),
+  },
+  footer: {
+    padding: theme.spacing(1.5, 2),
+    borderTop: `1px solid ${theme.palette.divider}`,
+    gap: theme.spacing(1),
+  },
 }));
 
 const filter = createFilterOptions({
@@ -158,7 +211,7 @@ const NewTicketModal = ({ modalOpen, onClose, initialContact }) => {
     if (!contactId) return;
     // if (selectedQueue === "" && user.profile !== 'admin') {
     if (selectedQueue === "") {
-      toast.error("Selecione uma fila");
+      toast.error("Selecciona una cola");
       return;
     }
 
@@ -297,108 +350,133 @@ const NewTicketModal = ({ modalOpen, onClose, initialContact }) => {
   return (
     <>
 
-      <Dialog open={modalOpen} onClose={handleClose}>
-        <DialogTitle id="form-dialog-title">
-          {i18n.t("newTicketModal.title")}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Grid style={{ width: 300 }} container spacing={2}>
-            {/* CONTATO */}
-            {renderContactAutocomplete()}
-            {/* FILA */}
-            <Grid xs={12} item>
-              <Select
-                required
-                fullWidth
-                displayEmpty
-                variant="outlined"
-                value={selectedQueue}
-                onChange={(e) => {
-                  setSelectedQueue(e.target.value)
-                }}
-                MenuProps={{
-                  anchorOrigin: {
-                    vertical: "bottom",
-                    horizontal: "left",
-                  },
-                  transformOrigin: {
-                    vertical: "top",
-                    horizontal: "left",
-                  },
-                  getContentAnchorEl: null,
-                }}
-                renderValue={() => {
-                  if (selectedQueue === "") {
-                    return "Selecione uma fila"
-                  }
-                  const queue = user.queues.find(q => q.id === selectedQueue)
-                  return queue.name
-                }}
-              >
-                {user.queues?.length > 0 &&
-                  user.queues.map((queue, key) => (
-                    <MenuItem dense key={key} value={queue.id}>
-                      <ListItemText primary={queue.name} />
-                    </MenuItem>
-                  ))
-                }
-              </Select>
-            </Grid>
-            {/* CONEXAO */}
-            <Grid xs={12} item>
-              <Select
-                required
-                fullWidth
-                displayEmpty
-                variant="outlined"
-                value={selectedWhatsapp}
-                onChange={(e) => {
-                  setSelectedWhatsapp(e.target.value)
-                }}
-                MenuProps={{
-                  anchorOrigin: {
-                    vertical: "bottom",
-                    horizontal: "left",
-                  },
-                  transformOrigin: {
-                    vertical: "top",
-                    horizontal: "left",
-                  },
-                  getContentAnchorEl: null,
-                }}
-                renderValue={() => {
-                  if (selectedWhatsapp === "") {
-                    return "Selecione uma Conexão"
-                  }
-                  const whatsapp = whatsapps.find(w => w.id === selectedWhatsapp)
-                  return whatsapp?.name
-                }}
-              >
-                {whatsapps?.length > 0 &&
-                  whatsapps.map((whatsapp, key) => (
-                    <MenuItem dense key={key} value={whatsapp.id}>
-                      <ListItemText
-                        primary={
-                          <>
-                            {IconChannel(whatsapp.channel)}
-                            <Typography component="span" style={{ fontSize: 14, marginLeft: "10px", display: "inline-flex", alignItems: "center", lineHeight: "2" }}>
-                              {whatsapp.name} &nbsp; <p className={(whatsapp.status) === 'CONNECTED' ? classes.online : classes.offline} >({whatsapp.status})</p>
-                            </Typography>
-                          </>
-                        }
-                      />
-                    </MenuItem>
-                  ))}
-              </Select>
-            </Grid>
-          </Grid>
+      <Dialog
+        open={modalOpen}
+        onClose={handleClose}
+        maxWidth="xs"
+        fullWidth
+        classes={{ paper: classes.dialogPaper }}
+      >
+        <Box className={classes.header}>
+          <Box className={classes.headerIcon}>
+            <AddComment />
+          </Box>
+          <Box flex={1}>
+            <Typography className={classes.headerTitle}>
+              {i18n.t("newTicketModal.title")}
+            </Typography>
+            <Typography className={classes.headerSubtitle}>
+              Crea una nueva conversación con un contacto existente o nuevo.
+            </Typography>
+          </Box>
+          <IconButton size="small" onClick={handleClose}>
+            <Close fontSize="small" />
+          </IconButton>
+        </Box>
+
+        <DialogContent className={classes.content}>
+          {/* CONTACTO */}
+          {(initialContact === undefined || initialContact?.id === undefined) && (
+            <Box mb={2}>
+              <Typography className={classes.fieldLabel}>
+                👤 Contacto
+              </Typography>
+              {renderContactAutocomplete()}
+              <Typography className={classes.fieldHint}>
+                Busca un contacto existente o escribe un nombre nuevo para crearlo.
+              </Typography>
+            </Box>
+          )}
+
+          {/* COLA */}
+          <Box mb={2}>
+            <Typography className={classes.fieldLabel}>
+              📂 Cola / Sector
+            </Typography>
+            <Select
+              required
+              fullWidth
+              displayEmpty
+              variant="outlined"
+              value={selectedQueue}
+              onChange={(e) => setSelectedQueue(e.target.value)}
+              MenuProps={{
+                anchorOrigin: { vertical: "bottom", horizontal: "left" },
+                transformOrigin: { vertical: "top", horizontal: "left" },
+                getContentAnchorEl: null,
+              }}
+              renderValue={() => {
+                if (selectedQueue === "") return "Selecciona una cola";
+                const queue = user.queues.find((q) => q.id === selectedQueue);
+                return queue?.name;
+              }}
+            >
+              {user.queues?.length > 0 &&
+                user.queues.map((queue, key) => (
+                  <MenuItem dense key={key} value={queue.id}>
+                    <ListItemText primary={queue.name} />
+                  </MenuItem>
+                ))}
+            </Select>
+            <Typography className={classes.fieldHint}>
+              Define a qué equipo se asigna el ticket inicialmente.
+            </Typography>
+          </Box>
+
+          {/* CONEXIÓN */}
+          <Box mb={1}>
+            <Typography className={classes.fieldLabel}>
+              📡 Conexión WhatsApp
+            </Typography>
+            <Select
+              required
+              fullWidth
+              displayEmpty
+              variant="outlined"
+              value={selectedWhatsapp}
+              onChange={(e) => setSelectedWhatsapp(e.target.value)}
+              MenuProps={{
+                anchorOrigin: { vertical: "bottom", horizontal: "left" },
+                transformOrigin: { vertical: "top", horizontal: "left" },
+                getContentAnchorEl: null,
+              }}
+              renderValue={() => {
+                if (selectedWhatsapp === "") return "Selecciona una conexión";
+                const whatsapp = whatsapps.find((w) => w.id === selectedWhatsapp);
+                return whatsapp?.name;
+              }}
+            >
+              {whatsapps?.length > 0 &&
+                whatsapps.map((whatsapp, key) => (
+                  <MenuItem dense key={key} value={whatsapp.id}>
+                    <ListItemText
+                      primary={
+                        <Box display="flex" alignItems="center" gap={1}>
+                          {IconChannel(whatsapp.channel)}
+                          <Typography component="span" style={{ fontSize: 14 }}>
+                            {whatsapp.name}
+                          </Typography>
+                          <p className={whatsapp.status === "CONNECTED" ? classes.online : classes.offline}>
+                            ({whatsapp.status})
+                          </p>
+                        </Box>
+                      }
+                    />
+                  </MenuItem>
+                ))}
+            </Select>
+            <Typography className={classes.fieldHint}>
+              Desde qué número WhatsApp saldrá la conversación.
+            </Typography>
+          </Box>
         </DialogContent>
-        <DialogActions>
+
+        <DialogActions className={classes.footer}>
           <Button
             onClick={handleClose}
-            color="secondary"
             disabled={loading}
             variant="outlined"
+            style={{ textTransform: "none", borderRadius: 10 }}
           >
             {i18n.t("newTicketModal.buttons.cancel")}
           </Button>
@@ -409,6 +487,7 @@ const NewTicketModal = ({ modalOpen, onClose, initialContact }) => {
             onClick={() => handleSaveTicket(selectedContact.id)}
             color="primary"
             loading={loading}
+            style={{ textTransform: "none", borderRadius: 10 }}
           >
             {i18n.t("newTicketModal.buttons.ok")}
           </ButtonWithSpinner>

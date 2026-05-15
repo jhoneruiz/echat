@@ -75,44 +75,65 @@ const useStyles = makeStyles((theme) => ({
     width: 20,
     height: 20,
   },
+  // Tarjeta de sección reutilizable
+  section: {
+    padding: theme.spacing(2),
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: 12,
+    background: theme.mode === "light" ? "rgba(248,250,252,0.5)" : "rgba(255,255,255,0.02)",
+    marginBottom: theme.spacing(2),
+  },
+  sectionTitle: {
+    fontSize: "0.92rem",
+    fontWeight: 600,
+    marginBottom: 4,
+  },
+  sectionHint: {
+    fontSize: "0.78rem",
+    color: theme.palette.text.secondary,
+    display: "block",
+    marginBottom: theme.spacing(1.5),
+    lineHeight: 1.35,
+  },
   mediaContainer: {
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing(2),
-    padding: theme.spacing(2),
-    border: `1px solid ${theme.palette.divider}`,
-    borderRadius: theme.shape.borderRadius,
-    marginBottom: theme.spacing(2)
+    gap: theme.spacing(1.5),
   },
   mediaOptions: {
     display: 'flex',
     gap: theme.spacing(1),
     justifyContent: 'center',
-    flexWrap: 'wrap'
+    flexWrap: 'wrap',
+    marginTop: theme.spacing(1),
   },
   mediaInfo: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: theme.spacing(1),
-    backgroundColor: theme.palette.grey[100],
-    borderRadius: theme.shape.borderRadius
+    padding: theme.spacing(1, 1.5),
+    backgroundColor: theme.mode === "light" ? "#fff" : "rgba(255,255,255,0.04)",
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: 10,
   },
   existingMediaActions: {
     display: 'flex',
-    gap: theme.spacing(1),
+    gap: theme.spacing(0.5),
     alignItems: 'center'
   },
   mediaPreview: {
     maxWidth: '100%',
     maxHeight: 200,
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: 10,
     marginTop: theme.spacing(1)
   }
 }));
 
 const QuickeMessageSchema = Yup.object().shape({
-  shortcode: Yup.string().required("Obrigatório"),
+  shortcode: Yup.string()
+    .required("El atajo es obligatorio")
+    .min(2, "Mínimo 2 caracteres")
+    .max(40, "Máximo 40 caracteres"),
 });
 
 const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
@@ -458,8 +479,15 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
                     {values.isOficial && <Tab label="Oficial" />}
                   </Tabs>
                   {tabIndex === 0 && (
-                    <Grid spacing={2} container>
-                      <Grid xs={12} item>
+                    <Box pt={1}>
+                      {/* Sección 1: Información básica */}
+                      <Box className={classes.section}>
+                        <Typography className={classes.sectionTitle}>
+                          📝 {i18n.t("quickMessages.dialog.basicSection")}
+                        </Typography>
+                        <Typography className={classes.sectionHint}>
+                          {i18n.t("quickMessages.dialog.basicHint")}
+                        </Typography>
                         <Field
                           as={TextField}
                           autoFocus
@@ -467,13 +495,14 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
                           name="shortcode"
                           disabled={isDisabled}
                           error={touched.shortcode && Boolean(errors.shortcode)}
-                          helperText={touched.shortcode && errors.shortcode}
+                          helperText={
+                            (touched.shortcode && errors.shortcode) ||
+                            "Palabra corta que activa la respuesta. Ej: /saludo, /precios"
+                          }
                           variant="outlined"
                           margin="dense"
                           fullWidth
                         />
-                      </Grid>
-                      <Grid xs={12} item>
                         <Field
                           as={TextField}
                           label={i18n.t("quickMessages.dialog.message")}
@@ -484,28 +513,30 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
                           variant="outlined"
                           margin="dense"
                           disabled={isDisabled}
-                          multiline={true}
-                          rows={7}
+                          multiline
+                          rows={6}
                           fullWidth
                         />
-                      </Grid>
+                        <Box mt={1}>
+                          <MessageVariablesPicker
+                            disabled={isSubmitting || isDisabled}
+                            showSchedulingVars={true}
+                            onClick={(value) =>
+                              handleClickMsgVar(value, setFieldValue)
+                            }
+                          />
+                        </Box>
+                      </Box>
 
-                      <Grid item xs={12} md={12} xl={12}>
-                        <MessageVariablesPicker
-                          disabled={isSubmitting || isDisabled}
-                          showSchedulingVars={true}
-                          onClick={(value) =>
-                            handleClickMsgVar(value, setFieldValue)
-                          }
-                        />
-                      </Grid>
-
-                      {/* Seção de Mídia */}
-                      <Grid xs={12} item>
+                      {/* Sección 2: Adjuntar archivo */}
+                      <Box className={classes.section}>
+                        <Typography className={classes.sectionTitle}>
+                          📎 {i18n.t("quickMessages.dialog.mediaSection")}
+                        </Typography>
+                        <Typography className={classes.sectionHint}>
+                          {i18n.t("quickMessages.dialog.mediaHint")}
+                        </Typography>
                         <Box className={classes.mediaContainer}>
-                          <Typography variant="h6" gutterBottom>
-                            Anexar Mídia
-                          </Typography>
 
                           {/* Mídia existente */}
                           {hasExistingMedia && (
@@ -529,7 +560,7 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
                                     onClick={handleEditExistingMedia}
                                     color="primary"
                                     size="small"
-                                    title="Editar mídia"
+                                    title={i18n.t("quickMessages.dialog.editMedia")}
                                     disabled={isDisabled}
                                   >
                                     <EditIcon />
@@ -538,7 +569,7 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
                                     onClick={() => setConfirmationOpen(true)}
                                     color="secondary"
                                     size="small"
-                                    title="Remover mídia"
+                                    title={i18n.t("quickMessages.dialog.removeMedia")}
                                     disabled={isDisabled}
                                   >
                                     <DeleteOutlineIcon />
@@ -560,7 +591,7 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
                                   <Typography variant="body2">
                                     {attachment.name}
                                   </Typography>
-                                  <Chip size="small" label="Novo Arquivo" color="primary" />
+                                  <Chip size="small" label={i18n.t("quickMessages.dialog.newFile")} color="primary" />
                                 </Box>
                                 <IconButton
                                   onClick={() => {
@@ -587,9 +618,9 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
                                 <Box display="flex" alignItems="center" gap={1}>
                                   <MicIcon />
                                   <Typography variant="body2">
-                                    Novo áudio gravado
+                                    {i18n.t("quickMessages.dialog.newAudio")}
                                   </Typography>
-                                  <Chip size="small" label="Novo Áudio" color="secondary" />
+                                  <Chip size="small" label={i18n.t("quickMessages.dialog.newAudio")} color="secondary" />
                                 </Box>
                                 <IconButton
                                   onClick={handleAudioDeleted}
@@ -609,14 +640,14 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
                                 <>
                                   <Divider />
                                   <Typography variant="body2" color="textSecondary" align="center">
-                                    Escolha uma nova mídia para substituir:
+                                    {i18n.t("quickMessages.dialog.chooseReplace")}
                                   </Typography>
                                 </>
                               )}
 
                               {!hasAnyMedia && (
                                 <Typography variant="body2" color="textSecondary" align="center">
-                                  Escolha uma opção para anexar mídia:
+                                  {i18n.t("quickMessages.dialog.chooseAttach")}
                                 </Typography>
                               )}
 
@@ -626,16 +657,18 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
                                   startIcon={<AttachFileIcon />}
                                   onClick={() => attachmentFile.current.click()}
                                   disabled={isSubmitting || isDisabled}
+                                  style={{ textTransform: "none" }}
                                 >
-                                  Anexar Arquivo
+                                  {i18n.t("quickMessages.dialog.attachFile")}
                                 </Button>
                                 <Button
                                   variant="outlined"
                                   startIcon={<MicIcon />}
                                   onClick={() => setMediaMode('audio')}
                                   disabled={isSubmitting || isDisabled}
+                                  style={{ textTransform: "none" }}
                                 >
-                                  Gravar Áudio
+                                  {i18n.t("quickMessages.dialog.recordAudio")}
                                 </Button>
 
                                 {isEditingMedia && (
@@ -644,8 +677,9 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
                                     color="secondary"
                                     onClick={handleCancelEdit}
                                     disabled={isSubmitting}
+                                    style={{ textTransform: "none" }}
                                   >
-                                    Cancelar Edição
+                                    {i18n.t("quickMessages.dialog.cancelEdit")}
                                   </Button>
                                 )}
                               </Box>
@@ -661,66 +695,65 @@ const QuickMessageDialog = ({ open, onClose, quickemessageId, reload }) => {
                             />
                           )}
                         </Box>
-                      </Grid>
+                      </Box>
 
-                      <Grid xs={12} item>
-                        <FormControl variant="outlined" margin="dense" fullWidth>
-                          <InputLabel id="geral-selection-label">
-                            {i18n.t("quickMessages.dialog.visao")}
-                          </InputLabel>
-                          <Field
-                            as={Select}
-                            label={i18n.t("quickMessages.dialog.visao")}
-                            placeholder={i18n.t("quickMessages.dialog.visao")}
-                            labelId="visao-selection-label"
-                            id="visao"
-                            disabled={isDisabled}
-                            name="visao"
-                            onChange={(e) => {
-                              setFieldValue("visao", e.target.value === "true");
-                            }}
-                            error={touched.visao && Boolean(errors.visao)}
-                            value={values.visao ? "true" : "false"}
-                          >
-                            <MenuItem value={"true"}>
-                              {i18n.t("announcements.active")}
-                            </MenuItem>
-                            <MenuItem value={"false"}>
-                              {i18n.t("announcements.inactive")}
-                            </MenuItem>
-                          </Field>
-                        </FormControl>
-                        {values.visao === true && (
-                          <FormControl
-                            variant="outlined"
-                            margin="dense"
-                            fullWidth
-                          >
-                            <InputLabel id="geral-selection-label">
-                              {i18n.t("quickMessages.dialog.geral")}
-                            </InputLabel>
-                            <Field
-                              as={Select}
-                              label={i18n.t("quickMessages.dialog.geral")}
-                              placeholder={i18n.t("quickMessages.dialog.geral")}
-                              labelId="novo-item-selection-label"
-                              id="geral"
-                              name="geral"
-                              disabled={isDisabled}
-                              value={values.geral ? "true" : "false"}
-                              error={touched.geral && Boolean(errors.geral)}
-                            >
-                              <MenuItem value={"true"}>
-                                {i18n.t("announcements.active")}
-                              </MenuItem>
-                              <MenuItem value={"false"}>
-                                {i18n.t("announcements.inactive")}
-                              </MenuItem>
-                            </Field>
-                          </FormControl>
-                        )}
-                      </Grid>
-                    </Grid>
+                      {/* Sección 3: Visibilidad */}
+                      <Box className={classes.section}>
+                        <Typography className={classes.sectionTitle}>
+                          👁️ {i18n.t("quickMessages.dialog.visibilitySection")}
+                        </Typography>
+                        <Typography className={classes.sectionHint}>
+                          {i18n.t("quickMessages.dialog.visibilityHint")}
+                        </Typography>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} md={6}>
+                            <FormControl variant="outlined" margin="dense" fullWidth>
+                              <InputLabel id="visao-selection-label">
+                                {i18n.t("quickMessages.dialog.visao")}
+                              </InputLabel>
+                              <Field
+                                as={Select}
+                                label={i18n.t("quickMessages.dialog.visao")}
+                                labelId="visao-selection-label"
+                                id="visao"
+                                disabled={isDisabled}
+                                name="visao"
+                                onChange={(e) => {
+                                  setFieldValue("visao", e.target.value === "true");
+                                }}
+                                error={touched.visao && Boolean(errors.visao)}
+                                value={values.visao ? "true" : "false"}
+                              >
+                                <MenuItem value={"true"}>✅ {i18n.t("announcements.active")}</MenuItem>
+                                <MenuItem value={"false"}>⏸️ {i18n.t("announcements.inactive")}</MenuItem>
+                              </Field>
+                            </FormControl>
+                          </Grid>
+                          {values.visao === true && (
+                            <Grid item xs={12} md={6}>
+                              <FormControl variant="outlined" margin="dense" fullWidth>
+                                <InputLabel id="geral-selection-label">
+                                  {i18n.t("quickMessages.dialog.geral")}
+                                </InputLabel>
+                                <Field
+                                  as={Select}
+                                  label={i18n.t("quickMessages.dialog.geral")}
+                                  labelId="geral-selection-label"
+                                  id="geral"
+                                  name="geral"
+                                  disabled={isDisabled}
+                                  value={values.geral ? "true" : "false"}
+                                  error={touched.geral && Boolean(errors.geral)}
+                                >
+                                  <MenuItem value={"true"}>🌐 Compartida con todos</MenuItem>
+                                  <MenuItem value={"false"}>🔒 Solo para mí</MenuItem>
+                                </Field>
+                              </FormControl>
+                            </Grid>
+                          )}
+                        </Grid>
+                      </Box>
+                    </Box>
                   )}
                   {tabIndex === 1 && (
                     <>

@@ -100,32 +100,75 @@ const useStyles = makeStyles((theme) => ({
   toolbar: {
     paddingRight: 16,
     paddingLeft: 12,
-    color: theme.palette.dark.main,
-    background: theme.palette.primary.main,
-    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)",
+    color: "#fff",
+    // Gradiente moderno con la cor primaria del tema
+    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark || theme.palette.primary.main} 100%)`,
+    backdropFilter: "blur(10px)",
+    boxShadow: "0 4px 12px -2px rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.06)",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
     transition: "all 0.25s ease",
     gap: 4,
+    minHeight: 56,
     [theme.breakpoints.down("sm")]: {
-      paddingRight: 8,
+      paddingRight: 6,
       paddingLeft: 4,
       gap: 0,
+      minHeight: 52,
+    },
+    // Decoración sutil de luz arriba del toolbar
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      height: "1px",
+      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
+      pointerEvents: "none",
     },
   },
   toolbarRightGroup: {
     display: "flex",
     alignItems: "center",
-    gap: 4,
+    gap: 2,
     marginLeft: "auto",
+    paddingLeft: 8,
+    paddingRight: 4,
     [theme.breakpoints.down("sm")]: {
       gap: 0,
+      paddingLeft: 0,
+      paddingRight: 2,
     },
     "& .MuiIconButton-root": {
-      color: "white",
-      padding: 8,
-      transition: "background 0.15s",
+      color: "rgba(255,255,255,0.92)",
+      padding: 9,
+      borderRadius: 10,
+      transition: "all 0.18s ease",
       "&:hover": {
-        background: "rgba(255,255,255,0.12)",
+        background: "rgba(255,255,255,0.15)",
+        transform: "translateY(-1px)",
       },
+      "& svg": {
+        fontSize: 21,
+      },
+    },
+    "& .MuiBadge-root .MuiIconButton-root": {
+      // mismo estilo dentro de Badge (notificaciones)
+      color: "rgba(255,255,255,0.92)",
+    },
+  },
+  // Contenedor del avatar con borde glassy
+  avatarFrame: {
+    marginLeft: 6,
+    padding: 3,
+    borderRadius: "50%",
+    background: "rgba(255,255,255,0.18)",
+    border: "1.5px solid rgba(255,255,255,0.35)",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    "&:hover": {
+      background: "rgba(255,255,255,0.28)",
+      transform: "scale(1.04)",
     },
   },
 
@@ -171,9 +214,18 @@ const useStyles = makeStyles((theme) => ({
   title: {
     flexGrow: 1,
     fontSize: 14,
-    color: "white",
-    fontWeight: 600,
-    letterSpacing: "0.025em",
+    color: "rgba(255,255,255,0.95)",
+    fontWeight: 500,
+    letterSpacing: "0.015em",
+    paddingLeft: theme.spacing(1),
+    "& b": {
+      fontWeight: 700,
+      color: "#fff",
+    },
+    [theme.breakpoints.down("sm")]: {
+      fontSize: 13,
+      paddingLeft: 4,
+    },
   },
 
   drawerPaper: {
@@ -274,12 +326,8 @@ const useStyles = makeStyles((theme) => ({
     height: theme.spacing(4),
     cursor: "pointer",
     borderRadius: "50%",
-    border: "2px solid #ccc",
-    transition: "all 0.3s ease",
-    "&:hover": {
-      transform: "scale(1.05)",
-      borderColor: theme.palette.primary.main, // Usa cor do tema
-    },
+    border: "none",
+    transition: "all 0.2s ease",
   },
 
   updateDiv: {
@@ -711,16 +759,24 @@ useEffect(() => {
         color="primary"
       >
         <Toolbar variant="dense" className={classes.toolbar}>
-          <IconButton
-            edge="start"
-            variant="contained"
-            aria-label="open drawer"
-            style={{ color: "white" }}
-            onClick={() => setDrawerOpen(!drawerOpen)}
-            className={clsx(drawerOpen && classes.menuButtonHidden)}
-          >
-            <MenuIcon />
-          </IconButton>
+          <Tooltip title="Menú" arrow>
+            <IconButton
+              edge="start"
+              aria-label="open drawer"
+              style={{
+                color: "white",
+                padding: 9,
+                borderRadius: 10,
+                transition: "background 0.18s",
+              }}
+              onClick={() => setDrawerOpen(!drawerOpen)}
+              className={clsx(drawerOpen && classes.menuButtonHidden)}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              <MenuIcon />
+            </IconButton>
+          </Tooltip>
 
           <Typography
             component="h2"
@@ -808,24 +864,24 @@ useEffect(() => {
             <ChatPopover />
           </Box>
 
-          <div className="user-menu-wrapper" style={{ marginLeft: 8, display: "flex", alignItems: "center" }}>
+          <div className="user-menu-wrapper" style={{ display: "flex", alignItems: "center" }}>
             <Tooltip title={i18n.t("mainDrawer.appBar.user.profile")} arrow>
-              <StyledBadge
-                overlap="circular"
-                anchorOrigin={{
-                  vertical: "bottom",
-                  horizontal: "right",
-                }}
-                variant="dot"
-                onClick={handleMenu}
-                style={{ cursor: "pointer" }}
-              >
-                <Avatar
-                  alt="Equipechat"
-                  className={classes.avatar2}
-                  src={profileUrl}
-                />
-              </StyledBadge>
+              <Box className={classes.avatarFrame} onClick={handleMenu}>
+                <StyledBadge
+                  overlap="circular"
+                  anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "right",
+                  }}
+                  variant="dot"
+                >
+                  <Avatar
+                    alt="Equipechat"
+                    className={classes.avatar2}
+                    src={profileUrl}
+                  />
+                </StyledBadge>
+              </Box>
             </Tooltip>
 
             <UserModal

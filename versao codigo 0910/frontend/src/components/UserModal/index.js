@@ -787,7 +787,7 @@ const UserModal = ({ open, onClose, userId }) => {
                     {/* SECCIÓN: Preferencias visuales */}
                     <Box
                       mb={1}
-                      p={2}
+                      p={2.5}
                       style={{
                         border: "1px solid #e2e8f0",
                         borderRadius: 12,
@@ -797,19 +797,21 @@ const UserModal = ({ open, onClose, userId }) => {
                       <Typography style={{ fontSize: "0.92rem", fontWeight: 600, marginBottom: 4 }}>
                         🎨 Preferencias visuales
                       </Typography>
-                      <Typography variant="caption" color="textSecondary" style={{ display: "block", marginBottom: 12 }}>
-                        Cómo se ve la interfaz al iniciar sesión.
+                      <Typography
+                        variant="caption"
+                        color="textSecondary"
+                        style={{ display: "block", marginBottom: 16, lineHeight: 1.4 }}
+                      >
+                        Define cómo se ve la interfaz al iniciar sesión: tema oscuro o claro
+                        y si el menú lateral arranca abierto o cerrado.
                       </Typography>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} md={6}>
-                          <FormControl variant="outlined" margin="dense" fullWidth>
-                            <InputLabel>{i18n.t("userModal.form.defaultTheme")}</InputLabel>
-                            <Field
-                              as={Select}
-                              label={i18n.t("userModal.form.defaultTheme")}
-                              name="defaultTheme"
-                              required
-                            >
+                      <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="caption" style={{ fontWeight: 500, display: "block", marginBottom: 6 }}>
+                            Tema de la interfaz
+                          </Typography>
+                          <FormControl variant="outlined" fullWidth size="small">
+                            <Field as={Select} name="defaultTheme" required>
                               <MenuItem value="light">
                                 ☀️ {i18n.t("userModal.form.defaultThemeLight")}
                               </MenuItem>
@@ -819,20 +821,17 @@ const UserModal = ({ open, onClose, userId }) => {
                             </Field>
                           </FormControl>
                         </Grid>
-                        <Grid item xs={12} md={6}>
-                          <FormControl variant="outlined" margin="dense" fullWidth>
-                            <InputLabel>{i18n.t("userModal.form.defaultMenu")}</InputLabel>
-                            <Field
-                              as={Select}
-                              label={i18n.t("userModal.form.defaultMenu")}
-                              name="defaultMenu"
-                              required
-                            >
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="caption" style={{ fontWeight: 500, display: "block", marginBottom: 6 }}>
+                            Menú lateral al iniciar
+                          </Typography>
+                          <FormControl variant="outlined" fullWidth size="small">
+                            <Field as={Select} name="defaultMenu" required>
                               <MenuItem value={"open"}>
-                                {i18n.t("userModal.form.defaultMenuOpen")}
+                                📂 {i18n.t("userModal.form.defaultMenuOpen")}
                               </MenuItem>
                               <MenuItem value={"closed"}>
-                                {i18n.t("userModal.form.defaultMenuClosed")}
+                                📁 {i18n.t("userModal.form.defaultMenuClosed")}
                               </MenuItem>
                             </Field>
                           </FormControl>
