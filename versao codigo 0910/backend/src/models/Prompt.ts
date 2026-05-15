@@ -62,6 +62,52 @@ class Prompt extends Model<Prompt> {
   @Column
   voiceRegion:string;
 
+  @Column({ defaultValue: "gpt-4o-mini" })
+  model: string;
+
+  @Column({ defaultValue: "general" })
+  agentFunction: string;
+
+  @Column({ defaultValue: "friendly" })
+  tone: string;
+
+  @Column({ defaultValue: "es" })
+  languages: string;
+
+  @Column({ defaultValue: true })
+  isActive: boolean;
+
+  @AllowNull(true)
+  @Column
+  initialMessage: string;
+
+  @AllowNull(true)
+  @Column
+  responseRules: string;
+
+  @Column({ defaultValue: true })
+  allowTransfer: boolean;
+
+  @AllowNull(true)
+  @Column
+  transferKeywords: string;
+
+  @AllowNull(true)
+  @Column
+  transferMessage: string;
+
+  @Column({ defaultValue: 1 })
+  responseDelay: number;
+
+  @Column({ defaultValue: 2000 })
+  charLimit: number;
+
+  @Column({ defaultValue: true })
+  humanize: boolean;
+
+  @Column({ defaultValue: false })
+  useAudio: boolean;
+
   @AllowNull
   @ForeignKey(() => Queue)
   @Column

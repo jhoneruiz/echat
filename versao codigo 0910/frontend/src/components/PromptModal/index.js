@@ -1,369 +1,850 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 
 import * as Yup from "yup";
 import { Formik, Form, Field } from "formik";
 import { toast } from "react-toastify";
 
-import { makeStyles } from "@material-ui/core/styles";
-import { green } from "@material-ui/core/colors";
-import Button from "@material-ui/core/Button";
-import TextField from "@material-ui/core/TextField";
-import Dialog from "@material-ui/core/Dialog";
-import DialogActions from "@material-ui/core/DialogActions";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogTitle from "@material-ui/core/DialogTitle";
-import CircularProgress from "@material-ui/core/CircularProgress";
+import { makeStyles, useTheme } from "@material-ui/core/styles";
+import {
+  Button,
+  TextField,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  CircularProgress,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  IconButton,
+  Tabs,
+  Tab,
+  Box,
+  Typography,
+  Switch,
+  Slider,
+  Chip,
+  InputAdornment,
+  Divider,
+} from "@material-ui/core";
+import {
+  Visibility,
+  VisibilityOff,
+  Close,
+  SmartToy,
+  Send as SendIcon,
+} from "@material-ui/icons";
 import { i18n } from "../../translate/i18n";
-import { MenuItem, FormControl, InputLabel, Select } from "@material-ui/core";
-import { Visibility, VisibilityOff } from "@material-ui/icons";
-import { InputAdornment, IconButton } from "@material-ui/core";
-import QueueSelectSingle from "../../components/QueueSelectSingle";
-
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
 
-const useStyles = makeStyles(theme => ({
-    root: {
-        display: "flex",
-        flexWrap: "wrap",
+const useStyles = makeStyles((theme) => ({
+  dialogPaper: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1.5),
+    padding: theme.spacing(2),
+    borderBottom: `1px solid ${theme.palette.divider}`,
+  },
+  headerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#FF6B35",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: "1.05rem",
+    fontWeight: 600,
+    lineHeight: 1.2,
+  },
+  headerSubtitle: {
+    fontSize: "0.78rem",
+    color: theme.palette.text.secondary,
+    marginTop: 2,
+  },
+  closeButton: {
+    marginLeft: "auto",
+  },
+  tabs: {
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    "& .MuiTab-root": {
+      minHeight: 44,
+      fontSize: "0.85rem",
+      textTransform: "none",
+      fontWeight: 500,
     },
-    multFieldLine: {
-        display: "flex",
-        "& > *:not(:last-child)": {
-            marginRight: theme.spacing(1),
-        },
+    "& .Mui-selected": {
+      color: "#FF6B35",
     },
-
-    btnWrapper: {
-        position: "relative",
+    "& .MuiTabs-indicator": {
+      backgroundColor: "#FF6B35",
+      height: 3,
     },
-
-    buttonProgress: {
-        color: green[500],
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-        marginTop: -12,
-        marginLeft: -12,
+  },
+  content: {
+    padding: theme.spacing(2.5),
+    minHeight: 380,
+  },
+  fieldLabel: {
+    fontSize: "0.85rem",
+    fontWeight: 500,
+    marginBottom: theme.spacing(0.5),
+    color: theme.palette.text.primary,
+  },
+  helperText: {
+    fontSize: "0.72rem",
+    color: theme.palette.text.secondary,
+    marginTop: theme.spacing(0.5),
+  },
+  twoCol: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: theme.spacing(2),
+    [theme.breakpoints.down("xs")]: {
+      gridTemplateColumns: "1fr",
     },
-    formControl: {
-        margin: theme.spacing(1),
-        minWidth: 120,
+  },
+  fieldBlock: {
+    marginBottom: theme.spacing(2),
+  },
+  switchRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: theme.spacing(1.25, 0),
+  },
+  langChips: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: theme.spacing(0.75),
+    marginBottom: theme.spacing(0.5),
+  },
+  langChipActive: {
+    backgroundColor: "#22C55E",
+    color: "#fff",
+    fontWeight: 600,
+    "&:hover": {
+      backgroundColor: "#16A34A",
     },
-    colorAdorment: {
-        width: 20,
-        height: 20,
+  },
+  langChip: {
+    backgroundColor:
+      theme.palette.type === "dark" ? "rgba(255,255,255,0.06)" : "#F1F5F9",
+    color: theme.palette.text.primary,
+    fontWeight: 500,
+  },
+  sliderRoot: {
+    color: "#FF6B35",
+  },
+  saveButton: {
+    backgroundColor: "#FF6B35",
+    color: "#fff",
+    textTransform: "none",
+    fontWeight: 600,
+    borderRadius: 8,
+    padding: theme.spacing(1, 3),
+    "&:hover": {
+      backgroundColor: "#E55A2B",
     },
+  },
+  cancelButton: {
+    textTransform: "none",
+    fontWeight: 500,
+    borderRadius: 8,
+    padding: theme.spacing(1, 3),
+  },
+  footer: {
+    padding: theme.spacing(2),
+    borderTop: `1px solid ${theme.palette.divider}`,
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: theme.spacing(1),
+  },
+  testChat: {
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: 12,
+    minHeight: 240,
+    padding: theme.spacing(2),
+    backgroundColor:
+      theme.palette.type === "dark" ? "rgba(255,255,255,0.03)" : "#FAFAFA",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    color: theme.palette.text.secondary,
+    fontSize: "0.85rem",
+    marginBottom: theme.spacing(2),
+  },
+  testInput: {
+    display: "flex",
+    gap: theme.spacing(1),
+  },
+  knowledgeBox: {
+    border: `2px dashed ${theme.palette.divider}`,
+    borderRadius: 12,
+    padding: theme.spacing(4, 2),
+    textAlign: "center",
+    color: theme.palette.text.secondary,
+    fontSize: "0.85rem",
+  },
 }));
 
 const PromptSchema = Yup.object().shape({
-    name: Yup.string().min(5, "Muito curto!").max(100, "Muito longo!").required("Obrigatório"),
-    prompt: Yup.string().min(50, "Muito curto!").required("Descreva o treinamento para Inteligência Artificial"),
-    voice: Yup.string().required("Informe o modo para Voz"),
-    max_tokens: Yup.number().required("Informe o número máximo de tokens"),
-    temperature: Yup.number().required("Informe a temperatura"),
-    apikey: Yup.string().required("Informe a API Key"),
-    queueId: Yup.number().required("Informe a fila"),
-    max_messages: Yup.number().required("Informe o número máximo de mensagens")
+  name: Yup.string().min(3, "Demasiado corto").max(100, "Demasiado largo").required("Nombre obligatorio"),
+  prompt: Yup.string().min(10, "La personalidad debe tener al menos 10 caracteres").required("Personalidad obligatoria"),
+  apiKey: Yup.string().required("API Key obligatoria"),
+  queueId: Yup.number().required("Selecciona una cola").nullable(),
 });
 
+const FUNCTIONS = [
+  { value: "general", label: "General — Asistente multiusos" },
+  { value: "sales", label: "Ventas — Calificación de leads" },
+  { value: "support", label: "Soporte — Resolución de dudas" },
+  { value: "scheduling", label: "Agendamiento — Reservas y citas" },
+  { value: "qualification", label: "Cualificación — Pre-filtro" },
+];
+
+const TONES = [
+  { value: "friendly", label: "😊 Amigable" },
+  { value: "professional", label: "👔 Profesional" },
+  { value: "formal", label: "🎩 Formal" },
+  { value: "casual", label: "🙂 Casual" },
+  { value: "empathetic", label: "💝 Empático" },
+];
+
+const MODELS = [
+  { value: "gpt-4o-mini", label: "GPT-4o Mini", desc: "Recomendado — Equilibrio entre velocidad y calidad" },
+  { value: "gpt-4o", label: "GPT-4o", desc: "Más capaz, mayor costo" },
+  { value: "gpt-4-turbo", label: "GPT-4 Turbo", desc: "Generación anterior, calidad alta" },
+  { value: "gpt-4.1-mini", label: "GPT-4.1 Mini", desc: "Mini estable" },
+  { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo", desc: "Más rápido, menor calidad" },
+];
+
+const LANGUAGES = [
+  { code: "pt-BR", flag: "🇧🇷", label: "Português (BR)" },
+  { code: "en", flag: "🇺🇸", label: "English" },
+  { code: "es", flag: "🇪🇸", label: "Español" },
+  { code: "fr", flag: "🇫🇷", label: "Français" },
+  { code: "de", flag: "🇩🇪", label: "Deutsch" },
+  { code: "it", flag: "🇮🇹", label: "Italiano" },
+  { code: "auto", flag: "🌐", label: "Auto" },
+];
+
+function TabPanel({ children, value, index }) {
+  return value === index ? <Box>{children}</Box> : null;
+}
+
+const initialState = {
+  name: "",
+  prompt: "",
+  apiKey: "",
+  queueId: null,
+  maxTokens: 2000,
+  temperature: 1,
+  maxMessages: 10,
+  voice: "texto",
+  voiceKey: "",
+  voiceRegion: "",
+  model: "gpt-4o-mini",
+  agentFunction: "general",
+  tone: "friendly",
+  languages: "es",
+  isActive: true,
+  initialMessage: "¡Hola! ¿Cómo puedo ayudarte?",
+  responseRules: "",
+  allowTransfer: true,
+  transferKeywords: "agente, salir, hablar con humano, humano",
+  transferMessage:
+    "Disculpa, no tengo información sobre este tema. Te transferiré a un agente.",
+  responseDelay: 1,
+  charLimit: 2000,
+  humanize: true,
+  useAudio: false,
+};
+
 const PromptModal = ({ open, onClose, promptId }) => {
-    const classes = useStyles();
-    const [selectedVoice, setSelectedVoice] = useState("texto");
-    const [showApiKey, setShowApiKey] = useState(false);
+  const classes = useStyles();
+  const theme = useTheme();
+  const [tab, setTab] = useState(0);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [prompt, setPrompt] = useState(initialState);
+  const [queues, setQueues] = useState([]);
 
-    const handleToggleApiKey = () => {
-        setShowApiKey(!showApiKey);
+  useEffect(() => {
+    const loadQueues = async () => {
+      try {
+        const { data } = await api.get("/queue");
+        setQueues(data);
+      } catch (err) {
+        // silent
+      }
     };
+    if (open) loadQueues();
+  }, [open]);
 
-    const initialState = {
-        name: "",
-        prompt: "",
-        voice: "texto",
-        voiceKey: "",
-        voiceRegion: "",
-        maxTokens: 100,
-        temperature: 1,
-        apiKey: "",
-        queueId: null,
-        maxMessages: 10
-    };
-
-    const [prompt, setPrompt] = useState(initialState);
-
-    useEffect(() => {
-        const fetchPrompt = async () => {
-            if (!promptId) {
-                setPrompt(initialState);
-                return;
-            }
-            try {
-                const { data } = await api.get(`/prompt/${promptId}`);
-                setPrompt(prevState => {
-                    return { ...prevState, ...data };
-                });
-                setSelectedVoice(data.voice);
-            } catch (err) {
-                toastError(err);
-            }
-        };
-
-        fetchPrompt();
-    }, [promptId, open]);
-
-    const handleClose = () => {
+  useEffect(() => {
+    const fetchPrompt = async () => {
+      if (!promptId) {
         setPrompt(initialState);
-        setSelectedVoice("texto");
-        onClose();
+        setTab(0);
+        return;
+      }
+      try {
+        const { data } = await api.get(`/prompt/${promptId}`);
+        setPrompt({ ...initialState, ...data });
+      } catch (err) {
+        toastError(err);
+      }
     };
+    if (open) fetchPrompt();
+  }, [promptId, open]);
 
-    const handleChangeVoice = (e) => {
-        setSelectedVoice(e.target.value);
-    };
+  const handleClose = () => {
+    setPrompt(initialState);
+    setTab(0);
+    onClose();
+  };
 
-    const handleSavePrompt = async values => {
-        const promptData = { ...values, voice: selectedVoice };
-        if (!values.queueId) {
-            toastError("Informe o setor");
-            return;
-        }
-        try {
-            if (promptId) {
-                await api.put(`/prompt/${promptId}`, promptData);
-            } else {
-                await api.post("/prompt", promptData);
-            }
-            toast.success(i18n.t("promptModal.success"));
-        } catch (err) {
-            toastError(err);
-        }
-        handleClose();
-    };
+  const handleSavePrompt = async (values) => {
+    if (!values.queueId) {
+      toastError("Selecciona una cola para el agente");
+      return;
+    }
+    try {
+      const data = { ...values };
+      if (promptId) {
+        await api.put(`/prompt/${promptId}`, data);
+        toast.success("Agente actualizado");
+      } else {
+        await api.post("/prompt", data);
+        toast.success("Agente creado");
+      }
+    } catch (err) {
+      toastError(err);
+    }
+    handleClose();
+  };
 
-    return (
-        <div className={classes.root}>
-            <Dialog
-                open={open}
-                onClose={handleClose}
-                maxWidth="md"
-                scroll="paper"
-                fullWidth
+  const toggleLanguage = (values, setFieldValue, code) => {
+    const current = (values.languages || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const has = current.includes(code);
+    const next = has ? current.filter((c) => c !== code) : [...current, code];
+    setFieldValue("languages", next.join(","));
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      classes={{ paper: classes.dialogPaper }}
+    >
+      <Formik
+        initialValues={prompt}
+        enableReinitialize
+        validationSchema={PromptSchema}
+        onSubmit={(values, actions) => {
+          setTimeout(() => {
+            handleSavePrompt(values);
+            actions.setSubmitting(false);
+          }, 300);
+        }}
+      >
+        {({ values, setFieldValue, isSubmitting, touched, errors }) => (
+          <Form>
+            <Box className={classes.header}>
+              <Box className={classes.headerIcon}>
+                <SmartToy />
+              </Box>
+              <Box>
+                <Typography className={classes.headerTitle}>
+                  {promptId ? "Editar Agente" : "Crear Agente"}
+                </Typography>
+                <Typography className={classes.headerSubtitle}>
+                  Configure los parámetros del agente de IA
+                </Typography>
+              </Box>
+              <IconButton className={classes.closeButton} onClick={handleClose} size="small">
+                <Close />
+              </IconButton>
+            </Box>
+
+            <Tabs
+              value={tab}
+              onChange={(_, v) => setTab(v)}
+              variant="scrollable"
+              scrollButtons="auto"
+              className={classes.tabs}
             >
-                <DialogTitle id="form-dialog-title">
-                    {promptId
-                        ? `${i18n.t("promptModal.title.edit")}`
-                        : `${i18n.t("promptModal.title.add")}`}
-                </DialogTitle>
-                <Formik
-                    initialValues={prompt}
-                    enableReinitialize={true}
-                    onSubmit={(values, actions) => {
-                        setTimeout(() => {
-                            handleSavePrompt(values);
-                            actions.setSubmitting(false);
-                        }, 400);
+              <Tab label="Básico" />
+              <Tab label="Comportamiento" />
+              <Tab label="Avanzado" />
+              <Tab label="Conocimiento" />
+              <Tab label="Probar" />
+            </Tabs>
+
+            <DialogContent className={classes.content}>
+              {/* TAB 1: BÁSICO */}
+              <TabPanel value={tab} index={0}>
+                <Box className={classes.twoCol}>
+                  <Box>
+                    <Typography className={classes.fieldLabel}>
+                      Nombre del Agente *
+                    </Typography>
+                    <Field
+                      as={TextField}
+                      name="name"
+                      placeholder="Ej: Asistente de Ventas"
+                      variant="outlined"
+                      fullWidth
+                      size="small"
+                      error={touched.name && Boolean(errors.name)}
+                      helperText={touched.name && errors.name}
+                    />
+                  </Box>
+                  <Box>
+                    <Typography className={classes.fieldLabel}>Función</Typography>
+                    <FormControl variant="outlined" fullWidth size="small">
+                      <Field as={Select} name="agentFunction">
+                        {FUNCTIONS.map((f) => (
+                          <MenuItem key={f.value} value={f.value}>
+                            {f.label}
+                          </MenuItem>
+                        ))}
+                      </Field>
+                    </FormControl>
+                  </Box>
+                </Box>
+
+                <Box className={classes.twoCol} mt={2}>
+                  <Box>
+                    <Typography className={classes.fieldLabel}>Tono de Voz</Typography>
+                    <FormControl variant="outlined" fullWidth size="small">
+                      <Field as={Select} name="tone">
+                        {TONES.map((t) => (
+                          <MenuItem key={t.value} value={t.value}>
+                            {t.label}
+                          </MenuItem>
+                        ))}
+                      </Field>
+                    </FormControl>
+                  </Box>
+                  <Box>
+                    <Typography className={classes.fieldLabel}>Modelo de IA</Typography>
+                    <FormControl variant="outlined" fullWidth size="small">
+                      <Field as={Select} name="model">
+                        {MODELS.map((m) => (
+                          <MenuItem key={m.value} value={m.value}>
+                            <Box>
+                              <Typography style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                                {m.label}
+                              </Typography>
+                              <Typography style={{ fontSize: "0.7rem", color: "#666" }}>
+                                {m.desc}
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        ))}
+                      </Field>
+                    </FormControl>
+                  </Box>
+                </Box>
+
+                <Box mt={2}>
+                  <Typography className={classes.fieldLabel}>API Key *</Typography>
+                  <Field
+                    as={TextField}
+                    name="apiKey"
+                    placeholder="sk-..."
+                    type={showApiKey ? "text" : "password"}
+                    variant="outlined"
+                    fullWidth
+                    size="small"
+                    error={touched.apiKey && Boolean(errors.apiKey)}
+                    helperText={touched.apiKey && errors.apiKey}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton size="small" onClick={() => setShowApiKey((s) => !s)}>
+                            {showApiKey ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
                     }}
-                >
-                    {({ touched, errors, isSubmitting, values }) => (
-                        <Form style={{ width: "100%" }}>
-                            <DialogContent dividers>
-                                <Field
-                                    as={TextField}
-                                    label={i18n.t("promptModal.form.name")}
-                                    name="name"
-                                    error={touched.name && Boolean(errors.name)}
-                                    helperText={touched.name && errors.name}
-                                    variant="outlined"
-                                    margin="dense"
-                                    fullWidth
-                                    required
-                                />
-                                <FormControl fullWidth margin="dense" variant="outlined">
-                                    <Field
-                                        as={TextField}
-                                        label={i18n.t("promptModal.form.apikey")}
-                                        name="apiKey"
-                                        type={showApiKey ? 'text' : 'password'}
-                                        error={touched.apiKey && Boolean(errors.apiKey)}
-                                        helperText={touched.apiKey && errors.apiKey}
-                                        variant="outlined"
-                                        margin="dense"
-                                        fullWidth
-                                        required
-                                        InputProps={{
-                                            endAdornment: (
-                                                <InputAdornment position="end">
-                                                    <IconButton onClick={handleToggleApiKey}>
-                                                        {showApiKey ? <VisibilityOff /> : <Visibility />}
-                                                    </IconButton>
-                                                </InputAdornment>
-                                            ),
-                                        }}
-                                    />
-                                </FormControl>
-                                <Field
-                                    as={TextField}
-                                    label={i18n.t("promptModal.form.prompt")}
-                                    name="prompt"
-                                    error={touched.prompt && Boolean(errors.prompt)}
-                                    helperText={touched.prompt && errors.prompt}
-                                    variant="outlined"
-                                    margin="dense"
-                                    fullWidth
-                                    required
-                                    rows={10}
-                                    multiline={true}
-                                />
-                                <QueueSelectSingle />
-                                <div className={classes.multFieldLine}>
-                                    <FormControl fullWidth margin="dense" variant="outlined">
-                                    <InputLabel>{i18n.t("promptModal.form.voice")}</InputLabel>
-                                        <Select
-                                            id="type-select"
-                                            labelWidth={60}
-                                            name="voice"
-                                            value={selectedVoice}
-                                            onChange={handleChangeVoice}
-                                            multiple={false}
-                                        >
-                                            <MenuItem key={"texto"} value={"texto"}>
-                                                Texto
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-FranciscaNeural"} value={"pt-BR-FranciscaNeural"}>
-                                                Francisa
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-AntonioNeural"} value={"pt-BR-AntonioNeural"}>
-                                                Antônio
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-BrendaNeural"} value={"pt-BR-BrendaNeural"}>
-                                                Brenda
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-DonatoNeural"} value={"pt-BR-DonatoNeural"}>
-                                                Donato
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-ElzaNeural"} value={"pt-BR-ElzaNeural"}>
-                                                Elza
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-FabioNeural"} value={"pt-BR-FabioNeural"}>
-                                                Fábio
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-GiovannaNeural"} value={"pt-BR-GiovannaNeural"}>
-                                                Giovanna
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-HumbertoNeural"} value={"pt-BR-HumbertoNeural"}>
-                                                Humberto
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-JulioNeural"} value={"pt-BR-JulioNeural"}>
-                                                Julio
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-LeilaNeural"} value={"pt-BR-LeilaNeural"}>
-                                                Leila
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-LeticiaNeural"} value={"pt-BR-LeticiaNeural"}>
-                                                Letícia
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-ManuelaNeural"} value={"pt-BR-ManuelaNeural"}>
-                                                Manuela
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-NicolauNeural"} value={"pt-BR-NicolauNeural"}>
-                                                Nicolau
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-ValerioNeural"} value={"pt-BR-ValerioNeural"}>
-                                                Valério
-                                            </MenuItem>
-                                            <MenuItem key={"pt-BR-YaraNeural"} value={"pt-BR-YaraNeural"}>
-                                                Yara
-                                            </MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                    <Field
-                                        as={TextField}
-                                        label={i18n.t("promptModal.form.voiceKey")}
-                                        name="voiceKey"
-                                        error={touched.voiceKey && Boolean(errors.voiceKey)}
-                                        helperText={touched.voiceKey && errors.voiceKey}
-                                        variant="outlined"
-                                        margin="dense"
-                                        fullWidth
-                                    />
-                                    <Field
-                                        as={TextField}
-                                        label={i18n.t("promptModal.form.voiceRegion")}
-                                        name="voiceRegion"
-                                        error={touched.voiceRegion && Boolean(errors.voiceRegion)}
-                                        helperText={touched.voiceRegion && errors.voiceRegion}
-                                        variant="outlined"
-                                        margin="dense"
-                                        fullWidth
-                                    />
-                                </div>
-                                
-                                <div className={classes.multFieldLine}>
-                                    <Field
-                                        as={TextField}
-                                        label={i18n.t("promptModal.form.temperature")}
-                                        name="temperature"
-                                        error={touched.temperature && Boolean(errors.temperature)}
-                                        helperText={touched.temperature && errors.temperature}
-                                        variant="outlined"
-                                        margin="dense"
-                                        fullWidth
-                                    />
-                                    <Field
-                                        as={TextField}
-                                        label={i18n.t("promptModal.form.max_tokens")}
-                                        name="maxTokens"
-                                        error={touched.maxTokens && Boolean(errors.maxTokens)}
-                                        helperText={touched.maxTokens && errors.maxTokens}
-                                        variant="outlined"
-                                        margin="dense"
-                                        fullWidth
-                                    />
-                                    <Field
-                                        as={TextField}
-                                        label={i18n.t("promptModal.form.max_messages")}
-                                        name="maxMessages"
-                                        error={touched.maxMessages && Boolean(errors.maxMessages)}
-                                        helperText={touched.maxMessages && errors.maxMessages}
-                                        variant="outlined"
-                                        margin="dense"
-                                        fullWidth
-                                    />
-                                </div>
-                            </DialogContent>
-                            <DialogActions>
-                                <Button
-                                    onClick={handleClose}
-                                    color="secondary"
-                                    disabled={isSubmitting}
-                                    variant="outlined"
-                                >
-                                    {i18n.t("promptModal.buttons.cancel")}
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    color="primary"
-                                    disabled={isSubmitting}
-                                    variant="contained"
-                                    className={classes.btnWrapper}
-                                >
-                                    {promptId
-                                        ? `${i18n.t("promptModal.buttons.okEdit")}`
-                                        : `${i18n.t("promptModal.buttons.okAdd")}`}
-                                    {isSubmitting && (
-                                        <CircularProgress
-                                            size={24}
-                                            className={classes.buttonProgress}
-                                        />
-                                    )}
-                                </Button>
-                            </DialogActions>
-                        </Form>
-                    )}
-                </Formik>
-            </Dialog>
-        </div>
-    );
+                  />
+                </Box>
+
+                <Box mt={2}>
+                  <Typography className={classes.fieldLabel}>
+                    🌐 Idiomas de respuesta
+                  </Typography>
+                  <Box className={classes.langChips}>
+                    {LANGUAGES.map((lang) => {
+                      const active = (values.languages || "")
+                        .split(",")
+                        .map((c) => c.trim())
+                        .includes(lang.code);
+                      return (
+                        <Chip
+                          key={lang.code}
+                          label={`${lang.flag} ${lang.label}`}
+                          size="small"
+                          onClick={() => toggleLanguage(values, setFieldValue, lang.code)}
+                          className={active ? classes.langChipActive : classes.langChip}
+                        />
+                      );
+                    })}
+                  </Box>
+                  <Typography className={classes.helperText}>
+                    Selecciona los idiomas en los que la IA puede responder. Use "Auto"
+                    para responder en el idioma del cliente automáticamente.
+                  </Typography>
+                </Box>
+
+                <Box mt={2}>
+                  <Typography className={classes.fieldLabel}>Personalidad *</Typography>
+                  <Field
+                    as={TextField}
+                    name="prompt"
+                    placeholder="Describe la personalidad, conocimientos y habilidades del agente"
+                    multiline
+                    rows={3}
+                    variant="outlined"
+                    fullWidth
+                    error={touched.prompt && Boolean(errors.prompt)}
+                    helperText={
+                      (touched.prompt && errors.prompt) ||
+                      "Describe la personalidad, conocimientos y habilidades del agente"
+                    }
+                  />
+                </Box>
+
+                <Divider style={{ margin: "16px 0" }} />
+
+                <Box className={classes.switchRow}>
+                  <Typography className={classes.fieldLabel} style={{ marginBottom: 0 }}>
+                    Agente Activo
+                  </Typography>
+                  <Switch
+                    checked={Boolean(values.isActive)}
+                    onChange={(e) => setFieldValue("isActive", e.target.checked)}
+                    style={{ color: "#FF6B35" }}
+                  />
+                </Box>
+              </TabPanel>
+
+              {/* TAB 2: COMPORTAMIENTO */}
+              <TabPanel value={tab} index={1}>
+                <Box className={classes.fieldBlock}>
+                  <Typography className={classes.fieldLabel}>
+                    Mensaje Inicial (opcional)
+                  </Typography>
+                  <Field
+                    as={TextField}
+                    name="initialMessage"
+                    placeholder="¡Hola! ¿Cómo puedo ayudarte?"
+                    multiline
+                    rows={2}
+                    variant="outlined"
+                    fullWidth
+                  />
+                  <Typography className={classes.helperText}>
+                    Mensaje enviado automáticamente cuando el agente inicia una conversación
+                  </Typography>
+                </Box>
+
+                <Box className={classes.fieldBlock}>
+                  <Typography className={classes.fieldLabel}>Reglas de Respuesta</Typography>
+                  <Field
+                    as={TextField}
+                    name="responseRules"
+                    placeholder="Liste reglas específicas que el agente debe seguir"
+                    multiline
+                    rows={3}
+                    variant="outlined"
+                    fullWidth
+                  />
+                  <Typography className={classes.helperText}>
+                    Liste reglas específicas que el agente debe seguir
+                  </Typography>
+                </Box>
+
+                <Box className={classes.switchRow}>
+                  <Typography className={classes.fieldLabel} style={{ marginBottom: 0 }}>
+                    Permitir transferencia a agente
+                  </Typography>
+                  <Switch
+                    checked={Boolean(values.allowTransfer)}
+                    onChange={(e) => setFieldValue("allowTransfer", e.target.checked)}
+                    style={{ color: "#FF6B35" }}
+                  />
+                </Box>
+
+                {values.allowTransfer && (
+                  <>
+                    <Box className={classes.fieldBlock}>
+                      <Typography className={classes.fieldLabel}>
+                        Palabras clave para transferencia
+                      </Typography>
+                      <Field
+                        as={TextField}
+                        name="transferKeywords"
+                        variant="outlined"
+                        fullWidth
+                        size="small"
+                      />
+                      <Typography className={classes.helperText}>
+                        Separe por coma. Cuando se detecten, la IA transfiere a un agente
+                      </Typography>
+                    </Box>
+
+                    <Box className={classes.fieldBlock}>
+                      <Typography className={classes.fieldLabel}>
+                        Mensaje al transferir
+                      </Typography>
+                      <Field
+                        as={TextField}
+                        name="transferMessage"
+                        multiline
+                        rows={2}
+                        variant="outlined"
+                        fullWidth
+                      />
+                    </Box>
+                  </>
+                )}
+
+                <Box className={classes.fieldBlock}>
+                  <Typography className={classes.fieldLabel}>Cola</Typography>
+                  <FormControl variant="outlined" fullWidth size="small">
+                    <Field
+                      as={Select}
+                      name="queueId"
+                      value={values.queueId || ""}
+                      displayEmpty
+                    >
+                      <MenuItem value="" disabled>
+                        Selecciona una cola
+                      </MenuItem>
+                      {queues.map((q) => (
+                        <MenuItem key={q.id} value={q.id}>
+                          {q.name}
+                        </MenuItem>
+                      ))}
+                    </Field>
+                  </FormControl>
+                </Box>
+              </TabPanel>
+
+              {/* TAB 3: AVANZADO */}
+              <TabPanel value={tab} index={2}>
+                <Box className={classes.fieldBlock}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography className={classes.fieldLabel}>
+                      Retraso de Respuesta: {values.responseDelay}s
+                    </Typography>
+                    <IconButton size="small" onClick={() => setFieldValue("responseDelay", 1)}>
+                      <i className="material-icons" style={{ fontSize: 18 }}>refresh</i>
+                    </IconButton>
+                  </Box>
+                  <Slider
+                    value={Number(values.responseDelay) || 0}
+                    onChange={(_, v) => setFieldValue("responseDelay", v)}
+                    min={0}
+                    max={10}
+                    step={1}
+                    className={classes.sliderRoot}
+                  />
+                  <Typography className={classes.helperText}>
+                    Tiempo de espera antes de enviar la respuesta (simula escritura)
+                  </Typography>
+                </Box>
+
+                <Box className={classes.fieldBlock}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography className={classes.fieldLabel}>
+                      Límite de caracteres: {values.charLimit}
+                    </Typography>
+                    <Switch
+                      checked={values.charLimit > 0}
+                      onChange={(e) =>
+                        setFieldValue("charLimit", e.target.checked ? 2000 : 0)
+                      }
+                      style={{ color: "#FF6B35" }}
+                    />
+                  </Box>
+                  <Slider
+                    value={Number(values.charLimit) || 0}
+                    onChange={(_, v) => setFieldValue("charLimit", v)}
+                    min={0}
+                    max={4000}
+                    step={100}
+                    className={classes.sliderRoot}
+                    disabled={!values.charLimit}
+                  />
+                  <Typography className={classes.helperText}>
+                    Tamaño máximo de la respuesta del agente
+                  </Typography>
+                </Box>
+
+                <Box className={classes.switchRow}>
+                  <Box>
+                    <Typography className={classes.fieldLabel} style={{ marginBottom: 0 }}>
+                      ✨ Humanizar conversación
+                    </Typography>
+                    <Typography className={classes.helperText}>
+                      Alterna entre primer nombre, nombre completo y sin nombre
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={Boolean(values.humanize)}
+                    onChange={(e) => setFieldValue("humanize", e.target.checked)}
+                    style={{ color: "#FF6B35" }}
+                  />
+                </Box>
+
+                <Box className={classes.switchRow}>
+                  <Typography className={classes.fieldLabel} style={{ marginBottom: 0 }}>
+                    🔊 Recursos de Audio
+                  </Typography>
+                  <Switch
+                    checked={Boolean(values.useAudio)}
+                    onChange={(e) => setFieldValue("useAudio", e.target.checked)}
+                    style={{ color: "#FF6B35" }}
+                  />
+                </Box>
+
+                <Divider style={{ margin: "12px 0" }} />
+
+                <Box className={classes.fieldBlock}>
+                  <Typography className={classes.fieldLabel}>Temperatura</Typography>
+                  <Field
+                    as={TextField}
+                    name="temperature"
+                    type="number"
+                    inputProps={{ min: 0, max: 2, step: 0.1 }}
+                    variant="outlined"
+                    fullWidth
+                    size="small"
+                  />
+                  <Typography className={classes.helperText}>
+                    0 = preciso, 2 = creativo
+                  </Typography>
+                </Box>
+
+                <Box className={classes.twoCol}>
+                  <Box>
+                    <Typography className={classes.fieldLabel}>Max Tokens</Typography>
+                    <Field
+                      as={TextField}
+                      name="maxTokens"
+                      type="number"
+                      variant="outlined"
+                      fullWidth
+                      size="small"
+                    />
+                  </Box>
+                  <Box>
+                    <Typography className={classes.fieldLabel}>Max Mensajes</Typography>
+                    <Field
+                      as={TextField}
+                      name="maxMessages"
+                      type="number"
+                      variant="outlined"
+                      fullWidth
+                      size="small"
+                    />
+                  </Box>
+                </Box>
+              </TabPanel>
+
+              {/* TAB 4: CONOCIMIENTO */}
+              <TabPanel value={tab} index={3}>
+                <Typography className={classes.fieldLabel}>Base de Conocimiento</Typography>
+                <Typography className={classes.helperText} style={{ marginBottom: 12 }}>
+                  Agregue textos, URLs, PDFs, audios y videos para que el agente use como
+                  referencia.
+                </Typography>
+                <Box className={classes.knowledgeBox}>
+                  {promptId
+                    ? "Próximamente: subida de archivos y URLs como contexto del agente."
+                    : "Guarda el agente primero para agregar elementos a la base de conocimiento"}
+                </Box>
+              </TabPanel>
+
+              {/* TAB 5: PROBAR */}
+              <TabPanel value={tab} index={4}>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <FormControl variant="outlined" size="small" style={{ minWidth: 160 }}>
+                    <InputLabel>Modelo</InputLabel>
+                    <Field as={Select} name="model" label="Modelo">
+                      {MODELS.map((m) => (
+                        <MenuItem key={m.value} value={m.value}>
+                          {m.label}
+                        </MenuItem>
+                      ))}
+                    </Field>
+                  </FormControl>
+                  <Typography variant="caption" color="textSecondary">
+                    Usando API Key y prompt de la pestaña "Básico"
+                  </Typography>
+                </Box>
+                <Box className={classes.testChat}>
+                  ✉️ Envíe un mensaje para probar su Agente de IA
+                </Box>
+                <Box className={classes.testInput}>
+                  <TextField
+                    placeholder="Escriba su mensaje de prueba..."
+                    variant="outlined"
+                    fullWidth
+                    size="small"
+                    disabled
+                  />
+                  <IconButton style={{ color: "#FF6B35" }} disabled>
+                    <SendIcon />
+                  </IconButton>
+                </Box>
+                <Typography className={classes.helperText} style={{ marginTop: 8 }}>
+                  Función disponible próximamente.
+                </Typography>
+              </TabPanel>
+            </DialogContent>
+
+            <Box className={classes.footer}>
+              <Button
+                onClick={handleClose}
+                variant="outlined"
+                className={classes.cancelButton}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                className={classes.saveButton}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <CircularProgress size={20} color="inherit" /> : "Guardar"}
+              </Button>
+            </Box>
+          </Form>
+        )}
+      </Formik>
+    </Dialog>
+  );
 };
 
 export default PromptModal;

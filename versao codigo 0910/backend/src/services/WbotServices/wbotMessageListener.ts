@@ -3279,7 +3279,7 @@ const handleOpenAi = async (
     messagesOpenAi.push({ role: "user", content: bodyMessage! });
 
     const chat = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: prompt.model || "gpt-4o-mini",
       messages: messagesOpenAi,
       max_tokens: prompt.maxTokens,
       temperature: prompt.temperature
@@ -3350,7 +3350,7 @@ const handleOpenAi = async (
     }
     messagesOpenAi.push({ role: "user", content: transcription.text });
     const chat = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: prompt.model || "gpt-4o-mini",
       messages: messagesOpenAi,
       max_tokens: prompt.maxTokens,
       temperature: prompt.temperature

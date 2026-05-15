@@ -18,6 +18,20 @@ interface PromptData {
     voice?: string;
     voiceKey?: string;
     voiceRegion?: string;
+    model?: string;
+    agentFunction?: string;
+    tone?: string;
+    languages?: string;
+    isActive?: boolean;
+    initialMessage?: string;
+    responseRules?: string;
+    allowTransfer?: boolean;
+    transferKeywords?: string;
+    transferMessage?: string;
+    responseDelay?: number;
+    charLimit?: number;
+    humanize?: boolean;
+    useAudio?: boolean;
 }
 
 const CreatePromptService = async (promptData: PromptData): Promise<Prompt> => {
