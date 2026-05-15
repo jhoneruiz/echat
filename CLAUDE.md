@@ -56,3 +56,13 @@ El código base principal se encuentra en la subcarpeta `versao codigo 0910`.
 - Si cambios en `api_oficial` no reflejan tras `npm run build`: `rm -rf dist/` antes de rebuildar; verificar con `grep` el archivo compilado, no solo el source.
 - Para ver el error real de Meta (no el genérico "Erro ao enviar a mensagem"): buscar `[MetaService] sendMessage - ` en `pm2 logs Equipechat-api-oficial`.
 - Hay DOS instancias de `TemplateMetaModal` (en `TicketActionButtonsCustom` y `MessageInput`). Cualquier cambio de props debe aplicarse en ambas.
+
+# WhatsApp Cloud API — Webhooks (configuración Meta)
+- HAY DOS niveles de suscripción de webhook que se necesitan AMBOS:
+  1. App level — `webhook_configuration.application` apunta a la URL de api_oficial. Se configura en Meta Developer Portal.
+  2. WABA level — la WABA debe tener tu app suscrita. Sin esto NO llegan los mensajes reales aunque el "Test" del UI funcione.
+- Suscribir WABA a la app: `POST /:waba_id/subscribed_apps` con Bearer del System User Token. Devuelve `{"success":true}`.
+- Verificar suscripciones actuales: `GET /:waba_id/subscribed_apps` — si `{"data":[]}` no hay nada subscribed.
+- Verify token de api_oficial NO es global — es el `token_mult100` por conexión (visible en el CRM como "Token para integración externa", mismo que se usa en URL de send-message).
+- Botón "Test" de Meta envía datos fake (`display_phone_number: "16505551111"`); solo prueba la URL, no que vayan a llegar mensajes reales.
+- Para debug remoto sin entrar a la UI: `GET /:phone_number_id?fields=verified_name,quality_rating,webhook_configuration` muestra a dónde apuntan los webhooks.
