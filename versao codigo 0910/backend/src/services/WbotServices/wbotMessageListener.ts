@@ -728,33 +728,43 @@ const downloadMedia = async (
   }
 
   let buffer;
-  try {
-    buffer = await downloadMediaMessage(
-      msg,
-      "buffer",
-      {},
-      {
-        logger,
-        reuploadRequest: wbot.updateMediaMessage
-      }
-    );
-  } catch (err) {
-    if (isImported) {
-      console.log(
-        "Falha ao fazer o download de uma mensagem importada, provavelmente a mensagem já não esta mais disponível"
+  const maxAttempts = isImported ? 1 : 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      buffer = await downloadMediaMessage(
+        msg,
+        "buffer",
+        {},
+        {
+          logger,
+          reuploadRequest: wbot.updateMediaMessage
+        }
       );
-    } else {
-      console.error("Erro ao baixar mídia:", err);
+      if (buffer) break;
+    } catch (err) {
+      if (attempt === maxAttempts) {
+        if (isImported) {
+          console.log(
+            "Falha ao fazer o download de uma mensagem importada, provavelmente a mensagem já não esta mais disponível"
+          );
+        } else {
+          console.error(`Erro al descargar media (intento ${attempt}/${maxAttempts}):`, err);
+        }
+      } else {
+        await new Promise(r => setTimeout(r, 1500 * attempt));
+      }
     }
   }
 
-  const media = {
+  if (!buffer) {
+    return null;
+  }
+
+  return {
     data: buffer,
     mimetype: mineType.mimetype,
     filename
   };
-
-  return media;
 };
 
 const checkLIDStatus = async (wbot: Session): Promise<boolean> => {
@@ -799,9 +809,10 @@ export const verifyMediaMessage = async (
   try {
     const media = await downloadMedia(msg, ticket?.imported, wbot);
 
-    if (!media && ticket.imported) {
-      const body =
-        "*System:* \nFalha no download da mídia verifique no dispositivo";
+    if (!media) {
+      const body = ticket.imported
+        ? "*Sistema:* \nNo se pudo descargar el archivo. Verifica en el dispositivo."
+        : "*Sistema:* \nNo se pudo descargar el archivo adjunto. Pide al remitente que lo reenvíe.";
       const messageData = {
         //mensagem de texto
         wid: msg.key.id,
@@ -832,10 +843,6 @@ export const verifyMediaMessage = async (
       });
       logger.error(Error("ERR_WAPP_DOWNLOAD_MEDIA"));
       return CreateMessageService({ messageData, companyId: companyId });
-    }
-
-    if (!media) {
-      throw new Error("ERR_WAPP_DOWNLOAD_MEDIA");
     }
 
     // if (!media.filename || media.mimetype === "audio/mp4") {
@@ -897,6 +904,10 @@ export const verifyMediaMessage = async (
       if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder, { recursive: true }); // Correção adicionada por Altemir 16-08-2023
         fs.chmodSync(folder, 0o777);
+      }
+
+      if (!media.data) {
+        throw new Error("Buffer de media vacío - descarga incompleta");
       }
 
       await fsp.writeFile(
