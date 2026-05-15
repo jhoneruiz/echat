@@ -505,91 +505,130 @@ const UserModal = ({ open, onClose, userId }) => {
                     value={tab}
                     name={"general"}
                   >
-                    <Grid
-                      container
-                      spacing={1}
-                      alignContent="center"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <FormControl className={classes.updateDiv}>
-                        <AvatarUploader
-                          setAvatar={setAvatar}
-                          avatar={user.profileImage}
-                          companyId={user.companyId}
-                        />
-                        {user.profileImage && (
-                          <Button
-                            variant="outlined"
-                            color="secondary"
-                            onClick={() => {
-                              user.profileImage = null;
-                              setFieldValue("profileImage", null);
-                              setAvatar(null);
-                            }}
-                          >
-                            {i18n.t("userModal.title.removeImage")}
-                          </Button>
-                        )}
-                      </FormControl>
-                    </Grid>
-                    <Grid container spacing={1}>
-                      <Grid item xs={12} md={6} xl={6}>
-                        <Field
-                          as={TextField}
-                          label={i18n.t("userModal.form.name")}
-                          autoFocus
-                          name="name"
-                          error={touched.name && Boolean(errors.name)}
-                          helperText={touched.name && errors.name}
+                    {/* SECCIÓN: Foto de perfil */}
+                    <Box mb={2.5} display="flex" flexDirection="column" alignItems="center">
+                      <AvatarUploader
+                        setAvatar={setAvatar}
+                        avatar={user.profileImage}
+                        companyId={user.companyId}
+                      />
+                      {user.profileImage && (
+                        <Button
                           variant="outlined"
-                          margin="dense"
-                          fullWidth
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={6} xl={6}>
-                        <Field
-                          as={TextField}
-                          label={i18n.t("userModal.form.password")}
-                          type="password"
-                          name="password"
-                          error={touched.password && Boolean(errors.password)}
-                          helperText={touched.password && errors.password}
-                          variant="outlined"
-                          margin="dense"
-                          fullWidth
-                        />
-                      </Grid>
-                    </Grid>
-                    <Grid container spacing={1}>
-                      <Grid item xs={12} md={8} xl={8}>
-                        <Field
-                          as={TextField}
-                          label={i18n.t("userModal.form.email")}
-                          name="email"
-                          error={touched.email && Boolean(errors.email)}
-                          helperText={touched.email && errors.email}
-                          variant="outlined"
-                          margin="dense"
-                          fullWidth
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={4} xl={4}>
-                        <FormControl
-                          variant="outlined"
-                          //className={classes.formControl}
-                          margin="dense"
-                          fullWidth
+                          color="secondary"
+                          size="small"
+                          style={{ marginTop: 8, textTransform: "none" }}
+                          onClick={() => {
+                            user.profileImage = null;
+                            setFieldValue("profileImage", null);
+                            setAvatar(null);
+                          }}
                         >
-                          <Can
-                            role={loggedInUser.profile}
-                            perform="user-modal:editProfile"
-                            yes={() => (
-                              <>
+                          {i18n.t("userModal.title.removeImage")}
+                        </Button>
+                      )}
+                    </Box>
+
+                    {/* SECCIÓN: Datos personales */}
+                    <Box
+                      mb={2}
+                      p={2}
+                      style={{
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 12,
+                        background: "rgba(248,250,252,0.4)",
+                      }}
+                    >
+                      <Typography style={{ fontSize: "0.92rem", fontWeight: 600, marginBottom: 4 }}>
+                        👤 Datos personales
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary" style={{ display: "block", marginBottom: 12 }}>
+                        Información básica del agente. El nombre se muestra en el saludo automático.
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} md={6}>
+                          <Field
+                            as={TextField}
+                            label={i18n.t("userModal.form.name")}
+                            autoFocus
+                            name="name"
+                            error={touched.name && Boolean(errors.name)}
+                            helperText={touched.name && errors.name}
+                            variant="outlined"
+                            margin="dense"
+                            fullWidth
+                          />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                          <Field
+                            as={TextField}
+                            label={i18n.t("userModal.form.email")}
+                            name="email"
+                            error={touched.email && Boolean(errors.email)}
+                            helperText={touched.email && errors.email}
+                            variant="outlined"
+                            margin="dense"
+                            fullWidth
+                          />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                          <Field
+                            as={TextField}
+                            label={i18n.t("userModal.form.password")}
+                            type="password"
+                            name="password"
+                            error={touched.password && Boolean(errors.password)}
+                            helperText={
+                              (touched.password && errors.password) ||
+                              (userId ? "Déjalo en blanco para no cambiar" : "Mínimo 5 caracteres")
+                            }
+                            variant="outlined"
+                            margin="dense"
+                            fullWidth
+                          />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                          <Field
+                            as={TextField}
+                            label="Fecha de nacimiento"
+                            type="date"
+                            name="birthDate"
+                            InputLabelProps={{ shrink: true }}
+                            fullWidth
+                            variant="outlined"
+                            margin="dense"
+                            helperText="Para enviarle felicitación automática"
+                          />
+                        </Grid>
+                      </Grid>
+                    </Box>
+
+                    {/* SECCIÓN: Acceso y rol (solo admin) */}
+                    <Can
+                      role={loggedInUser.profile}
+                      perform="user-modal:editProfile"
+                      yes={() => (
+                        <Box
+                          mb={2}
+                          p={2}
+                          style={{
+                            border: "1px solid #e2e8f0",
+                            borderRadius: 12,
+                            background: "rgba(248,250,252,0.4)",
+                          }}
+                        >
+                          <Typography style={{ fontSize: "0.92rem", fontWeight: 600, marginBottom: 4 }}>
+                            🔐 Rol y acceso
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary" style={{ display: "block", marginBottom: 12 }}>
+                            Define el perfil del agente y la conexión WhatsApp por defecto que usa al crear tickets nuevos.
+                          </Typography>
+                          <Grid container spacing={2}>
+                            <Grid item xs={12} md={6}>
+                              <FormControl variant="outlined" margin="dense" fullWidth>
                                 <InputLabel id="profile-selection-input-label">
                                   {i18n.t("userModal.form.profile")}
                                 </InputLabel>
-
                                 <Field
                                   as={Select}
                                   label={i18n.t("userModal.form.profile")}
@@ -598,206 +637,195 @@ const UserModal = ({ open, onClose, userId }) => {
                                   id="profile-selection"
                                   required
                                 >
-                                  <MenuItem value="admin">Admin</MenuItem>
-                                  <MenuItem value="user">User</MenuItem>
+                                  <MenuItem value="admin">Admin (acceso total)</MenuItem>
+                                  <MenuItem value="user">Usuario (acceso restringido)</MenuItem>
                                 </Field>
-                              </>
-                            )}
+                              </FormControl>
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                              <FormControl variant="outlined" margin="dense" fullWidth>
+                                <InputLabel>{i18n.t("userModal.form.whatsapp")}</InputLabel>
+                                <Field
+                                  as={Select}
+                                  value={whatsappId}
+                                  onChange={(e) => setWhatsappId(e.target.value)}
+                                  label={i18n.t("userModal.form.whatsapp")}
+                                >
+                                  <MenuItem value={""}>(Ninguna)</MenuItem>
+                                  {whatsApps.map((whatsapp) => (
+                                    <MenuItem key={whatsapp.id} value={whatsapp.id}>
+                                      {whatsapp.name}
+                                    </MenuItem>
+                                  ))}
+                                </Field>
+                              </FormControl>
+                            </Grid>
+                          </Grid>
+                        </Box>
+                      )}
+                    />
+
+                    {/* SECCIÓN: Colas asignadas */}
+                    <Can
+                      role={loggedInUser.profile}
+                      perform="user-modal:editQueues"
+                      yes={() => (
+                        <Box
+                          mb={2}
+                          p={2}
+                          style={{
+                            border: "1px solid #e2e8f0",
+                            borderRadius: 12,
+                            background: "rgba(248,250,252,0.4)",
+                          }}
+                        >
+                          <Typography style={{ fontSize: "0.92rem", fontWeight: 600, marginBottom: 4 }}>
+                            📂 Colas asignadas
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary" style={{ display: "block", marginBottom: 12 }}>
+                            El agente solo verá tickets que pertenezcan a las colas seleccionadas. Si no eliges ninguna, no recibirá tickets.
+                          </Typography>
+                          <QueueSelect
+                            selectedQueueIds={selectedQueueIds}
+                            onChange={(values) => setSelectedQueueIds(values)}
+                            fullWidth
                           />
-                        </FormControl>
-                      </Grid>
-                    </Grid>
-                    <Grid container spacing={1}>
-                      <Grid item xs={12} md={12} xl={12}>
-                        <Can
-                          role={loggedInUser.profile}
-                          perform="user-modal:editQueues"
-                          yes={() => (
-                            <QueueSelect
-                              selectedQueueIds={selectedQueueIds}
-                              onChange={(values) => setSelectedQueueIds(values)}
-                              fullWidth
-                            />
-                          )}
-                        />
-                      </Grid>
-                    </Grid>
-                    <Grid container spacing={1}>
-                      <Grid item xs={12} md={12} xl={12}>
-                        <Can
-                          role={loggedInUser.profile}
-                          perform="user-modal:editProfile"
-                          yes={() => (
-                            <FormControl
-                              variant="outlined"
-                              margin="dense"
-                              className={classes.maxWidth}
-                              fullWidth
-                            >
-                              <InputLabel>
-                                {i18n.t("userModal.form.whatsapp")}
-                              </InputLabel>
-                              <Field
-                                as={Select}
-                                value={whatsappId}
-                                onChange={(e) => setWhatsappId(e.target.value)}
-                                label={i18n.t("userModal.form.whatsapp")}
-                              >
-                                <MenuItem value={""}>&nbsp;</MenuItem>
-                                {whatsApps.map((whatsapp) => (
-                                  <MenuItem
-                                    key={whatsapp.id}
-                                    value={whatsapp.id}
-                                  >
-                                    {whatsapp.name}
-                                  </MenuItem>
-                                ))}
-                              </Field>
-                            </FormControl>
-                          )}
-                        />
-                      </Grid>
-                    </Grid>
+                        </Box>
+                      )}
+                    />
+
+                    {/* SECCIÓN: Horario de trabajo (solo admin) */}
                     <Can
                       role={loggedInUser.profile}
                       perform="user-modal:editProfile"
                       yes={() => (
-                        <Grid container spacing={1}>
-                          <Grid item xs={12} md={6} xl={6}>
-                            <Field
-                              as={TextField}
-                              label={i18n.t("userModal.form.startWork")}
-                              type="time"
-                              ampm={"false"}
-                              inputRef={startWorkRef}
-                              InputLabelProps={{
-                                shrink: true,
-                              }}
-                              inputProps={{
-                                step: 600, // 5 min
-                              }}
-                              fullWidth
-                              name="startWork"
-                              error={
-                                touched.startWork && Boolean(errors.startWork)
-                              }
-                              helperText={touched.startWork && errors.startWork}
-                              variant="outlined"
-                              margin="dense"
-                              className={classes.textField}
-                            />
+                        <Box
+                          mb={2}
+                          p={2}
+                          style={{
+                            border: "1px solid #e2e8f0",
+                            borderRadius: 12,
+                            background: "rgba(248,250,252,0.4)",
+                          }}
+                        >
+                          <Typography style={{ fontSize: "0.92rem", fontWeight: 600, marginBottom: 4 }}>
+                            ⏰ Horario laboral
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary" style={{ display: "block", marginBottom: 12 }}>
+                            Rango horario en el que el agente está disponible. Se usa para reportes de productividad y reglas de distribución de tickets.
+                          </Typography>
+                          <Grid container spacing={2}>
+                            <Grid item xs={12} md={6}>
+                              <Field
+                                as={TextField}
+                                label={i18n.t("userModal.form.startWork")}
+                                type="time"
+                                ampm={"false"}
+                                inputRef={startWorkRef}
+                                InputLabelProps={{ shrink: true }}
+                                inputProps={{ step: 600 }}
+                                fullWidth
+                                name="startWork"
+                                error={touched.startWork && Boolean(errors.startWork)}
+                                helperText={touched.startWork && errors.startWork}
+                                variant="outlined"
+                                margin="dense"
+                              />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                              <Field
+                                as={TextField}
+                                label={i18n.t("userModal.form.endWork")}
+                                type="time"
+                                ampm={"false"}
+                                inputRef={endWorkRef}
+                                InputLabelProps={{ shrink: true }}
+                                inputProps={{ step: 600 }}
+                                fullWidth
+                                name="endWork"
+                                error={touched.endWork && Boolean(errors.endWork)}
+                                helperText={touched.endWork && errors.endWork}
+                                variant="outlined"
+                                margin="dense"
+                              />
+                            </Grid>
                           </Grid>
-                          <Grid item xs={12} md={6} xl={6}>
-                            <Field
-                              as={TextField}
-                              label={i18n.t("userModal.form.endWork")}
-                              type="time"
-                              ampm={"false"}
-                              inputRef={endWorkRef}
-                              InputLabelProps={{
-                                shrink: true,
-                              }}
-                              inputProps={{
-                                step: 600, // 5 min
-                              }}
-                              fullWidth
-                              name="endWork"
-                              error={touched.endWork && Boolean(errors.endWork)}
-                              helperText={touched.endWork && errors.endWork}
-                              variant="outlined"
-                              margin="dense"
-                              className={classes.textField}
-                            />
-                          </Grid>
-                        </Grid>
+                        </Box>
                       )}
                     />
 
-                    <Grid container spacing={1}>
-                      <Grid item xs={12} md={6} xl={6}>
-                        <Field
-                          as={TextField}
-                          label="Data de Nascimento"
-                          type="date"
-                          name="birthDate"
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                          fullWidth
-                          variant="outlined"
-                          margin="dense"
-                          className={classes.textField}
-                          helperText="Data de nascimento para notificações de aniversário"
-                        />
-                      </Grid>
-                    </Grid>
+                    {/* SECCIÓN: Mensaje de despedida */}
+                    <Box
+                      mb={2}
+                      p={2}
+                      style={{
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 12,
+                        background: "rgba(248,250,252,0.4)",
+                      }}
+                    >
+                      <Typography style={{ fontSize: "0.92rem", fontWeight: 600, marginBottom: 4 }}>
+                        👋 Mensaje de despedida
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary" style={{ display: "block", marginBottom: 12 }}>
+                        Mensaje opcional que el agente puede enviar al cerrar un ticket. Se usa al cerrar "Con despedida" desde la barra de acciones.
+                      </Typography>
+                      <Field
+                        as={TextField}
+                        label={i18n.t("userModal.form.farewellMessage")}
+                        multiline
+                        rows={3}
+                        fullWidth
+                        name="farewellMessage"
+                        error={touched.farewellMessage && Boolean(errors.farewellMessage)}
+                        helperText={touched.farewellMessage && errors.farewellMessage}
+                        variant="outlined"
+                        margin="dense"
+                      />
+                    </Box>
 
-                    <Field
-                      as={TextField}
-                      label={i18n.t("userModal.form.farewellMessage")}
-                      type="farewellMessage"
-                      multiline
-                      rows={4}
-                      fullWidth
-                      name="farewellMessage"
-                      error={
-                        touched.farewellMessage &&
-                        Boolean(errors.farewellMessage)
-                      }
-                      helperText={
-                        touched.farewellMessage && errors.farewellMessage
-                      }
-                      variant="outlined"
-                      margin="dense"
-                    />
-
-                    <Grid container spacing={1}>
-                      <Grid item xs={12} md={6} xl={6}>
-                        <FormControl
-                          variant="outlined"
-                          className={classes.maxWidth}
-                          margin="dense"
-                          fullWidth
-                        >
-                          <>
-                            <InputLabel>
-                              {i18n.t("userModal.form.defaultTheme")}
-                            </InputLabel>
-
+                    {/* SECCIÓN: Preferencias visuales */}
+                    <Box
+                      mb={1}
+                      p={2}
+                      style={{
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 12,
+                        background: "rgba(248,250,252,0.4)",
+                      }}
+                    >
+                      <Typography style={{ fontSize: "0.92rem", fontWeight: 600, marginBottom: 4 }}>
+                        🎨 Preferencias visuales
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary" style={{ display: "block", marginBottom: 12 }}>
+                        Cómo se ve la interfaz al iniciar sesión.
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} md={6}>
+                          <FormControl variant="outlined" margin="dense" fullWidth>
+                            <InputLabel>{i18n.t("userModal.form.defaultTheme")}</InputLabel>
                             <Field
                               as={Select}
                               label={i18n.t("userModal.form.defaultTheme")}
                               name="defaultTheme"
-                              type="defaultTheme"
                               required
                             >
                               <MenuItem value="light">
-                                {i18n.t("userModal.form.defaultThemeLight")}
+                                ☀️ {i18n.t("userModal.form.defaultThemeLight")}
                               </MenuItem>
                               <MenuItem value="dark">
-                                {i18n.t("userModal.form.defaultThemeDark")}
+                                🌙 {i18n.t("userModal.form.defaultThemeDark")}
                               </MenuItem>
                             </Field>
-                          </>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} md={6} xl={6}>
-                        <FormControl
-                          variant="outlined"
-                          className={classes.maxWidth}
-                          margin="dense"
-                          fullWidth
-                        >
-                          <>
-                            <InputLabel>
-                              {i18n.t("userModal.form.defaultMenu")}
-                            </InputLabel>
-
+                          </FormControl>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                          <FormControl variant="outlined" margin="dense" fullWidth>
+                            <InputLabel>{i18n.t("userModal.form.defaultMenu")}</InputLabel>
                             <Field
                               as={Select}
                               label={i18n.t("userModal.form.defaultMenu")}
                               name="defaultMenu"
-                              type="defaultMenu"
                               required
                             >
                               <MenuItem value={"open"}>
@@ -807,10 +835,10 @@ const UserModal = ({ open, onClose, userId }) => {
                                 {i18n.t("userModal.form.defaultMenuClosed")}
                               </MenuItem>
                             </Field>
-                          </>
-                        </FormControl>
+                          </FormControl>
+                        </Grid>
                       </Grid>
-                    </Grid>
+                    </Box>
                   </TabPanel>
                   <TabPanel
                     className={classes.container}

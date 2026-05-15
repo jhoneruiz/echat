@@ -25,6 +25,8 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
+  Box,
+  Tooltip,
 } from "@material-ui/core";
 import MenuIcon from "@material-ui/icons/Menu";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
@@ -96,12 +98,35 @@ const useStyles = makeStyles((theme) => ({
   },
 
   toolbar: {
-    paddingRight: 24,
+    paddingRight: 16,
+    paddingLeft: 12,
     color: theme.palette.dark.main,
-    // Usa a cor primária do tema para o fundo do AppBar
-    background: theme.palette.primary.main, // Mudança principal aqui
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)", // Sombra sutil
-    transition: "all 0.3s ease",
+    background: theme.palette.primary.main,
+    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)",
+    transition: "all 0.25s ease",
+    gap: 4,
+    [theme.breakpoints.down("sm")]: {
+      paddingRight: 8,
+      paddingLeft: 4,
+      gap: 0,
+    },
+  },
+  toolbarRightGroup: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    marginLeft: "auto",
+    [theme.breakpoints.down("sm")]: {
+      gap: 0,
+    },
+    "& .MuiIconButton-root": {
+      color: "white",
+      padding: 8,
+      transition: "background 0.15s",
+      "&:hover": {
+        background: "rgba(255,255,255,0.12)",
+      },
+    },
   },
 
   toolbarIcon: {
@@ -407,6 +432,7 @@ const LoggedInLayout = ({ children, themeToggle }) => {
   const [drawerVariant, setDrawerVariant] = useState("permanent");
 
   const [showOptions, setShowOptions] = useState(false);
+  const [langAnchorEl, setLangAnchorEl] = useState(null);
   const [showAnnouncementsModal, setShowAnnouncementsModal] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
@@ -723,107 +749,84 @@ useEffect(() => {
             )}
           </Typography>
 
-          <VersionControl 
-            onUpdateStart={handleUpdateStart}
-            onUpdateComplete={handleUpdateComplete}
-          />
+          <Box className={classes.toolbarRightGroup}>
+            <VersionControl
+              onUpdateStart={handleUpdateStart}
+              onUpdateComplete={handleUpdateComplete}
+            />
 
-          <div
-            style={{ position: "relative", display: "inline-block" }}
-            className="language-dropdown"
-          >
-            <button
-              onClick={() => setShowOptions(!showOptions)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "white",
-                cursor: "pointer",
-                fontSize: "22px",
-                paddingRight: "20px",
-                paddingTop: "8px",
-              }}
+            {/* Selector de idioma con Menu nativo de MUI */}
+            <Tooltip title="Idioma" arrow>
+              <IconButton onClick={(e) => setLangAnchorEl(e.currentTarget)}>
+                <FaGlobe size={18} style={{ color: "white" }} />
+              </IconButton>
+            </Tooltip>
+            <Menu
+              anchorEl={langAnchorEl}
+              open={Boolean(langAnchorEl)}
+              onClose={() => setLangAnchorEl(null)}
+              getContentAnchorEl={null}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
             >
-              <FaGlobe />
-            </button>
+              {filteredLanguageOptions.map((lang) => (
+                <MenuItem
+                  key={lang.code}
+                  onClick={() => {
+                    handleLanguageChange(lang.code);
+                    setLangAnchorEl(null);
+                  }}
+                  style={{ minWidth: 140 }}
+                >
+                  {lang.label}
+                </MenuItem>
+              ))}
+            </Menu>
 
-            {showOptions && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "35px",
-                  left: "0",
-                  background: "#fff",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                  borderRadius: "8px",
-                  padding: "8px",
-                  zIndex: 1000,
-                  minWidth: "120px",
-                  maxWidth: "200px",
+            <Tooltip title={theme.mode === "dark" ? "Modo claro" : "Modo oscuro"} arrow>
+              <IconButton onClick={colorMode.toggleColorMode}>
+                {theme.mode === "dark" ? (
+                  <Brightness7Icon style={{ color: "white" }} />
+                ) : (
+                  <Brightness4Icon style={{ color: "white" }} />
+                )}
+              </IconButton>
+            </Tooltip>
+
+            <NotificationsVolume setVolume={setVolume} volume={volume} />
+
+            <Tooltip title={i18n.t("mainDrawer.appBar.refresh")} arrow>
+              <IconButton onClick={handleRefreshPage}>
+                <CachedIcon style={{ color: "white" }} />
+              </IconButton>
+            </Tooltip>
+
+            {user.id && <NotificationsPopOver volume={volume} />}
+
+            <AnnouncementsPopover />
+
+            <ChatPopover />
+          </Box>
+
+          <div className="user-menu-wrapper" style={{ marginLeft: 8, display: "flex", alignItems: "center" }}>
+            <Tooltip title={i18n.t("mainDrawer.appBar.user.profile")} arrow>
+              <StyledBadge
+                overlap="circular"
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "right",
                 }}
+                variant="dot"
+                onClick={handleMenu}
+                style={{ cursor: "pointer" }}
               >
-                {filteredLanguageOptions.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => handleLanguageChange(lang.code)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      display: "block",
-                      width: "100%",
-                      padding: "4px",
-                    }}
-                  >
-                    {lang.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <IconButton edge="start" onClick={colorMode.toggleColorMode}>
-            {theme.mode === "dark" ? (
-              <Brightness7Icon style={{ color: "white" }} />
-            ) : (
-              <Brightness4Icon style={{ color: "white" }} />
-            )}
-          </IconButton>
-
-          <NotificationsVolume setVolume={setVolume} volume={volume} />
-
-          <IconButton
-            onClick={handleRefreshPage}
-            aria-label={i18n.t("mainDrawer.appBar.refresh")}
-            color="inherit"
-          >
-            <CachedIcon style={{ color: "white" }} />
-          </IconButton>
-
-          {/* <DarkMode themeToggle={themeToggle} /> */}
-
-          {user.id && <NotificationsPopOver volume={volume} />}
-
-          <AnnouncementsPopover />
-
-          <ChatPopover />
-
-          <div className="user-menu-wrapper">
-            <StyledBadge
-              overlap="circular"
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "right",
-              }}
-              variant="dot"
-              onClick={handleMenu}
-            >
-              <Avatar
-                alt="Equipechat"
-                className={classes.avatar2}
-                src={profileUrl}
-              />
-            </StyledBadge>
+                <Avatar
+                  alt="Equipechat"
+                  className={classes.avatar2}
+                  src={profileUrl}
+                />
+              </StyledBadge>
+            </Tooltip>
 
             <UserModal
               open={userModalOpen}

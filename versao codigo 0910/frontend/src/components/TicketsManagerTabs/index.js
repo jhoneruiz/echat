@@ -59,6 +59,8 @@ const useStyles = makeStyles((theme) => ({
     overflow: "hidden",
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
+    border: "none",
+    background: theme.mode === "light" ? "#fafbfc" : "transparent",
   },
 
   tabsHeader: {
@@ -167,31 +169,41 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: "space-between",
     alignItems: "center",
     background: theme.palette.optionsBackground,
-    borderRadius: 8,
-    borderColor: "#aaa",
-    borderWidth: "1px",
-    borderStyle: "solid",
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(1),
-    marginLeft: theme.spacing(1),
-    marginRight: theme.spacing(1),
-    padding: theme.spacing(0.5),
+    borderRadius: 12,
+    border: `1px solid ${theme.palette.divider}`,
+    margin: theme.spacing(1),
+    padding: theme.spacing(1, 1.5),
+    boxShadow: theme.mode === "light"
+      ? "0 1px 2px rgba(0,0,0,0.04)"
+      : "0 1px 2px rgba(0,0,0,0.2)",
+    "& > .MuiGrid-container": {
+      gap: 4,
+    },
+    [theme.breakpoints.down("sm")]: {
+      padding: theme.spacing(0.75, 1),
+      margin: theme.spacing(0.75),
+    },
   },
 
   serachInputWrapper: {
     flex: 1,
-    height: 40,
+    height: 42,
     background: theme.palette.total,
     display: "flex",
-    borderRadius: 40,
-    padding: 4,
-    borderColor: "#aaa",
-    borderWidth: "1px",
-    borderStyle: "solid",
-    marginTop: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
-    marginLeft: theme.spacing(0.5),
-    marginRight: theme.spacing(0.5),
+    alignItems: "center",
+    borderRadius: 24,
+    padding: theme.spacing(0.5, 1),
+    border: `1px solid ${theme.palette.divider}`,
+    margin: theme.spacing(1),
+    transition: "border-color 0.15s, box-shadow 0.15s",
+    "&:focus-within": {
+      borderColor: theme.palette.primary.main,
+      boxShadow: `0 0 0 3px ${theme.palette.primary.main}22`,
+    },
+    [theme.breakpoints.down("sm")]: {
+      height: 38,
+      margin: theme.spacing(0.75),
+    },
   },
 
   searchIcon: {
@@ -344,42 +356,50 @@ const useStyles = makeStyles((theme) => ({
       color: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
     },
   },
-  // Classe padronizada para todos os botões de ação
+  // Botones de acción modernos y consistentes
   standardButton: {
-    height: 30,
-    width: 30,
-    border: "2px solid #aaa",
-    borderRadius: 8,
-    marginRight: 8,
+    height: 36,
+    width: 36,
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: 10,
+    marginRight: 6,
     padding: 0,
     minWidth: 'auto',
+    transition: "all 0.15s ease",
     "&:hover": {
-      borderColor: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
+      borderColor: theme.palette.primary.main,
+      backgroundColor: theme.mode === "light"
+        ? "rgba(0,0,0,0.04)"
+        : "rgba(255,255,255,0.06)",
     },
     [theme.breakpoints.down('sm')]: {
-      height: 28,
-      width: 28,
-      marginRight: 6,
+      height: 32,
+      width: 32,
+      marginRight: 4,
+      borderRadius: 8,
     },
-    // Ajuste para monitores pequenos (11-13 polegadas)
     '@media (max-width: 1366px)': {
-      height: 28,
-      width: 28,
-      marginRight: 6,
+      height: 32,
+      width: 32,
+      marginRight: 4,
     },
   },
   activeButton: {
-    borderColor: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
-    borderWidth: "3px",
+    borderColor: theme.palette.primary.main,
+    borderWidth: 2,
+    backgroundColor: theme.mode === "light"
+      ? `${theme.palette.primary.main}15`
+      : `${theme.palette.primary.main}30`,
   },
   standardIcon: {
-    color: "#aaa",
-    fontSize: 18,
+    color: theme.palette.text.secondary,
+    fontSize: 20,
+    transition: "color 0.15s",
     "&:hover": {
-      color: theme.mode === "light" ? theme.palette.primary.main : "#FFF",
+      color: theme.palette.primary.main,
     },
     [theme.breakpoints.down('sm')]: {
-      fontSize: 16,
+      fontSize: 18,
     },
   },
   activeIcon: {

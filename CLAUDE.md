@@ -57,6 +57,21 @@ El código base principal se encuentra en la subcarpeta `versao codigo 0910`.
 - Para ver el error real de Meta (no el genérico "Erro ao enviar a mensagem"): buscar `[MetaService] sendMessage - ` en `pm2 logs Equipechat-api-oficial`.
 - Hay DOS instancias de `TemplateMetaModal` (en `TicketActionButtonsCustom` y `MessageInput`). Cualquier cambio de props debe aplicarse en ambas.
 
+# Reglas de diseño UI (es-MX, modernización 2026)
+- **Stack visual**: Material-UI v4 (NO v5). Verificar exports antes de importar de `@material-ui/icons`.
+- **Lenguaje y tono**: Español de México neutral. Nada de portuñol. Mensajes cortos, claros, accionables.
+- **Layout de campos**: usar tarjetas/secciones espaciadas (no grids 50/50 apretados). Cada bloque relevante con título + descripción corta debajo (`<Typography variant="caption">`) explicando qué hace.
+- **Toggles vs Selects**: para "Habilitar/Deshabilitar" usar `<Switch>`, no `<Select>` con MenuItem true/false.
+- **Iconos contextuales**: usar emojis (🎫 👥 📜 etc.) o íconos MUI v4 al inicio de cada sección/tarjeta para escaneo visual rápido.
+- **Spacing mínimo**: padding 12-16px en bloques. Margen 8-12px entre secciones. Nunca chocar 2 elementos sin aire.
+- **Hover states**: filas con switches/acciones deben tener hover sutil (`background: #F8FAFC` light / `rgba(255,255,255,0.04)` dark) para feedback.
+- **Mobile-first responsive**: usar `useMediaQuery(theme.breakpoints.down('sm'))` y reducir padding/columnas en móvil. Toolbars con muchos íconos → colapsar en menú overflow `<MoreVert>` en pantalla chica.
+- **Colores acento del proyecto**: rojo Equipechat `#E11D48` / naranja agente `#FF6B35`. Usar para CTAs y headers, no para texto de cuerpo.
+- **Modal de edición**: Header con título + descripción → tabs scrollables → contenido con padding generoso → footer fijo con botones Cancelar/Guardar (usar `Box` con `position: sticky` o `DialogActions`).
+- **Validación visible**: errores de Formik via `error={touched.X && Boolean(errors.X)}` + `helperText={touched.X && errors.X}`. Si error está en otro tab, saltar al tab + toast con el mensaje.
+- **Sin recargar página**: cambios de switch/select se reflejan inmediato vía `setFieldValue`. Save explícito con botón.
+- **Patrón de variables/chips**: si hay marcadores como `{{firstName}}`, mostrar chips arriba del campo que los inserten en cursor (no copiar al clipboard).
+
 # WhatsApp Cloud API — Webhooks (configuración Meta)
 - HAY DOS niveles de suscripción de webhook que se necesitan AMBOS:
   1. App level — `webhook_configuration.application` apunta a la URL de api_oficial. Se configura en Meta Developer Portal.
