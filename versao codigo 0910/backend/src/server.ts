@@ -11,6 +11,7 @@ import BullQueue from './libs/queue';
 import { startQueueProcess } from "./queues";
 // Importar diretamente do arquivo, não do index de jobs
 import { startLidSyncJob } from "./jobs/LidSyncJob";
+import { startPendingTicketsAlertJob } from "./jobs/PendingTicketsAlertJob";
 // import { ScheduledMessagesJob, ScheduleMessagesGenerateJob, ScheduleMessagesEnvioJob, ScheduleMessagesEnvioForaHorarioJob } from "./wbotScheduledMessages";
 
 const server = app.listen(process.env.PORT, async () => {
@@ -36,6 +37,9 @@ const server = app.listen(process.env.PORT, async () => {
 
   // Iniciar job de sincronização de LIDs
   startLidSyncJob();
+
+  // Iniciar job de alerta de tickets pendientes sin atender (cada 3 min)
+  startPendingTicketsAlertJob();
 
   logger.info(`Server started on port: ${process.env.PORT}`);
 });

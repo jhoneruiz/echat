@@ -73,6 +73,14 @@ class Queue extends Model<Queue> {
   })
   schedules: [];
 
+  // Si > 0, cuando un ticket de esta cola lleva más de N minutos en estado
+  // 'pending', un job cron envía notificación push de recordatorio a todos
+  // los agentes asignados a la cola. 0 = deshabilitado.
+  @Default(0)
+  @AllowNull(false)
+  @Column
+  pendingTimeoutMinutes: number;
+
   @CreatedAt
   createdAt: Date;
 

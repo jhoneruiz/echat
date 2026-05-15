@@ -889,7 +889,9 @@ const UpdateTicketService = async ({
         rated: false,
         whatsappId: ticket.whatsappId,
         userId: ticket.userId,
-        queueId: ticket.queueId
+        queueId: ticket.queueId,
+        // Reset alert flag: si vuelve a caer en pending después, podrá alertar de nuevo.
+        pendingAlertSentAt: null
       });
 
       //loga inicio de atendimento

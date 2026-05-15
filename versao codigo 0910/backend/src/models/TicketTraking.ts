@@ -83,6 +83,12 @@ class TicketTraking extends Model<TicketTraking> {
   @Column
   chatbotAt: Date;
 
+  // Marca cuándo se envió la última alerta push de "ticket pendiente sin atender".
+  // Se setea por PendingTicketsAlertJob para evitar re-enviar.
+  // Se resetea (NULL) cuando el ticket pasa de pending → open.
+  @Column
+  pendingAlertSentAt: Date;
+
   @ForeignKey(() => Queue)
   @Column
   queueId: number;

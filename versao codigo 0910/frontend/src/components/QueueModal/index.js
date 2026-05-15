@@ -4,7 +4,7 @@ import * as Yup from "yup";
 import { Formik, FieldArray, Form, Field } from "formik";
 import { toast } from "react-toastify";
 
-import { FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Paper, Select, Tab, Tabs } from "@material-ui/core";
+import { Box, FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Paper, Select, Tab, Tabs, Typography } from "@material-ui/core";
 
 import { makeStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
@@ -132,7 +132,8 @@ const QueueModal = ({ open, onClose, queueId, onEdit }) => {
     fileListId: "",
     closeTicket: false,
     typeRandomMode: "RANDOM",
-    randomizeImmediate: false
+    randomizeImmediate: false,
+    pendingTimeoutMinutes: 0
   };
 
   const [colorPickerModalOpen, setColorPickerModalOpen] = useState(false);
@@ -248,7 +249,8 @@ const QueueModal = ({ open, onClose, queueId, onEdit }) => {
         fileListId: "",
         closeTicket: false,
         typeRandomMode: "RANDOM",
-        randomizeImmediate: false
+        randomizeImmediate: false,
+        pendingTimeoutMinutes: 0
       });
     };
   }, [queueId, open]);
@@ -712,6 +714,42 @@ const QueueModal = ({ open, onClose, queueId, onEdit }) => {
                         margin="dense"
                       />
                     )}
+
+                    {/* SECCIÓN: Alerta de tickets pendientes sin atender */}
+                    <Box
+                      mt={2}
+                      mb={1}
+                      p={2}
+                      style={{
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 12,
+                        background: "rgba(248,250,252,0.4)",
+                      }}
+                    >
+                      <Typography style={{ fontSize: "0.92rem", fontWeight: 600, marginBottom: 4 }}>
+                        ⏱️ Alerta de tickets pendientes
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="textSecondary"
+                        style={{ display: "block", marginBottom: 12, lineHeight: 1.4 }}
+                      >
+                        Si un ticket en esta cola lleva más de N minutos en pendiente sin que
+                        nadie lo tome, todos los agentes asignados a esta cola reciben una
+                        notificación push de recordatorio. Pon 0 para desactivar.
+                      </Typography>
+                      <Field
+                        as={TextField}
+                        type="number"
+                        name="pendingTimeoutMinutes"
+                        label="Tiempo límite (minutos)"
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        inputProps={{ min: 0, max: 1440 }}
+                        helperText="Recomendado: 5-15 min para soporte. 0 = deshabilitado."
+                      />
+                    </Box>
                   </div>
 
                   <Typography variant="subtitle1">

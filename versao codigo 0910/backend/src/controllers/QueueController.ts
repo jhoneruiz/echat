@@ -40,7 +40,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     fileListId,
     closeTicket,
     typeRandomMode,
-    randomizeImmediate
+    randomizeImmediate,
+    pendingTimeoutMinutes
   } = req.body;
   const { companyId } = req.user;
 
@@ -49,17 +50,18 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     color,
     greetingMessage,
     companyId,
-    outOfHoursMessage, 
-    tempoRoteador: tempoRoteador ===""? 0 : tempoRoteador, 
+    outOfHoursMessage,
+    tempoRoteador: tempoRoteador ===""? 0 : tempoRoteador,
     ativarRoteador,
     schedules,
-    chatbots, 
+    chatbots,
     orderQueue: orderQueue === "" ? null : orderQueue,
     integrationId: integrationId === "" ? null : integrationId,
     fileListId: fileListId === "" ? null : fileListId,
     closeTicket,
     typeRandomMode,
-    randomizeImmediate
+    randomizeImmediate,
+    pendingTimeoutMinutes: pendingTimeoutMinutes === "" || pendingTimeoutMinutes == null ? 0 : Number(pendingTimeoutMinutes)
   });
 
   const io = getIO();
@@ -102,24 +104,26 @@ export const update = async (
     fileListId,
     closeTicket,
     typeRandomMode,
-    randomizeImmediate
+    randomizeImmediate,
+    pendingTimeoutMinutes
   } = req.body;
 
-  const queue = await UpdateQueueService(queueId, 
+  const queue = await UpdateQueueService(queueId,
     {name,
     color,
     greetingMessage,
-    outOfHoursMessage, 
-    tempoRoteador: tempoRoteador ===""? 0 : tempoRoteador, 
+    outOfHoursMessage,
+    tempoRoteador: tempoRoteador ===""? 0 : tempoRoteador,
     ativarRoteador,
     schedules,
-    chatbots, 
+    chatbots,
     orderQueue: orderQueue === "" ? null : orderQueue,
     integrationId: integrationId === "" ? null : integrationId,
     fileListId: fileListId === "" ? null : fileListId,
     closeTicket,
     typeRandomMode,
-    randomizeImmediate
+    randomizeImmediate,
+    pendingTimeoutMinutes: pendingTimeoutMinutes === "" || pendingTimeoutMinutes == null ? 0 : Number(pendingTimeoutMinutes)
   },
     companyId);
 

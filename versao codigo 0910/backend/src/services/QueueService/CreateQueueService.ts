@@ -22,6 +22,7 @@ interface QueueData {
   closeTicket?: boolean;
   typeRandomMode?: string;
   randomizeImmediate?: boolean;
+  pendingTimeoutMinutes?: number;
 }
 
 const CreateQueueService = async (queueData: QueueData): Promise<Queue> => {
