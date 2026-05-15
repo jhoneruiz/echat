@@ -1030,7 +1030,7 @@ const MessagesList = ({
       
       // Fallback para messageUser se não estiver presente
       if (!messageUser || messageUser.trim() === "") {
-        messageUser = "Olá! Tenho interesse e queria mais informações, por favor.";
+        messageUser = "¡Hola! Me interesa y quisiera más información, por favor.";
       }
       
       return <AdMetaPreview 
@@ -1107,7 +1107,7 @@ const MessagesList = ({
             }}>
               <CircularProgress size={30} />
               <Typography variant="caption" color="textSecondary">
-                Carregando vídeo...
+                Cargando video...
               </Typography>
             </div>
           )}
@@ -1154,7 +1154,7 @@ const MessagesList = ({
             <source src={message.mediaUrl} type="video/ogg" />
             
             {/* Fallback para navegadores antigos */}
-            Seu navegador não suporta reprodução de vídeo.
+            Tu navegador no soporta la reproducción de video.
           </video>
           
           {/* Error state */}
@@ -1168,7 +1168,7 @@ const MessagesList = ({
               marginTop: "8px"
             }}>
               <Typography variant="body2" style={{ marginBottom: "12px" }}>
-                ❌ Erro ao carregar vídeo
+                ❌ Error al cargar el video
               </Typography>
               <Button
                 startIcon={<GetApp />}
@@ -1239,7 +1239,7 @@ const MessagesList = ({
           key={`timestamp-${message.id}`}
         >
           <div className={classes.dailyTimestampText}>
-            {today === format(parseISO(displayedMessages[index].createdAt), "dd/MM/yyyy") ? "HOJE" : format(parseISO(displayedMessages[index].createdAt), "dd/MM/yyyy")}
+            {today === format(parseISO(displayedMessages[index].createdAt), "dd/MM/yyyy") ? "HOY" : format(parseISO(displayedMessages[index].createdAt), "dd/MM/yyyy")}
           </div>
         </span>
       );
@@ -1255,7 +1255,7 @@ const MessagesList = ({
               key={`timestamp-${message.id}`}
             >
               <div className={classes.dailyTimestampText}>
-                {today === format(parseISO(displayedMessages[index].createdAt), "dd/MM/yyyy") ? "HOJE" : format(parseISO(displayedMessages[index].createdAt), "dd/MM/yyyy")}
+                {today === format(parseISO(displayedMessages[index].createdAt), "dd/MM/yyyy") ? "HOY" : format(parseISO(displayedMessages[index].createdAt), "dd/MM/yyyy")}
               </div>
             </span>
           );
@@ -1405,7 +1405,7 @@ const MessagesList = ({
                   <source src={message.quotedMsg.mediaUrl} type="video/webm" />
                   <source src={message.quotedMsg.mediaUrl} type="video/ogg" />
                   <div style={{ padding: "10px", textAlign: "center", fontSize: "12px", color: "#999" }}>
-                    ❌ Erro ao carregar vídeo
+                    ❌ Error al cargar el video
                   </div>
                 </video>
               </div>
@@ -1413,7 +1413,7 @@ const MessagesList = ({
           }
           {message.quotedMsg.mediaType === "contactMessage"
             && (
-              "Contato"
+              "Contacto"
             )
           }
           {message.quotedMsg.mediaType === "application"
@@ -1702,7 +1702,7 @@ const MessagesList = ({
 
                         )}
                         {!xmlRegex.test(message.body) && (
-                          <MarkdownWrapper>{(lgpdDeleteMessage && message.isDeleted) ? "🚫 _Mensagem apagada_ " :
+                          <MarkdownWrapper>{(lgpdDeleteMessage && message.isDeleted) ? "🚫 _Mensaje eliminado_ " :
                             message.body
                           }</MarkdownWrapper>)}
 
@@ -1723,7 +1723,7 @@ const MessagesList = ({
                   {renderReactionSummary(message)}
 
                   <span className={classes.timestamp}>
-                    {message.isEdited ? "Editada " + format(parseISO(message.createdAt), "HH:mm") : format(parseISO(message.createdAt), "HH:mm")}
+                    {message.isEdited ? "Editado " + format(parseISO(message.createdAt), "HH:mm") : format(parseISO(message.createdAt), "HH:mm")}
                   </span>
                 </div>
               </div>
@@ -1866,7 +1866,7 @@ const MessagesList = ({
                   {renderReactionSummary(message)}
 
                   <span className={classes.timestamp}>
-                    {message.isEdited ? "Editada " + format(parseISO(message.createdAt), "HH:mm") : format(parseISO(message.createdAt), "HH:mm")}
+                    {message.isEdited ? "Editado " + format(parseISO(message.createdAt), "HH:mm") : format(parseISO(message.createdAt), "HH:mm")}
                     {renderMessageAck(message)}
                   </span>
                 </div>
@@ -1927,8 +1927,8 @@ const MessagesList = ({
           )}
 
           <span>
-            Você tem 24h para responder após receber uma mensagem, de acordo
-            com as políticas da Meta.
+            Tienes 24h para responder después de recibir un mensaje, de acuerdo
+            con las políticas de Meta.
           </span>
         </div>
       )}
