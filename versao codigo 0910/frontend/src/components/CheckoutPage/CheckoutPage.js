@@ -290,11 +290,10 @@ export default function CheckoutPage(props) {
       ) : !hasAnyMethod ? (
         <div className={classes.noMethodsBox}>
           <Typography className={classes.noMethodsText} style={{ fontWeight: 600, marginBottom: 4 }}>
-            No hay métodos de pago configurados
+            Pagos no disponibles en este momento
           </Typography>
           <Typography className={classes.noMethodsText}>
-            Configura un token de Mercado Pago, Stripe o Asaas en
-            Configuración → Pagos para poder cobrar.
+            Por favor contacta al soporte para procesar tu pago.
           </Typography>
         </div>
       ) : (
