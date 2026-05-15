@@ -292,6 +292,81 @@ const PromptModal = ({ open, onClose, promptId }) => {
   const [testMessages, setTestMessages] = useState([]);
   const [testInput, setTestInput] = useState("");
   const [testLoading, setTestLoading] = useState(false);
+  // Knowledge items (archivos, URLs, textos por categoría)
+  const [knowledgeItems, setKnowledgeItems] = useState([]);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemContent, setNewItemContent] = useState("");
+  const [newItemUrl, setNewItemUrl] = useState("");
+  const [newItemFile, setNewItemFile] = useState(null);
+  const [savingItem, setSavingItem] = useState(false);
+
+  const loadKnowledgeItems = async () => {
+    if (!promptId) {
+      setKnowledgeItems([]);
+      return;
+    }
+    try {
+      const { data } = await api.get(`/prompt/${promptId}/knowledge`);
+      setKnowledgeItems(data || []);
+    } catch (err) {
+      setKnowledgeItems([]);
+    }
+  };
+
+  const handleAddKnowledgeItem = async () => {
+    if (!promptId) {
+      toast.error("Guarda el agente primero para agregar elementos a la base de conocimiento");
+      return;
+    }
+    if (!newItemName.trim()) {
+      toast.error("El nombre del item es obligatorio");
+      return;
+    }
+    if (!newItemContent.trim() && !newItemUrl.trim() && !newItemFile) {
+      toast.error("Agrega texto, URL o archivo para el item");
+      return;
+    }
+    setSavingItem(true);
+    try {
+      const formData = new FormData();
+      // IMPORTANTE: typeArch debe ir ANTES del archivo para que multer lo lea
+      // al determinar la carpeta de destino.
+      formData.append("typeArch", "knowledge");
+      formData.append("name", newItemName.trim());
+      if (newItemContent.trim()) formData.append("content", newItemContent.trim());
+      if (newItemUrl.trim()) {
+        formData.append("url", newItemUrl.trim());
+        formData.append("type", "url");
+      }
+      if (newItemFile) {
+        formData.append("file", newItemFile);
+      }
+      await api.post(`/prompt/${promptId}/knowledge`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      toast.success("Item agregado");
+      setNewItemName("");
+      setNewItemContent("");
+      setNewItemUrl("");
+      setNewItemFile(null);
+      await loadKnowledgeItems();
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setSavingItem(false);
+    }
+  };
+
+  const handleRemoveKnowledgeItem = async (itemId) => {
+    if (!window.confirm("¿Eliminar este item del conocimiento?")) return;
+    try {
+      await api.delete(`/prompt/${promptId}/knowledge/${itemId}`);
+      toast.success("Item eliminado");
+      await loadKnowledgeItems();
+    } catch (err) {
+      toastError(err);
+    }
+  };
 
   useEffect(() => {
     const loadQueues = async () => {
@@ -310,6 +385,7 @@ const PromptModal = ({ open, onClose, promptId }) => {
       if (!promptId) {
         setPrompt(initialState);
         setTab(0);
+        setKnowledgeItems([]);
         return;
       }
       try {
@@ -319,7 +395,11 @@ const PromptModal = ({ open, onClose, promptId }) => {
         toastError(err);
       }
     };
-    if (open) fetchPrompt();
+    if (open) {
+      fetchPrompt();
+      loadKnowledgeItems();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promptId, open]);
 
   const handleClose = () => {
@@ -833,24 +913,190 @@ const PromptModal = ({ open, onClose, promptId }) => {
 
               {/* TAB 4: CONOCIMIENTO */}
               <TabPanel value={tab} index={3}>
-                <Typography className={classes.fieldLabel}>Base de Conocimiento</Typography>
+                <Typography className={classes.fieldLabel}>Base de Conocimientos</Typography>
                 <Typography className={classes.helperText} style={{ marginBottom: 12 }}>
-                  Pega aquí información de referencia (precios, políticas, FAQs, catálogo,
-                  horarios, etc.) que el agente usará como contexto para responder.
+                  Añada texto, URL, archivos PDF, audio y vídeo para que el agente los utilice
+                  como referencia.
                 </Typography>
-                <Field
-                  as={TextField}
-                  name="knowledge"
-                  placeholder="Ejemplo:&#10;HORARIO DE ATENCIÓN: Lunes a Viernes 9:00 a 18:00, Sábados 9:00 a 14:00.&#10;DIRECCIÓN: Av. Reforma 123, CDMX.&#10;PRECIOS:&#10;  - Servicio básico: $500&#10;  - Servicio premium: $1,200&#10;FAQ:&#10;  - ¿Aceptan tarjetas? Sí, todas las marcas.&#10;  - ¿Hacen envíos? Sí, a toda la república."
-                  multiline
-                  rows={12}
-                  variant="outlined"
-                  fullWidth
-                />
-                <Typography className={classes.helperText} style={{ marginTop: 8 }}>
-                  💡 Se incluye automáticamente en cada conversación. Mantén el texto conciso
-                  (máx ~2000 palabras). Subida de archivos PDF/URLs próximamente.
+
+                {/* Texto general (siempre incluido en system prompt) */}
+                <Box mb={2}>
+                  <Typography className={classes.fieldLabel} style={{ fontSize: "0.78rem" }}>
+                    📝 Contexto general (siempre se incluye)
+                  </Typography>
+                  <Field
+                    as={TextField}
+                    name="knowledge"
+                    placeholder="Ej: HORARIO L-V 9-18. DIRECCIÓN: Av. Reforma 123. PRECIOS: básico $500, premium $1,200..."
+                    multiline
+                    rows={4}
+                    variant="outlined"
+                    fullWidth
+                    size="small"
+                  />
+                </Box>
+
+                <Divider style={{ margin: "16px 0" }} />
+
+                {/* Items específicos (Q&A con archivos) */}
+                <Typography className={classes.fieldLabel} style={{ fontSize: "0.78rem" }}>
+                  📦 Items con recursos (el agente puede enviar el archivo cuando aplique)
                 </Typography>
+
+                {!promptId && (
+                  <Box className={classes.knowledgeBox} style={{ padding: 12, marginTop: 8 }}>
+                    💾 Guarda el agente primero para poder agregar items con archivos
+                  </Box>
+                )}
+
+                {promptId && (
+                  <>
+                    {/* Lista de items existentes */}
+                    <Box mt={1} mb={2} style={{ maxHeight: 200, overflowY: "auto" }}>
+                      {knowledgeItems.length === 0 ? (
+                        <Typography variant="caption" color="textSecondary">
+                          Sin items todavía. Agrega uno abajo.
+                        </Typography>
+                      ) : (
+                        knowledgeItems.map((item) => (
+                          <Box
+                            key={item.id}
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            style={{
+                              padding: 8,
+                              border: `1px solid ${theme.palette.divider}`,
+                              borderRadius: 8,
+                              marginBottom: 6,
+                              fontSize: "0.8rem",
+                            }}
+                          >
+                            <Box flex={1} mr={1}>
+                              <Typography style={{ fontSize: "0.82rem", fontWeight: 600 }}>
+                                {item.type === "image" && "🖼️ "}
+                                {item.type === "pdf" && "📄 "}
+                                {item.type === "audio" && "🎵 "}
+                                {item.type === "video" && "🎬 "}
+                                {item.type === "url" && "🔗 "}
+                                {item.type === "text" && "📝 "}
+                                {item.name}
+                              </Typography>
+                              {item.content && (
+                                <Typography
+                                  variant="caption"
+                                  color="textSecondary"
+                                  style={{ display: "block" }}
+                                >
+                                  {item.content.substring(0, 100)}
+                                  {item.content.length > 100 ? "..." : ""}
+                                </Typography>
+                              )}
+                              {item.fileName && (
+                                <Typography variant="caption" color="textSecondary" style={{ display: "block" }}>
+                                  📎 {item.fileName}
+                                </Typography>
+                              )}
+                              {item.url && (
+                                <Typography variant="caption" color="textSecondary" style={{ display: "block" }}>
+                                  🔗 {item.url}
+                                </Typography>
+                              )}
+                            </Box>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleRemoveKnowledgeItem(item.id)}
+                              title="Eliminar"
+                            >
+                              <Close fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        ))
+                      )}
+                    </Box>
+
+                    {/* Form para agregar nuevo item */}
+                    <Box
+                      p={1.5}
+                      style={{
+                        border: `1px dashed ${theme.palette.divider}`,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Typography variant="caption" color="textSecondary" style={{ marginBottom: 6, display: "block" }}>
+                        ➕ Agregar nuevo item
+                      </Typography>
+                      <TextField
+                        placeholder="Nombre (ej: 'Catálogo de colores')"
+                        variant="outlined"
+                        fullWidth
+                        size="small"
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        style={{ marginBottom: 6 }}
+                      />
+                      <TextField
+                        placeholder="Respuesta / descripción (lo que el agente debe decir cuando aplique)"
+                        variant="outlined"
+                        fullWidth
+                        size="small"
+                        multiline
+                        rows={2}
+                        value={newItemContent}
+                        onChange={(e) => setNewItemContent(e.target.value)}
+                        style={{ marginBottom: 6 }}
+                      />
+                      <TextField
+                        placeholder="URL externa (opcional)"
+                        variant="outlined"
+                        fullWidth
+                        size="small"
+                        value={newItemUrl}
+                        onChange={(e) => setNewItemUrl(e.target.value)}
+                        style={{ marginBottom: 6 }}
+                      />
+                      <Box display="flex" alignItems="center" gap={1} mb={1}>
+                        <Button
+                          variant="outlined"
+                          component="label"
+                          size="small"
+                          style={{ textTransform: "none" }}
+                        >
+                          📎 {newItemFile ? newItemFile.name : "Adjuntar archivo (imagen, PDF, audio, video)"}
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/*,video/*,audio/*,.pdf"
+                            onChange={(e) => setNewItemFile(e.target.files?.[0] || null)}
+                          />
+                        </Button>
+                        {newItemFile && (
+                          <IconButton size="small" onClick={() => setNewItemFile(null)}>
+                            <Close fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                      <Button
+                        variant="contained"
+                        onClick={handleAddKnowledgeItem}
+                        disabled={savingItem}
+                        style={{
+                          backgroundColor: "#FF6B35",
+                          color: "#fff",
+                          textTransform: "none",
+                        }}
+                        fullWidth
+                      >
+                        {savingItem ? <CircularProgress size={18} color="inherit" /> : "Agregar item"}
+                      </Button>
+                    </Box>
+
+                    <Typography className={classes.helperText} style={{ marginTop: 12 }}>
+                      💡 Cuando un cliente pregunte algo relacionado, el agente enviará la respuesta de texto +
+                      el archivo automáticamente.
+                    </Typography>
+                  </>
+                )}
               </TabPanel>
 
               {/* TAB 5: PROBAR */}

@@ -3202,8 +3202,12 @@ const checkTemporaryAI = async (
 // Marcador de transferencia que el modelo debe colocar al inicio de la respuesta cuando detecta intención de transferir.
 const TRANSFER_MARKER = "[TRANSFERIR]";
 
+// Carga lazy del modelo para evitar import circular si no estaba presente en el bundle
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const PromptKnowledgeModel = require("../../models/PromptKnowledge").default;
+
 // Construye el system prompt enriquecido con todos los campos configurables del agente.
-const buildAgentSystemPrompt = (prompt: any, contact: Contact): string => {
+const buildAgentSystemPrompt = (prompt: any, contact: Contact, knowledgeItems: any[] = []): string => {
   const parts: string[] = [];
 
   const tones: Record<string, string> = {
@@ -3246,9 +3250,31 @@ const buildAgentSystemPrompt = (prompt: any, contact: Contact): string => {
     parts.push(`Reglas adicionales:\n${prompt.responseRules}`);
   }
 
-  // Base de conocimiento (texto de referencia)
+  // Base de conocimiento (texto de referencia general)
   if (prompt.knowledge && prompt.knowledge.trim()) {
     parts.push(`Información de referencia que puedes usar para responder (NO la copies literalmente; úsala como contexto):\n${prompt.knowledge}`);
+  }
+
+  // Items de conocimiento con archivos/URLs (catálogos, imágenes, PDFs, etc.)
+  if (knowledgeItems && knowledgeItems.length > 0) {
+    const itemsList = knowledgeItems.map((it: any) => {
+      const desc = it.content ? ` — ${it.content.substring(0, 200)}` : "";
+      const mediaTag =
+        it.type === "image" ? " (tiene IMAGEN adjunta)" :
+        it.type === "pdf"   ? " (tiene PDF adjunto)" :
+        it.type === "audio" ? " (tiene AUDIO adjunto)" :
+        it.type === "video" ? " (tiene VIDEO adjunto)" :
+        it.type === "url"   ? ` (URL: ${it.url})` :
+        "";
+      return `- [ID:${it.id}] "${it.name}"${mediaTag}${desc}`;
+    }).join("\n");
+
+    parts.push(
+      `Tienes los siguientes recursos disponibles que puedes ENVIAR al cliente si la pregunta lo requiere:\n${itemsList}\n\n` +
+      `Cuando un recurso sea útil para responder al cliente, INCLUYE en tu respuesta el marcador exacto [ENVIAR:N] (donde N es el ID del recurso entre paréntesis cuadrados). ` +
+      `Puedes usar varios marcadores. El sistema enviará automáticamente esos archivos al cliente después de tu mensaje. ` +
+      `Ejemplo: "Aquí está nuestro catálogo de colores [ENVIAR:5]". NO escribas la URL ni describas el archivo en lugar del marcador — usa el marcador.`
+    );
   }
 
   // Personalización con nombre
@@ -3273,13 +3299,14 @@ const buildAgentSystemPrompt = (prompt: any, contact: Contact): string => {
   return parts.join("\n\n");
 };
 
-// Aplica post-procesamiento a la respuesta de OpenAI: detecta transfer y aplica límite de caracteres.
+// Aplica post-procesamiento a la respuesta de OpenAI: detecta transfer, marcadores de envío y aplica límite de caracteres.
 const processAgentResponse = async (
   response: string,
   prompt: any,
   ticket: Ticket,
-  contact: Contact
-): Promise<{ text: string; transferred: boolean }> => {
+  contact: Contact,
+  knowledgeItems: any[] = []
+): Promise<{ text: string; transferred: boolean; itemsToSend: any[] }> => {
   let text = response || "";
   let transferred = false;
 
@@ -3292,12 +3319,79 @@ const processAgentResponse = async (
     }
   }
 
+  // Detectar marcadores [ENVIAR:N] y resolver a items de conocimiento
+  const itemsToSend: any[] = [];
+  const markerRegex = /\[ENVIAR:(\d+)\]/g;
+  const matches = Array.from(text.matchAll(markerRegex));
+  for (const m of matches) {
+    const id = Number(m[1]);
+    const item = knowledgeItems.find((i: any) => i.id === id);
+    if (item) itemsToSend.push(item);
+  }
+  // Limpiar marcadores del texto
+  text = text.replace(markerRegex, "").replace(/\s{2,}/g, " ").trim();
+
   // Aplicar límite de caracteres si está configurado
   if (prompt.charLimit && prompt.charLimit > 0 && text.length > prompt.charLimit) {
     text = text.substring(0, prompt.charLimit - 3).trim() + "...";
   }
 
-  return { text, transferred };
+  return { text, transferred, itemsToSend };
+};
+
+// Envía un item de conocimiento (imagen/pdf/audio/video) al cliente vía WhatsApp.
+const sendKnowledgeItem = async (
+  wbot: Session,
+  msg: proto.IWebMessageInfo,
+  ticket: Ticket,
+  contact: Contact,
+  ticketTraking: TicketTraking,
+  item: any
+): Promise<void> => {
+  const publicFolder = path.resolve(
+    __dirname,
+    "..",
+    "..",
+    "..",
+    "public",
+    `company${ticket.companyId}`,
+    "knowledge"
+  );
+  const filePath = path.resolve(publicFolder, item.mediaPath || "");
+
+  try {
+    if (!item.mediaPath || !fs.existsSync(filePath)) {
+      // Sin archivo físico (item solo de texto/URL) — fallback: enviar URL si tiene
+      if (item.type === "url" && item.url) {
+        const sent = await wbot.sendMessage(msg.key.remoteJid!, { text: item.url });
+        await verifyMessage(sent!, ticket, contact);
+      }
+      return;
+    }
+
+    const fileBuffer = fs.readFileSync(filePath);
+    let payload: any;
+
+    if (item.type === "image") {
+      payload = { image: fileBuffer, caption: item.content || undefined };
+    } else if (item.type === "video") {
+      payload = { video: fileBuffer, caption: item.content || undefined };
+    } else if (item.type === "audio") {
+      payload = { audio: fileBuffer, mimetype: item.mediaType || "audio/mpeg", ptt: false };
+    } else {
+      // PDF / otros documentos
+      payload = {
+        document: fileBuffer,
+        mimetype: item.mediaType || "application/pdf",
+        fileName: item.fileName || item.name,
+      };
+    }
+
+    const sent = await wbot.sendMessage(msg.key.remoteJid!, payload);
+    await verifyMediaMessage(sent!, ticket, contact, ticketTraking, false, false, wbot);
+  } catch (err) {
+    console.log(`Error enviando knowledge item ${item.id}:`, err);
+  }
 };
 
 const handleOpenAi = async (
@@ -3360,7 +3454,19 @@ const handleOpenAi = async (
     await verifyMessage(sentInitial!, ticket, contact);
   }
 
-  const promptSystem = buildAgentSystemPrompt(prompt, contact);
+  // Cargar items de conocimiento (archivos, URLs, textos por categoría) para este prompt
+  let knowledgeItems: any[] = [];
+  try {
+    knowledgeItems = await PromptKnowledgeModel.findAll({
+      where: { promptId: prompt.id, companyId: ticket.companyId },
+      order: [["createdAt", "ASC"]],
+    });
+  } catch (err) {
+    // si la tabla no existe aún (migración pendiente), seguimos sin items
+    knowledgeItems = [];
+  }
+
+  const promptSystem = buildAgentSystemPrompt(prompt, contact, knowledgeItems);
 
   let messagesOpenAi = [];
 
@@ -3391,7 +3497,7 @@ const handleOpenAi = async (
     });
 
     const rawResponseText = chat.choices[0].message?.content || "";
-    const { text: response } = await processAgentResponse(rawResponseText, prompt, ticket, contact);
+    const { text: response, itemsToSend } = await processAgentResponse(rawResponseText, prompt, ticket, contact, knowledgeItems);
 
     if (prompt.responseDelay && prompt.responseDelay > 0) {
       await new Promise(resolve => setTimeout(resolve, prompt.responseDelay * 1000));
@@ -3402,6 +3508,12 @@ const handleOpenAi = async (
         text: `\u200e ${response!}`
       });
       await verifyMessage(sentMessage!, ticket, contact);
+
+      // Enviar archivos de conocimiento DESPUÉS del texto
+      for (const item of itemsToSend) {
+        await new Promise(r => setTimeout(r, 800));
+        await sendKnowledgeItem(wbot, msg, ticket, contact, ticketTraking, item);
+      }
     } else {
       const fileNameWithOutExtension = `${ticket.id}_${Date.now()}`;
       convertTextToSpeechAndSaveToFile(
@@ -3459,7 +3571,7 @@ const handleOpenAi = async (
       temperature: prompt.temperature
     });
     const rawResponseText = chat.choices[0].message?.content || "";
-    const { text: response } = await processAgentResponse(rawResponseText, prompt, ticket, contact);
+    const { text: response, itemsToSend } = await processAgentResponse(rawResponseText, prompt, ticket, contact, knowledgeItems);
 
     if (prompt.responseDelay && prompt.responseDelay > 0) {
       await new Promise(resolve => setTimeout(resolve, prompt.responseDelay * 1000));
@@ -3469,6 +3581,12 @@ const handleOpenAi = async (
         text: `\u200e ${response!}`
       });
       await verifyMessage(sentMessage!, ticket, contact);
+
+      // Enviar archivos de conocimiento DESPUÉS del texto
+      for (const item of itemsToSend) {
+        await new Promise(r => setTimeout(r, 800));
+        await sendKnowledgeItem(wbot, msg, ticket, contact, ticketTraking, item);
+      }
     } else {
       const fileNameWithOutExtension = `${ticket.id}_${Date.now()}`;
       convertTextToSpeechAndSaveToFile(

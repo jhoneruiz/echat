@@ -41,6 +41,7 @@ import ContactTag from "../models/ContactTag";
 import CompaniesSettings from "../models/CompaniesSettings";
 import LogTicket from "../models/LogTicket";
 import Prompt from "../models/Prompt";
+import PromptKnowledge from "../models/PromptKnowledge";
 import Partner from "../models/Partner";
 import ContactWallet from "../models/ContactWallet";
 import ScheduledMessages from "../models/ScheduledMessages";
@@ -111,6 +112,7 @@ const models = [
   CompaniesSettings,
   LogTicket,
   Prompt,
+  PromptKnowledge,
   Partner,
   ContactWallet,
   ScheduledMessages,
