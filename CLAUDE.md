@@ -72,6 +72,21 @@ El código base principal se encuentra en la subcarpeta `versao codigo 0910`.
 - **Sin recargar página**: cambios de switch/select se reflejan inmediato vía `setFieldValue`. Save explícito con botón.
 - **Patrón de variables/chips**: si hay marcadores como `{{firstName}}`, mostrar chips arriba del campo que los inserten en cursor (no copiar al clipboard).
 
+# Patrones técnicos del proyecto
+- **Editar JSX grandes (>200 líneas)**: el Edit tool falla por chars invisibles (`‎`, RLM) o por ambigüedad. Patrón: `python3 -c "lines=open('f','r',encoding='utf-8').read().split('\n'); new=lines[:N]+['{/* PLACEHOLDER */}']+lines[M:]; open('f','w',encoding='utf-8',newline='\n').write('\n'.join(new))"` y luego Edit del placeholder.
+- **Formik render props**: si usas `Switch`/`setFieldValue`/`values` directamente (no via `<Field>`), DEBES incluirlos en el destructuring `{({ values, touched, errors, setFieldValue }) =>}`. Default solo trae `touched, errors, isSubmitting`. Lint error típico: `'setFieldValue' is not defined`.
+- **Multer + FormData ordering**: el campo `typeArch` (que decide la carpeta de destino) DEBE appendearse ANTES del `file` en el FormData. Multer parsea multipart en orden y la callback de destination corre cuando llega el file.
+- **Migraciones en VPS**: usar SIEMPRE `./node_modules/.bin/sequelize db:migrate` desde `backend/`. El `npx sequelize` falla con "could not determine executable to run". Si añades modelo/columna nueva, sin esto el backend crashea con `relation "X" does not exist`.
+
+# Variables Mustache disponibles (helpers/Mustache.ts)
+- `{{firstName}}` `{{name}}` `{{userName}}` `{{ms}}` (saludo según hora) `{{protocol}}` `{{date}}` `{{hour}}` `{{ticket_id}}` `{{queue}}` `{{connection}}` `{{data_hora}}` `{{name_company}}`
+- Reemplazadas en `formatBody(text, ticket)` desde el backend. Útiles en mensajes de WhatsApp, plantillas, agente AI initialMessage.
+
+# Schedules (horarios fuera de oficina)
+- Se configuran a nivel de **Queue** (Cola) — prioritaria — o **Whatsapp** (Conexión) en `schedules` (JSONB).
+- `VerifyCurrentSchedule.ts` evalúa NOW vs startTimeA/endTimeA/startTimeB/endTimeB y devuelve `inActivity` boolean.
+- Si `!inActivity` y existe `outOfHoursMessage`, `wbotMessageListener.ts` lo envía.
+
 # WhatsApp Cloud API — Webhooks (configuración Meta)
 - HAY DOS niveles de suscripción de webhook que se necesitan AMBOS:
   1. App level — `webhook_configuration.application` apunta a la URL de api_oficial. Se configura en Meta Developer Portal.
