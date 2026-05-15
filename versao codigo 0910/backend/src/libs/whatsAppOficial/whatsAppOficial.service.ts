@@ -30,6 +30,9 @@ export const sendMessageWhatsAppOficial = async (
 
         formData.append('data', JSON.stringify(data));
 
+        console.log(`[SEND-META] POST ${urlApi}/v1/send-message-whatsapp/${token}`);
+        console.log(`[SEND-META] data:`, JSON.stringify(data, null, 2));
+
         const res = await axios.post(`${urlApi}/v1/send-message-whatsapp/${token}`, formData, {
             headers: {
                 ...formData.getHeaders(), // Importante para definir os cabeçalhos corretos
@@ -41,7 +44,11 @@ export const sendMessageWhatsAppOficial = async (
         throw new Error('Falha em envia a mensagem para a API da Meta');
 
     } catch (error) {
-        console.log(error.message);
+        console.log('[SEND-META] ERROR:', error.message);
+        if (error.response) {
+            console.log('[SEND-META] response status:', error.response.status);
+            console.log('[SEND-META] response data:', JSON.stringify(error.response.data, null, 2));
+        }
         throw new Error('Mensagem não enviada para a meta');
     }
 
