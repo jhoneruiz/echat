@@ -47,22 +47,28 @@ export const createSubscription = async (
     const getasaastoken = await Setting.findOne({
       where: { companyId: buscacompanyId, key: "asaastoken" },
     });
-    key_ASAAS_TOKEN = getasaastoken?.value;
+    key_ASAAS_TOKEN = getasaastoken?.value || process.env.ASAAS_TOKEN || null;
 
     const getmptoken = await Setting.findOne({
       where: { companyId: buscacompanyId, key: "mpaccesstoken" },
     });
-    key_MP_ACCESS_TOKEN = getmptoken?.value;
+    key_MP_ACCESS_TOKEN = getmptoken?.value || process.env.MP_ACCESS_TOKEN || null;
 
     const getstripetoken = await Setting.findOne({
       where: { companyId: buscacompanyId, key: "stripeprivatekey" },
     });
-    key_STRIPE_PRIVATE = getstripetoken?.value;
+    key_STRIPE_PRIVATE = getstripetoken?.value || process.env.STRIPE_PRIVATE || null;
 
     const getpixchave = await Setting.findOne({
       where: { companyId: buscacompanyId, key: "efichavepix" },
     });
-    key_GERENCIANET_PIX_KEY = getpixchave?.value;
+    key_GERENCIANET_PIX_KEY = getpixchave?.value || process.env.GERENCIANET_PIX_KEY || null;
+
+    // Limpiar tokens vacíos o solo whitespace para que las condiciones de abajo no entren
+    if (key_ASAAS_TOKEN && !key_ASAAS_TOKEN.trim()) key_ASAAS_TOKEN = null;
+    if (key_MP_ACCESS_TOKEN && !key_MP_ACCESS_TOKEN.trim()) key_MP_ACCESS_TOKEN = null;
+    if (key_STRIPE_PRIVATE && !key_STRIPE_PRIVATE.trim()) key_STRIPE_PRIVATE = null;
+    if (key_GERENCIANET_PIX_KEY && !key_GERENCIANET_PIX_KEY.trim()) key_GERENCIANET_PIX_KEY = null;
 
   } catch (error) {
     console.error("Error retrieving settings:", error);

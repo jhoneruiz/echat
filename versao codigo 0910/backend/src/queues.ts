@@ -2409,31 +2409,26 @@ async function handleInvoiceCreate() {
                   `Fatura ${openInvoices[0].id} atualizada para empresa ${companyId}`
                 );
               } else {
-                // Criar nova fatura - VALIDAÇÃO ADEQUADA DO VALOR
-                let valuePlan: string | number = 0;
+                // Crear nueva factura — validación correcta del valor
+                let valuePlan: string = "0.00";
 
-                // Validação robusta para o valor do plano
-                if (plan.amount && typeof plan.amount === 'string') {
-                  if (typeof plan.amount === 'string') {
-                    valuePlan = plan.amount.replace(",", ".");
+                if (plan.amount !== undefined && plan.amount !== null) {
+                  const raw =
+                    typeof plan.amount === "string"
+                      ? plan.amount.replace(",", ".")
+                      : plan.amount;
+                  const numeric = parseFloat(raw.toString());
+                  if (!isNaN(numeric) && numeric >= 0) {
+                    valuePlan = numeric.toFixed(2);
                   } else {
                     logger.error(
-                      `EMPRESA: ${companyId} - Valor do plano inválido: ${plan.amount}`
+                      `EMPRESA: ${companyId} - Valor del plan inválido: ${plan.amount}`
                     );
                   }
-                  // Definir um valor padrão ou pular esta empresa
-                  valuePlan = "0.00";
-                }
-
-                // Validação adicional para garantir que é um número válido
-                const numericValue = parseFloat(valuePlan.toString());
-                if (isNaN(numericValue)) {
-                  logger.error(
-                    `EMPRESA: ${companyId} - Não foi possível converter valor do plano para número: ${valuePlan}`
-                  );
-                  valuePlan = "0.00";
                 } else {
-                  valuePlan = numericValue.toFixed(2);
+                  logger.warn(
+                    `EMPRESA: ${companyId} - Plan sin valor configurado, factura se generará en 0.00`
+                  );
                 }
 
                 // Validação dos outros campos do plano
