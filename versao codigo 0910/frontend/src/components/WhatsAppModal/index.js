@@ -28,6 +28,8 @@ import {
   Tabs,
   Paper,
   Box,
+  Chip,
+  Typography,
 } from "@material-ui/core";
 
 import api from "../../services/api";
@@ -1451,6 +1453,56 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                   name={"messages"}
                 >
                   <DialogContent dividers>
+                    {/* PANEL DE VARIABLES DISPONIBLES */}
+                    <Box
+                      mb={2}
+                      p={1.5}
+                      style={{
+                        border: "1px dashed #cbd5e1",
+                        borderRadius: 8,
+                        backgroundColor: "#F8FAFC",
+                      }}
+                    >
+                      <Typography variant="caption" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>
+                        💡 Variables disponibles (haz clic para copiar y pegarlas en el mensaje):
+                      </Typography>
+                      <Box display="flex" flexWrap="wrap" gridGap={6} style={{ gap: 6 }}>
+                        {[
+                          { v: "{{firstName}}", d: "Primer Nombre" },
+                          { v: "{{name}}", d: "Nombre completo" },
+                          { v: "{{userName}}", d: "Agente" },
+                          { v: "{{ms}}", d: "Saludo según horario" },
+                          { v: "{{protocol}}", d: "Protocolo" },
+                          { v: "{{date}}", d: "Fecha" },
+                          { v: "{{hour}}", d: "Hora" },
+                          { v: "{{ticket_id}}", d: "Nº del Ticket" },
+                          { v: "{{queue}}", d: "Sector" },
+                          { v: "{{connection}}", d: "Conexión" },
+                          { v: "{{data_hora}}", d: "Fecha programada" },
+                        ].map(({ v, d }) => (
+                          <Chip
+                            key={v}
+                            size="small"
+                            label={d}
+                            title={`Copia ${v} al portapapeles`}
+                            onClick={() => {
+                              navigator.clipboard.writeText(v);
+                              toast.success(`Copiado: ${v}`);
+                            }}
+                            style={{
+                              fontSize: "0.72rem",
+                              cursor: "pointer",
+                              backgroundColor: "#fff",
+                              border: "1px solid #cbd5e1",
+                            }}
+                          />
+                        ))}
+                      </Box>
+                      <Typography variant="caption" color="textSecondary" style={{ display: "block", marginTop: 6 }}>
+                        Ejemplo: <code>Hola {`{{firstName}}`}, {`{{ms}}`}. Tu protocolo es {`{{protocol}}`}.</code>
+                      </Typography>
+                    </Box>
+
                     {/* MENSAGEM DE SAUDAÇÃO */}
                     <Grid container spacing={1}>
                       <Grid item xs={12} md={12} xl={12}>
@@ -1519,6 +1571,9 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                       </Grid>
                       {/* MENSAGEM DE FÉRIAS COLETIVAS */}
                       <Grid item xs={12} md={12} xl={12}>
+                        <Typography variant="caption" color="textSecondary" style={{ display: "block", marginTop: 8, marginBottom: 4 }}>
+                          📅 El mensaje de vacaciones se enviará automáticamente durante el rango de fechas (inicial-final) que definas abajo, reemplazando los mensajes normales de saludo/fuera de horario.
+                        </Typography>
                         <Field
                           as={TextField}
                           label={i18n.t(
