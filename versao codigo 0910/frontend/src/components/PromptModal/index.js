@@ -31,7 +31,7 @@ import {
   Visibility,
   VisibilityOff,
   Close,
-  SmartToy,
+  Android as SmartToy,
   Send as SendIcon,
 } from "@material-ui/icons";
 import { i18n } from "../../translate/i18n";
