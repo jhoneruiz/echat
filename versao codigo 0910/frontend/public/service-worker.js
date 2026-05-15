@@ -261,20 +261,30 @@ self.addEventListener("push", event => {
       payload = event.data.json();
     }
   } catch (err) {
-    payload = { title: "Nuevo mensaje", body: event.data?.text() };
+    payload = { title: "Nuevo mensaje", body: event.data?.text() || "Tienes un mensaje nuevo." };
   }
 
-  const title = payload.title || payload.notification?.title || "Nuevo mensaje";
-  const body = payload.body || payload.notification?.body || "Tienes un mensaje nuevo.";
+  // Soporta payload directo o anidado en .notification (Firebase style)
+  const src = payload.notification || payload;
+
+  const title = src.title || "Nuevo mensaje";
+  const body = src.body || "Tienes un mensaje nuevo.";
 
   const notificationOptions = {
     body,
-    icon: payload.icon || payload.notification?.icon || "/apple-touch-icon.png",
-    badge: payload.badge || payload.notification?.badge || "/favicon-32x32.png",
-    data: payload.data || payload.notification?.data || {},
-    tag: payload.data?.ticketId ? `ticket-${payload.data.ticketId}` : undefined,
-    renotify: true,
-    vibrate: payload.vibrate || [100, 50, 100]
+    icon: src.icon || "/apple-touch-icon.png",
+    badge: src.badge || "/favicon-32x32.png",
+    image: src.image || undefined,
+    data: src.data || {},
+    tag: src.tag || (src.data?.ticketId ? `ticket-${src.data.ticketId}` : undefined),
+    renotify: src.renotify !== undefined ? src.renotify : true,
+    vibrate: src.vibrate || [120, 60, 120, 60, 120],
+    requireInteraction: false,
+    silent: false,
+    actions: [
+      { action: "open", title: "Abrir" },
+      { action: "dismiss", title: "Descartar" }
+    ]
   };
 
   event.waitUntil(self.registration.showNotification(title, notificationOptions));
@@ -282,15 +292,21 @@ self.addEventListener("push", event => {
 
 self.addEventListener("notificationclick", event => {
   event.notification.close();
+  if (event.action === "dismiss") return;
+
   const targetUrl = event.notification.data?.url || "/";
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(clientList => {
+      // Si ya hay una ventana abierta, enfocarla y navegar
       for (const client of clientList) {
-        if (client.url === targetUrl && "focus" in client) {
-          return client.focus();
+        if ("focus" in client) {
+          if (client.url.includes(targetUrl) || targetUrl === "/") {
+            return client.focus();
+          }
         }
       }
+      // Si no hay ventana abierta o ninguna match, abrir nueva
       if (self.clients.openWindow) {
         return self.clients.openWindow(targetUrl);
       }

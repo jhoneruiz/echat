@@ -35,27 +35,59 @@ const mapSubscription = (subscription: UserPushSubscription): WebPushSubscriptio
   }
 });
 
+// Tipos de WhatsApp que SON contenido textual (no media). Hay que mostrar el body, no un placeholder.
+const TEXT_MEDIA_TYPES = new Set([
+  "chat",
+  "conversation",
+  "extendedTextMessage",
+  "text",
+  "buttonsResponseMessage",
+  "listResponseMessage",
+  "templateButtonReplyMessage",
+  "interactiveResponseMessage",
+  "ephemeralMessage",
+]);
+
 const getMessagePreview = (message: Message): string => {
-  if (!message) return "Tienes un mensaje nuevo";
+  if (!message) return "Nuevo mensaje";
 
-  if (message.mediaType && message.mediaType !== "chat") {
-    const mediaLabels: Record<string, string> = {
-      image: "📷 Imagen",
-      audio: "🎧 Audio",
-      video: "🎬 Video",
-      document: "📎 Archivo",
-      sticker: "💬 Sticker",
-      location: "📍 Ubicación"
-    };
+  const mediaType = message.mediaType || "";
+  const body = (message.body || "").trim();
+  const isTextType = !mediaType || TEXT_MEDIA_TYPES.has(mediaType);
 
-    return mediaLabels[message.mediaType] || "Nuevo mensaje";
-  }
-
-  if (!message.body || message.body.trim() === "") {
+  // Si es texto: priorizar el body real
+  if (isTextType) {
+    if (body) return body.substring(0, 140);
     return "Nuevo mensaje";
   }
 
-  return message.body.substring(0, 120);
+  // Para tipos de media conocidos, mostrar emoji + caption si lo hay
+  const mediaLabels: Record<string, string> = {
+    image: "📷 Imagen",
+    audio: "🎧 Audio",
+    video: "🎬 Video",
+    document: "📎 Archivo",
+    application: "📎 Archivo",
+    sticker: "💬 Sticker",
+    location: "📍 Ubicación",
+    contactMessage: "👤 Contacto",
+    contactsArrayMessage: "👤 Contactos",
+    reactionMessage: "❤️ Reacción",
+    audioMessage: "🎧 Audio",
+    voiceMessage: "🎤 Mensaje de voz",
+    videoMessage: "🎬 Video",
+    imageMessage: "📷 Imagen",
+    documentMessage: "📎 Archivo",
+    stickerMessage: "💬 Sticker",
+  };
+
+  const label = mediaLabels[mediaType] || "📎 Archivo";
+
+  // Si la media tiene caption (body) en el mensaje, agregarlo después del label
+  if (body) {
+    return `${label}: ${body.substring(0, 100)}`;
+  }
+  return label;
 };
 
 const shouldNotifyUser = async (
@@ -99,20 +131,34 @@ const buildNotificationPayload = (
 ) => {
   const ticket = message.ticket;
   const contactName = ticket?.contact?.name || "Cliente";
-  const queueName = ticket?.queue?.name || ticket?.whatsapp?.name || "Whaticket";
+  const queueName = ticket?.queue?.name || ticket?.whatsapp?.name || null;
 
-  const title = `${contactName} · ${queueName}`;
-  const body = shouldBlur ? "Tienes un mensaje nuevo" : getMessagePreview(message);
+  // Título limpio: solo el nombre del contacto. El sistema operativo agrega "from <App>" abajo.
+  const title = contactName;
+
+  // Body: si está borroso (ticket pending sin permiso de ver), mensaje genérico.
+  // Si no, preview real del mensaje. Si hay cola, anteponemos el nombre de la cola en cursiva-style.
+  let body = shouldBlur ? "Te enviaron un mensaje" : getMessagePreview(message);
+  if (!shouldBlur && queueName) {
+    body = `[${queueName}] ${body}`;
+  }
+
   const urlBase = process.env.FRONTEND_URL || "https://app.whaticket.app";
-  const targetUrl = `${urlBase.replace(/\/$/, "")}/tickets/${ticket?.id ?? ""}`;
+  const targetUrl = `${urlBase.replace(/\/$/, "")}/tickets/${ticket?.uuid ?? ticket?.id ?? ""}`;
 
   return {
     title,
     body,
+    // Estos campos los lee el service worker para enriquecer la notificación
+    icon: "/logo192.png",
+    badge: "/logo192.png",
+    tag: `ticket-${ticket?.id}`,
+    renotify: true,
     data: {
       url: targetUrl,
       ticketId: ticket?.id,
-      contactId: ticket?.contactId
+      contactId: ticket?.contactId,
+      queueName,
     }
   };
 };

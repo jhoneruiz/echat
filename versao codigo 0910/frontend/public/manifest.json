@@ -1,6 +1,6 @@
 {
-  "short_name": "MultiFLOW",
-  "name": "MultiFLOW",
+  "short_name": "Equipechat",
+  "name": "Equipechat — CRM omnicanal",
   "icons": [
     {
       "src": "favicon.ico",
@@ -22,10 +22,10 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "theme_color": "#3b82f6",
+  "theme_color": "#E11D48",
   "background_color": "#ffffff",
   "orientation": "portrait",
   "categories": ["productivity", "communication"],
-  "description": "MultiFLOW - atención omnicanal con notificaciones push en tiempo real",
+  "description": "Equipechat — atención omnicanal con notificaciones push en tiempo real",
   "prefer_related_applications": false
 }
