@@ -1836,6 +1836,8 @@ const MessageInput = ({
             handleClose={() => setTemplateModalOpen(false)}
             onSelectTemplate={(e) => handleSendMessageTemplate(e)}
             templates={templates}
+            ticketId={ticketId}
+            whatsappId={whatsappId}
           />
         )}
         {meta24hTemplateOpen && (
