@@ -13,14 +13,64 @@ import { makeStyles } from "@material-ui/core/styles";
 import { grey, blue } from "@material-ui/core/colors";
 
 import { Tab, Tabs, TextField } from "@material-ui/core";
+import {
+  Tune as TuneIcon,
+  Forum as ForumIcon,
+  Security as SecurityIcon,
+  Payment as PaymentIcon,
+  Message as MessageIcon,
+  AlternateEmail as AlternateEmailIcon,
+} from "@material-ui/icons";
 import { i18n } from "../../translate/i18n";
 import useCompanySettings from "../../hooks/useSettings/companySettings";
 import { ALL_TIMEZONES } from "../../data/timezones";
 
 const useStyles = makeStyles((theme) => ({
-  container: {
-    paddingTop: theme.spacing(4),
+  pageRoot: {
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing(2.5),
+    paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(4),
+  },
+  sectionCard: {
+    padding: theme.spacing(3),
+    borderRadius: 14,
+    border: `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.background.paper,
+    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+    [theme.breakpoints.down("sm")]: {
+      padding: theme.spacing(2),
+      borderRadius: 10,
+    },
+  },
+  sectionHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1.5),
+    marginBottom: theme.spacing(2.5),
+  },
+  sectionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor:
+      theme.palette.type === "dark" ? "rgba(59,130,246,0.15)" : "#EBF5FF",
+    color: theme.palette.primary.main,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 20,
+  },
+  sectionTitle: {
+    fontSize: "1rem",
+    fontWeight: 600,
+    lineHeight: 1.2,
+  },
+  sectionSubtitle: {
+    fontSize: "0.8rem",
+    color: theme.palette.text.secondary,
+    marginTop: 2,
   },
   fixedHeightPaper: {
     padding: theme.spacing(2),
@@ -36,33 +86,31 @@ const useStyles = makeStyles((theme) => ({
     width: theme.spacing(7),
     height: theme.spacing(7),
   },
-  cardTitle: {
-    fontSize: "18px",
-    color: blue[700],
-  },
-  cardSubtitle: {
-    color: grey[600],
-    fontSize: "14px",
-  },
-  alignRight: {
-    textAlign: "right",
-  },
-  fullWidth: {
-    width: "100%",
-  },
-  selectContainer: {
-    width: "100%",
-    textAlign: "left",
-  },
+  cardTitle: { fontSize: "18px", color: blue[700] },
+  cardSubtitle: { color: grey[600], fontSize: "14px" },
+  alignRight: { textAlign: "right" },
+  fullWidth: { width: "100%" },
+  selectContainer: { width: "100%", textAlign: "left" },
   tab: {
-    backgroundColor: theme.mode === 'light' ? "#f2f2f2" : "#7f7f7f",
+    backgroundColor: theme.mode === "light" ? "#f2f2f2" : "#7f7f7f",
     borderRadius: 4,
     width: "100%",
-    "& .MuiTabs-flexContainer": {
-      justifyContent: "center"
-    }
+    "& .MuiTabs-flexContainer": { justifyContent: "center" },
   },
 }));
+
+const SectionCard = ({ title, subtitle, icon, children, classes }) => (
+  <div className={classes.sectionCard}>
+    <div className={classes.sectionHeader}>
+      <div className={classes.sectionIcon}>{icon}</div>
+      <div>
+        <div className={classes.sectionTitle}>{title}</div>
+        {subtitle && <div className={classes.sectionSubtitle}>{subtitle}</div>}
+      </div>
+    </div>
+    {children}
+  </div>
+);
 
 export default function Options(props) {
   const { oldSettings, settings, scheduleTypeChanged, user } = props;
@@ -694,7 +742,13 @@ async function handleCopyContactPrefix(value) {
   }
 
   return (
-    <>
+    <div className={classes.pageRoot}>
+      <SectionCard
+        classes={classes}
+        icon={<TuneIcon />}
+        title="Configuración general"
+        subtitle="Ajustes globales del sistema, zona horaria y comportamiento de tickets."
+      >
       <Grid spacing={3} container>
 
         {/* CRIAÇÃO DE COMPANY/USERS */}
@@ -1182,69 +1236,48 @@ async function handleCopyContactPrefix(value) {
           </FormControl>
         </Grid>
       </Grid>
-      <br></br>
+      </SectionCard>
 
-
-      {/* CONFIGURAÇÃO SIGLA PARA CÓPIA DE CONTATOS */}
-      <Grid spacing={3} container style={{ marginBottom: 10 }}>
-                  <Tabs
-            indicatorColor='primary'
-            textColor='primary'
-            scrollButtons='on'
-            variant='scrollable'
-            className={classes.tab}
-            style={{
-              marginBottom: 20,
-              marginTop: 20,
-            }}
-          >
-            <Tab label='Configuração de Sigla para Copia de Contato' />
-          </Tabs>
-        <Grid xs={12} sm={6} md={6} item>
-          <FormControl className={classes.selectContainer}>
-            <TextField
-              id="copyContactPrefix"
-              name="copyContactPrefix"
-              margin="dense"
-              label={i18n.t("settings.settings.options.copyContactPrefix")}
-              variant="outlined"
-              value={copyContactPrefix}
-              placeholder={i18n.t("settings.settings.options.copyContactPrefixPlaceholder")}
-              onChange={async (e) => {
-                handleCopyContactPrefix(e.target.value);
-              }}
-                InputLabelProps={{
-    shrink: true,
-  }}
-            />
-            <FormHelperText>
-              {loadingCopyContactPrefix && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+      <SectionCard
+        classes={classes}
+        icon={<AlternateEmailIcon />}
+        title="Prefijo para copiar contactos"
+        subtitle="Texto que se antepone al copiar números desde el panel."
+      >
+        <Grid spacing={3} container>
+          <Grid xs={12} sm={6} md={6} item>
+            <FormControl className={classes.selectContainer}>
+              <TextField
+                id="copyContactPrefix"
+                name="copyContactPrefix"
+                margin="dense"
+                label={i18n.t("settings.settings.options.copyContactPrefix")}
+                variant="outlined"
+                value={copyContactPrefix}
+                placeholder={i18n.t("settings.settings.options.copyContactPrefixPlaceholder")}
+                onChange={async (e) => {
+                  handleCopyContactPrefix(e.target.value);
+                }}
+                InputLabelProps={{ shrink: true }}
+              />
+              <FormHelperText>
+                {loadingCopyContactPrefix && i18n.t("settings.settings.options.updating")}
+              </FormHelperText>
+            </FormControl>
+          </Grid>
         </Grid>
-      </Grid>
+      </SectionCard>
 
-      
+
       {/*-----------------LGPD-----------------*/}
       {enableLGPD === "enabled" && (
-        <>
-          <Grid spacing={3} container
-            style={{ marginBottom: 10 }}>
-            <Tabs
-              value={0}
-              indicatorColor="primary"
-              textColor="primary"
-              scrollButtons="on"
-              variant="scrollable"
-              className={classes.tab}
-            >
-              <Tab
-
-                label={i18n.t("settings.settings.LGPD.title")} />
-
-            </Tabs>
-          </Grid>
-          <Grid spacing={1} container>
+        <SectionCard
+          classes={classes}
+          icon={<SecurityIcon />}
+          title={i18n.t("settings.settings.LGPD.title")}
+          subtitle="Configuración de privacidad, mensaje de bienvenida y consentimiento."
+        >
+          <Grid spacing={2} container>
             <Grid xs={12} sm={6} md={12} item>
               <FormControl className={classes.selectContainer}>
                 <TextField
@@ -1347,214 +1380,145 @@ async function handleCopyContactPrefix(value) {
               </FormControl>
             </Grid>
           </Grid>
-        </>
+        </SectionCard>
       )}
 
-      <Grid spacing={3} container>
-        {isSuper() ?
-          <Tabs
-            indicatorColor='primary'
-            textColor='primary'
-            scrollButtons='on'
-            variant='scrollable'
-            className={classes.tab}
-            style={{
-              marginBottom: 20,
-              marginTop: 20,
-            }}
-          >
-            <Tab label='Configuração Pix Efí (GerenciaNet)' />
-          </Tabs>
-          : null}
-      </Grid>
+      {isSuper() && (
+        <SectionCard
+          classes={classes}
+          icon={<PaymentIcon />}
+          title="Pasarelas de pago"
+          subtitle="Configura los tokens de Mercado Pago, Stripe, Asaas y Pix Efí. Solo visible para el superadmin."
+        >
+          <div style={{ marginBottom: 8, fontSize: "0.85rem", fontWeight: 600 }}>
+            Mercado Pago
+          </div>
+          <Grid spacing={2} container style={{ marginBottom: 16 }}>
+            <Grid xs={12} item>
+              <FormControl className={classes.selectContainer}>
+                <TextField
+                  id="mpaccesstoken"
+                  name="mpaccesstoken"
+                  size="small"
+                  variant="outlined"
+                  label="Access Token de Mercado Pago"
+                  value={mpaccesstokenType}
+                  onChange={async (e) => handleChangempaccesstoken(e.target.value)}
+                />
+                <FormHelperText>
+                  {loadingmpaccesstokenType && "Actualizando..."}
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+          </Grid>
 
-      <Grid spacing={3} container style={{ marginBottom: 10 }}>
-        <Grid xs={12} sm={6} md={6} item>
-          {isSuper() ?
-            <FormControl className={classes.selectContainer}>
-              <TextField
-                id='eficlientid'
-                name='eficlientid'
-                margin='dense'
-                label='Client ID'
-                variant='outlined'
-                value={eficlientidType}
-                onChange={async (e) => {
-                  handleChangeEfiClientid(e.target.value);
-                }}
-              ></TextField>
-              <FormHelperText>
-                {loadingEfiClientidType && 'Atualizando...'}
-              </FormHelperText>
-            </FormControl>
-            : null}
-        </Grid>
-        <Grid xs={12} sm={6} md={6} item>
-          {isSuper() ?
-            <FormControl className={classes.selectContainer}>
-              <TextField
-                id='eficlientsecret'
-                name='eficlientsecret'
-                margin='dense'
-                label='Client Secret'
-                variant='outlined'
-                value={eficlientsecretType}
-                onChange={async (e) => {
-                  handleChangeEfiClientsecret(e.target.value);
-                }}
-              ></TextField>
-              <FormHelperText>
-                {loadingEfiClientsecretType && 'Atualizando...'}
-              </FormHelperText>
-            </FormControl>
-            : null}
-        </Grid>
-        <Grid xs={12} sm={12} md={12} item>
-          {isSuper() ?
-            <FormControl className={classes.selectContainer}>
-              <TextField
-                id='efichavepix'
-                name='efichavepix'
-                margin='dense'
-                label='Chave PIX'
-                variant='outlined'
-                value={efichavepixType}
-                onChange={async (e) => {
-                  handleChangeEfiChavepix(e.target.value);
-                }}
-              ></TextField>
-              <FormHelperText>
-                {loadingEfiChavepixType && 'Atualizando...'}
-              </FormHelperText>
-            </FormControl>
-            : null}
-        </Grid>
-      </Grid>
+          <div style={{ marginBottom: 8, fontSize: "0.85rem", fontWeight: 600 }}>
+            Stripe
+          </div>
+          <Grid spacing={2} container style={{ marginBottom: 16 }}>
+            <Grid xs={12} item>
+              <FormControl className={classes.selectContainer}>
+                <TextField
+                  id="stripeprivatekey"
+                  name="stripeprivatekey"
+                  size="small"
+                  variant="outlined"
+                  label="Stripe Private Key"
+                  value={stripeprivatekeyType}
+                  onChange={async (e) => handleChangestripeprivatekey(e.target.value)}
+                />
+                <FormHelperText>
+                  {loadingstripeprivatekeyType && "Actualizando..."}
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+          </Grid>
 
-      <Grid spacing={3} container>
-        {isSuper() ?
-          <Tabs
-            indicatorColor='primary'
-            textColor='primary'
-            scrollButtons='on'
-            variant='scrollable'
-            className={classes.tab}
-            style={{
-              marginBottom: 20,
-              marginTop: 20,
-            }}
-          >
-            <Tab label='Mercado Pago' />
-          </Tabs>
-          : null}
-      </Grid>
+          <div style={{ marginBottom: 8, fontSize: "0.85rem", fontWeight: 600 }}>
+            Asaas
+          </div>
+          <Grid spacing={2} container style={{ marginBottom: 16 }}>
+            <Grid xs={12} item>
+              <FormControl className={classes.selectContainer}>
+                <TextField
+                  id="asaastoken"
+                  name="asaastoken"
+                  size="small"
+                  variant="outlined"
+                  label="Token Asaas"
+                  value={asaastokenType}
+                  onChange={async (e) => handleChangeasaastoken(e.target.value)}
+                />
+                <FormHelperText>
+                  {loadingasaastokenType && "Actualizando..."}
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+          </Grid>
 
-      <Grid spacing={3} container style={{ marginBottom: 10 }}>
-        <Grid xs={12} sm={12} md={12} item>
-          {isSuper() ?
-            <FormControl className={classes.selectContainer}>
-              <TextField
-                id='mpaccesstoken'
-                name='mpaccesstoken'
-                margin='dense'
-                label='Access Token'
-                variant='outlined'
-                value={mpaccesstokenType}
-                onChange={async (e) => {
-                  handleChangempaccesstoken(e.target.value);
-                }}
-              ></TextField>
-              <FormHelperText>
-                {loadingmpaccesstokenType && 'Atualizando...'}
-              </FormHelperText>
-            </FormControl>
-            : null}
-        </Grid>
-      </Grid>
+          <div style={{ marginBottom: 8, fontSize: "0.85rem", fontWeight: 600 }}>
+            Pix Efí (GerenciaNet)
+          </div>
+          <Grid spacing={2} container>
+            <Grid xs={12} sm={6} item>
+              <FormControl className={classes.selectContainer}>
+                <TextField
+                  id="eficlientid"
+                  name="eficlientid"
+                  size="small"
+                  variant="outlined"
+                  label="Client ID"
+                  value={eficlientidType}
+                  onChange={async (e) => handleChangeEfiClientid(e.target.value)}
+                />
+                <FormHelperText>
+                  {loadingEfiClientidType && "Actualizando..."}
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid xs={12} sm={6} item>
+              <FormControl className={classes.selectContainer}>
+                <TextField
+                  id="eficlientsecret"
+                  name="eficlientsecret"
+                  size="small"
+                  variant="outlined"
+                  label="Client Secret"
+                  value={eficlientsecretType}
+                  onChange={async (e) => handleChangeEfiClientsecret(e.target.value)}
+                />
+                <FormHelperText>
+                  {loadingEfiClientsecretType && "Actualizando..."}
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+            <Grid xs={12} item>
+              <FormControl className={classes.selectContainer}>
+                <TextField
+                  id="efichavepix"
+                  name="efichavepix"
+                  size="small"
+                  variant="outlined"
+                  label="Clave Pix"
+                  value={efichavepixType}
+                  onChange={async (e) => handleChangeEfiChavepix(e.target.value)}
+                />
+                <FormHelperText>
+                  {loadingEfiChavepixType && "Actualizando..."}
+                </FormHelperText>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </SectionCard>
+      )}
 
-      <Grid spacing={3} container>
-        {isSuper() ?
-          <Tabs
-            indicatorColor='primary'
-            textColor='primary'
-            scrollButtons='on'
-            variant='scrollable'
-            className={classes.tab}
-            style={{
-              marginBottom: 20,
-              marginTop: 20,
-            }}
-          >
-            <Tab label='Stripe' />
-          </Tabs>
-          : null}
-      </Grid>
-
-      <Grid spacing={3} container style={{ marginBottom: 10 }}>
-        <Grid xs={12} sm={12} md={12} item>
-          {isSuper() ?
-            <FormControl className={classes.selectContainer}>
-              <TextField
-                id='stripeprivatekey'
-                name='stripeprivatekey'
-                margin='dense'
-                label='Stripe Private Key'
-                variant='outlined'
-                value={stripeprivatekeyType}
-                onChange={async (e) => {
-                  handleChangestripeprivatekey(e.target.value);
-                }}
-              ></TextField>
-              <FormHelperText>
-                {loadingstripeprivatekeyType && 'Atualizando...'}
-              </FormHelperText>
-            </FormControl>
-            : null}
-        </Grid>
-      </Grid>
-
-      <Grid spacing={3} container>
-        {isSuper() ?
-          <Tabs
-            indicatorColor='primary'
-            textColor='primary'
-            scrollButtons='on'
-            variant='scrollable'
-            className={classes.tab}
-            style={{
-              marginBottom: 20,
-              marginTop: 20,
-            }}
-          >
-            <Tab label='ASAAS' />
-          </Tabs>
-          : null}
-      </Grid>
-
-      <Grid spacing={3} container style={{ marginBottom: 10 }}>
-        <Grid xs={12} sm={12} md={12} item>
-          {isSuper() ?
-            <FormControl className={classes.selectContainer}>
-              <TextField
-                id='asaastoken'
-                name='asaastoken'
-                margin='dense'
-                label='Token Asaas'
-                variant='outlined'
-                value={asaastokenType}
-                onChange={async (e) => {
-                  handleChangeasaastoken(e.target.value);
-                }}
-              ></TextField>
-              <FormHelperText>
-                {loadingasaastokenType && 'Atualizando...'}
-              </FormHelperText>
-            </FormControl>
-            : null}
-        </Grid>
-      </Grid>
-
-      <Grid spacing={1} container>
+      <SectionCard
+        classes={classes}
+        icon={<MessageIcon />}
+        title="Mensajes personalizados"
+        subtitle="Plantillas que el sistema envía automáticamente a los contactos."
+      >
+      <Grid spacing={2} container>
         <Grid xs={12} sm={6} md={6} item>
           <FormControl className={classes.selectContainer}>
             <TextField
@@ -1647,6 +1611,7 @@ async function handleCopyContactPrefix(value) {
           </FormControl>
         </Grid>
       </Grid>
-    </>
+      </SectionCard>
+    </div>
   );
 }
