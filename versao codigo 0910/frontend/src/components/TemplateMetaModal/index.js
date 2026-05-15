@@ -182,7 +182,14 @@ const TemplateMetaModal = ({ open, handleClose, ticketId, whatsappId }) => {
     };
 
     const handleSend = async () => {
-        if (!selectedTemplate || !ticketId) return;
+        if (!selectedTemplate) {
+            toast.error('Selecciona una plantilla primero');
+            return;
+        }
+        if (!ticketId) {
+            toast.error('Error: ID de ticket no disponible. Recarga la página.');
+            return;
+        }
         setSending(true);
         try {
             const bodyToSave = generateBodyToSave();

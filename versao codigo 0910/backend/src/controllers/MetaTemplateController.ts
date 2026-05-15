@@ -133,7 +133,7 @@ export const sync = async (req: Request, res: Response): Promise<Response> => {
         await Promise.all(
             data.data.map(async template => {
                 const qm = await QuickMessage.findOne({
-                    where: { metaID: template.id },
+                    where: { metaID: template.id, companyId },
                     include: [{ model: QuickMessageComponent, as: "components" }],
                 });
 
