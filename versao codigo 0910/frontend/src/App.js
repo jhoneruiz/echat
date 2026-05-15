@@ -405,11 +405,11 @@ const App = () => {
       });
     getPublicSetting("appName")
       .then((name) => {
-        setAppName(name || "Multi100");
+        setAppName(name || "Equipechat");
       })
       .catch((error) => {
         console.log("Error reading setting", error);
-        setAppName("Multi100");
+        setAppName("Equipechat");
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

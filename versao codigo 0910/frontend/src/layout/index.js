@@ -819,7 +819,7 @@ useEffect(() => {
               onClick={handleMenu}
             >
               <Avatar
-                alt="Multi100"
+                alt="Equipechat"
                 className={classes.avatar2}
                 src={profileUrl}
               />

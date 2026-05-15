@@ -402,34 +402,24 @@ const Login = () => {
         getPublicSetting("appLogoBackgroundLight", companyId)
             .then((bgLight) => {
                 if (bgLight) {
-                    const backendUrl = getBackendUrl();
-                    const fullUrl = backendUrl + "/public/" + bgLight;
-                    console.log("Background light URL:", fullUrl);
+                    const fullUrl = getBackendUrl() + "/public/" + bgLight;
                     setBackgroundLight(fullUrl);
                 } else {
                     setBackgroundLight("");
                 }
             })
-            .catch((err) => {
-                console.error("Erro ao carregar imagem de fundo clara:", err);
-                setBackgroundLight("");
-            });
+            .catch(() => setBackgroundLight(""));
 
         getPublicSetting("appLogoBackgroundDark", companyId)
             .then((bgDark) => {
                 if (bgDark) {
-                    const backendUrl = getBackendUrl();
-                    const fullUrl = backendUrl + "/public/" + bgDark;
-                    console.log("Background dark URL:", fullUrl);
+                    const fullUrl = getBackendUrl() + "/public/" + bgDark;
                     setBackgroundDark(fullUrl);
                 } else {
                     setBackgroundDark("");
                 }
             })
-            .catch((err) => {
-                console.error("Erro ao carregar imagem de fundo escura:", err);
-                setBackgroundDark("");
-            });
+            .catch(() => setBackgroundDark(""));
     }, []);
 
     const current =
@@ -444,39 +434,23 @@ const Login = () => {
     };
 
     let finalBackground;
-    
-    console.log("Modo:", mode);
-    console.log("Background Light URL:", backgroundLight);
-    console.log("Background Dark URL:", backgroundDark);
-    
     const hasValidLightBg = backgroundLight && backgroundLight.trim() !== '';
     const hasValidDarkBg = backgroundDark && backgroundDark.trim() !== '';
-    
-    if (mode === "light") {
-        if (hasValidLightBg) {
-            finalBackground = `url(${backgroundLight})`;
-            console.log("Usando background light:", finalBackground);
-        } else {
-            finalBackground = theme.palette.background ? theme.palette.background.default : "#f5f5f5";
-            console.log("Usando cor do tema light:", finalBackground);
-        }
-    } else {
-        if (hasValidDarkBg) {
-            finalBackground = `url(${backgroundDark})`;
-            console.log("Usando background dark:", finalBackground);
-        } else {
-            finalBackground = theme.palette.background ? theme.palette.background.default : "#303030";
-            console.log("Usando cor do tema dark:", finalBackground);
-        }
-    }
-    
-    console.log("Background final definido:", finalBackground);
 
+    if (mode === "light") {
+        finalBackground = hasValidLightBg
+            ? `url(${backgroundLight})`
+            : (theme.palette.background ? theme.palette.background.default : "#f5f5f5");
+    } else {
+        finalBackground = hasValidDarkBg
+            ? `url(${backgroundDark})`
+            : (theme.palette.background ? theme.palette.background.default : "#303030");
+    }
 
     return (
         <>
             <Helmet>
-                <title>{appName || "Multi100"}</title>
+                <title>{appName || "Equipechat"}</title>
                 <link rel="icon" href={appLogoFavicon || "/default-favicon.ico"} />
             </Helmet>
 

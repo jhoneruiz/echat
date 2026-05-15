@@ -411,7 +411,7 @@ const SignUp = () => {
     return (
         <React.Fragment>
             <Helmet>
-                <title>{appName || "Multi100 - Registro"}</title>
+                <title>{appName ? `${appName} - Registro` : "Equipechat - Registro"}</title>
                 <link rel="icon" href={appLogoFavicon || "/default-favicon.ico"}/>
             </Helmet>
 
