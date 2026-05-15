@@ -39,20 +39,20 @@ El código base principal se encuentra en la subcarpeta `versao codigo 0910`.
 - NO elimines la estructura de la base de datos sin crear las migraciones de Sequelize correspondientes.
 
 ## Tarea 2: Traducción a Español de México (es-MX)
-- **Frontend COMPLETADO (2026-05-13):** `i18n.js` ya tiene `fallbackLng: "es"` y `lng: "es"`. `es.js` está totalmente traducido al español. Si aparece texto en portugués es que falta la clave en `es.js`.
-- Términos estándar: "Fila" → "Cola", "Atendimento" → "Atención/Chat", "Excluir" → "Eliminar", "Historico" → "Historial".
-- Pendiente: mensajes de error del backend (AppError, console.log en servicios).
-- Nuevas claves de UI deben agregarse directamente en español (no en portugués).
+- Revisa los archivos de internacionalización (i18n) en el frontend. Si no existen, créalos o extrae los textos "hardcodeados" a un archivo de idioma centralizado.
+- Traduce todos los términos del portugués al español de México de forma profesional (ej. "Atendimentos" -> "Chats" o "Atenciones", "Fila" -> "Cola", "Configurações" -> "Configuración").
+- Asegúrate de traducir también los mensajes de error, respuestas del bot en el backend y logs de la consola.
 
 ## Metodología de Trabajo
 - Antes de modificar archivos grandes, explícame la estrategia que vas a utilizar.
 - Trabaja de forma incremental: primero la base de datos de conexiones, luego los Webhooks de recepción, después el envío de mensajes, y finalmente la traducción.
 - Proporciona comandos de npm o yarn para instalar nuevas dependencias necesarias (como librerías para manejar Meta API) y desinstalar las obsoletas (como `@adiwajshing/baileys`).
 
-## Entorno de Desarrollo y VPS
-- **Directorio de trabajo local:** `g:\Mi unidad\whatikect desarrollo\echat\` (aquí se editan los archivos).
-- **Repositorio git:** `C:\Users\ruiz_\echat-fix\` — copiar archivos modificados aquí antes de `git commit && git push`.
-- **VPS (Ubuntu 24.04):** proyecto en `/home/deploy/Equipechat/`. Procesos PM2: `Equipechat-backend` y `Equipechat-frontend`.
-- **Rebuild frontend en VPS:** `cd /home/deploy/Equipechat && git pull origin main && cd "versao codigo 0910/frontend" && npm run build && pm2 restart Equipechat-frontend`
-- **Rebuild backend en VPS:** `cd /home/deploy/Equipechat/"versao codigo 0910/backend" && npm install --legacy-peer-deps && npm run build && pm2 restart Equipechat-backend`
-- **Git ownership en VPS:** si `git pull` falla con "dubious ownership", ejecutar `git config --global --add safe.directory /home/deploy/Equipechat`.
+# Gotchas frecuentes
+- Frontend usa Material-UI v4 (no v5): `SmartToy` no existe → usar `Android`. Verificar exports antes de importar de `@material-ui/icons`.
+- VPS path con espacios: `/home/deploy/Equipechat/"versao codigo 0910"/` — siempre quotear; para `pm2 start` hacer `cd` primero (path como argumento se rompe).
+- PM2 puede tener daemons duplicados (root + deploy). Si un proceso "se respawnea solo" tras `pm2 delete`: `ps -ef | grep "PM2.*Daemon"` y matar el otro daemon (`sudo -u deploy pm2 kill`).
+- Plantilla Meta `hello_world` solo funciona desde Public Test Numbers — siempre devuelve `(#131058)` en números reales. Usar plantillas propias aprobadas.
+- Si cambios en `api_oficial` no reflejan tras `npm run build`: `rm -rf dist/` antes de rebuildar; verificar con `grep` el archivo compilado, no solo el source.
+- Para ver el error real de Meta (no el genérico "Erro ao enviar a mensagem"): buscar `[MetaService] sendMessage - ` en `pm2 logs Equipechat-api-oficial`.
+- Hay DOS instancias de `TemplateMetaModal` (en `TicketActionButtonsCustom` y `MessageInput`). Cualquier cambio de props debe aplicarse en ambas.
