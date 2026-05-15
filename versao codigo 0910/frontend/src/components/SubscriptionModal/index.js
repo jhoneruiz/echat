@@ -52,11 +52,9 @@ const ContactModal = ({ open, onClose, Invoice, contactId, initialValues, onSave
 
   return (
     <div className={classes.root}>
-      <Dialog open={open} onClose={handleClose} maxWidth="md" scroll="paper">
-        <DialogContent dividers>
-          <CheckoutPage
-            Invoice={Invoice}
-          />
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth scroll="paper">
+        <DialogContent dividers style={{ padding: 0 }}>
+          {Invoice && <CheckoutPage Invoice={Invoice} />}
         </DialogContent>
       </Dialog>
     </div>
