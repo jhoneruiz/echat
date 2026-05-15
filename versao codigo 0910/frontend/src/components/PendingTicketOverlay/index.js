@@ -184,17 +184,17 @@ const PendingTicketOverlay = ({
           <LockIcon className={classes.lockIcon} />
           
           <Typography variant="h6" className={classes.title}>
-            Conversa Bloqueada
+            Conversación bloqueada
           </Typography>
-          
+
           <Typography variant="body2" className={classes.subtitle}>
-            Este ticket está aguardando aceite. Aceite a conversa para visualizar 
-            e responder às mensagens do cliente.
+            Este ticket está en espera. Acepta la conversación para ver y
+            responder los mensajes del cliente.
           </Typography>
 
           <div className={classes.statusChip}>
             <PendingIcon style={{ fontSize: 16 }} />
-            Status: Aguardando
+            Estado: En espera
           </div>
 
           {/* Informações do Contato */}

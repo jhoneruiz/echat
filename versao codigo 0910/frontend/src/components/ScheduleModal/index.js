@@ -67,9 +67,9 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const ScheduleSchema = Yup.object().shape({
-  body: Yup.string().min(5, "Mensagem muito curta").required("Obrigatório"),
-  contactId: Yup.number().required("Obrigatório"),
-  sendAt: Yup.string().required("Obrigatório"),
+  body: Yup.string().min(5, "Mensaje muy corto").required("Obligatorio"),
+  contactId: Yup.number().required("Obligatorio"),
+  sendAt: Yup.string().required("Obligatorio"),
   reminderDate: Yup.string().nullable()
 });
 
@@ -642,8 +642,8 @@ const ScheduleModal = ({
       >
         <DialogTitle id="form-dialog-title">
           {schedule.status === "ERRO"
-            ? "Erro de Envio"
-            : `Mensagem ${capitalize(schedule.status)}`}
+            ? "Error de envío"
+            : `Mensaje ${capitalize(schedule.status)}`}
         </DialogTitle>
         <div style={{ display: "none" }}>
           <input
@@ -692,7 +692,7 @@ const ScheduleModal = ({
                             <TextField
                               {...params}
                               variant="outlined"
-                              placeholder="Contato"
+                              placeholder="Contacto"
                             />
                           )}
                         />
@@ -737,7 +737,7 @@ const ScheduleModal = ({
                     fullWidth
                     margin="dense"
                     label={i18n.t("ticketInfo.quickMessages")}
-                    placeholder="Digite para buscar respostas rápidas..."
+                    placeholder="Escribe para buscar respuestas rápidas..."
                     value={quickMessageSearch}
                     onChange={(e) => {
                       setQuickMessageSearch(e.target.value);
@@ -1046,7 +1046,7 @@ const ScheduleModal = ({
                     <Grid item xs={12} md={6} xl={6}>
                       <Field
                         as={TextField}
-                        label="Data do Lembrete"
+                        label="Fecha del recordatorio"
                         type="datetime-local"
                         name="reminderDate"
                         error={touched.reminderDate && Boolean(errors.reminderDate)}
@@ -1136,7 +1136,7 @@ const ScheduleModal = ({
                         id="demo-simple-select"
                         value={tipoDias}
                         onChange={(e) => setTipoDias(e.target.value || 4)}
-                        label="Enviar quantas vezes"
+                        label="Enviar cuántas veces"
                       >
                         <MenuItem value={4}>
                           {i18n.t(
@@ -1164,7 +1164,7 @@ const ScheduleModal = ({
                       </Button>
                       {quickMessageMedia && (
                         <Chip
-                          label="Da Resposta Rápida"
+                          label="De respuesta rápida"
                           size="small"
                           color="primary"
                           variant="outlined"

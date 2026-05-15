@@ -210,7 +210,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.mode === "light" ? "#ffffff" : "#202c33",
     borderTop: "1px solid rgba(0, 0, 0, 0.12)",
   },
-  emojiBox: {
+  emojiBoxLegacy: {
     position: "absolute",
     bottom: 63,
     width: 40,
@@ -468,16 +468,52 @@ const useStyles = makeStyles((theme) => ({
     flex: 1,
   },
   pendingAlert: {
-    marginBottom: theme.spacing(1),
-    padding: theme.spacing(1, 2),
-    backgroundColor: "#E3F2FD",
-    border: "1px solid #2196F3",
-    borderRadius: 4,
+    margin: theme.spacing(1, 1.5, 1, 1.5),
+    padding: theme.spacing(1.25, 2),
+    backgroundColor: theme.palette.type === "dark" ? "rgba(33,150,243,0.12)" : "#EBF5FF",
+    border: `1px solid ${theme.palette.type === "dark" ? "rgba(33,150,243,0.35)" : "#BBDEFB"}`,
+    borderRadius: 12,
     display: "flex",
     alignItems: "center",
-    gap: theme.spacing(1),
-    color: "#1976D2",
-    fontSize: "0.875rem",
+    gap: theme.spacing(1.25),
+    color: theme.palette.type === "dark" ? "#90CAF9" : "#1565C0",
+    fontSize: "0.8125rem",
+    lineHeight: 1.4,
+    boxShadow: theme.palette.type === "dark" ? "none" : "0 1px 3px rgba(0,0,0,0.04)",
+    "& strong": {
+      fontWeight: 600,
+    },
+    [theme.breakpoints.down("sm")]: {
+      margin: theme.spacing(0.75, 1),
+      padding: theme.spacing(1, 1.5),
+      fontSize: "0.78rem",
+      borderRadius: 10,
+    },
+  },
+  emojiBox: {
+    position: "absolute",
+    bottom: 60,
+    left: 16,
+    zIndex: 1500,
+    borderRadius: 12,
+    overflow: "hidden",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+    "& .emoji-mart": {
+      border: "none !important",
+      borderRadius: "12px !important",
+      fontFamily: theme.typography.fontFamily,
+    },
+    "& .emoji-mart-bar": {
+      borderRadius: "12px 12px 0 0 !important",
+    },
+    [theme.breakpoints.down("sm")]: {
+      left: 8,
+      right: 8,
+      bottom: 56,
+      "& .emoji-mart": {
+        width: "100% !important",
+      },
+    },
   },
 }));
 
@@ -583,7 +619,7 @@ const MessageInput = ({
     if (ticketStatus === "open" || ticketStatus === "group") {
       setPlaceHolderText(i18n.t("messagesInput.placeholderOpen"));
     } else if (ticketStatus === "pending") {
-      setPlaceHolderText("Digite sua mensagem interna (ticket aguardando)...");
+      setPlaceHolderText("Escribe un mensaje interno (ticket en espera)...");
     } else {
       setPlaceHolderText(i18n.t("messagesInput.placeholderClosed"));
     }
@@ -1204,7 +1240,7 @@ const MessageInput = ({
     setLoading(true);
 
     const userName = (privateMessage || isTicketPending())
-      ? `${user.name} - Mensagem Interna`
+      ? `${user.name} - Mensaje interno`
       : user.name;
 
     const sendMessage = inputMessage.trim();
@@ -1424,7 +1460,7 @@ const MessageInput = ({
       }
 
       formData.append("medias", blob, filename);
-      formData.append("body", "🎵 Mensagem de voz"); // ✅ Body mais claro
+      formData.append("body", "🎵 Mensaje de voz");
       formData.append("fromMe", true);
       formData.append("isPrivate", (privateMessage || isTicketPending()) ? "true" : "false");
 
@@ -1765,7 +1801,7 @@ const MessageInput = ({
       <Box className={classes.pendingAlert}>
         <Info style={{ fontSize: 20 }} />
         <span>
-          <strong>Ticket Aguardando:</strong> Apenas mensagens internas são permitidas neste momento.
+          <strong>Ticket en espera:</strong> solo se permiten mensajes internos en este momento.
         </span>
       </Box>
     );
@@ -2243,7 +2279,7 @@ const MessageInput = ({
                       className={isTicketPending() ? classes.messageInputPending : classes.messageInputPrivate}
                       placeholder={
                         isTicketPending()
-                          ? "Mensagem interna (ticket aguardando aceite)..."
+                          ? "Mensaje interno (ticket en espera de aceptación)..."
                           : ticketStatus === "open" || ticketStatus === "group"
                             ? i18n.t("messagesInput.placeholderPrivateMessage")
                             : i18n.t("messagesInput.placeholderClosed")
