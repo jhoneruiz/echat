@@ -180,6 +180,9 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
   const [selectedQueueIds, setSelectedQueueIds] = useState([]);
   const [queues, setQueues] = useState([]);
   const [tab, setTab] = useState("general");
+  // Tracking del campo de mensaje enfocado actualmente para insertar variables
+  const [focusedMsgField, setFocusedMsgField] = useState("greetingMessage");
+  const [msgFieldCursors, setMsgFieldCursors] = useState({});
   const [enableImportMessage, setEnableImportMessage] = useState(false);
   const [importOldMessagesGroups, setImportOldMessagesGroups] = useState(false);
   const [closedTicketsPostImported, setClosedTicketsPostImported] =
@@ -1464,7 +1467,7 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                       }}
                     >
                       <Typography variant="caption" style={{ fontWeight: 600, display: "block", marginBottom: 6 }}>
-                        💡 Variables disponibles (haz clic para copiar y pegarlas en el mensaje):
+                        💡 Variables disponibles — haz clic para insertarlas en el campo activo ({focusedMsgField === "greetingMessage" ? "Saludo" : focusedMsgField === "complationMessage" ? "Conclusión" : focusedMsgField === "outOfHoursMessage" ? "Fuera de horario" : focusedMsgField === "collectiveVacationMessage" ? "Vacaciones" : "Saludo"}):
                       </Typography>
                       <Box display="flex" flexWrap="wrap" gridGap={6} style={{ gap: 6 }}>
                         {[
@@ -1484,10 +1487,23 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                             key={v}
                             size="small"
                             label={d}
-                            title={`Copia ${v} al portapapeles`}
+                            title={`Inserta ${v} en ${focusedMsgField}`}
                             onClick={() => {
-                              navigator.clipboard.writeText(v);
-                              toast.success(`Copiado: ${v}`);
+                              const fieldName = focusedMsgField || "greetingMessage";
+                              const current = values[fieldName] || "";
+                              const pos = msgFieldCursors[fieldName] ?? current.length;
+                              const next = current.substring(0, pos) + v + current.substring(pos);
+                              setFieldValue(fieldName, next);
+                              // Restaurar foco al campo y posicionar cursor después del var insertado
+                              setTimeout(() => {
+                                const el = document.querySelector(`textarea[name="${fieldName}"]`);
+                                if (el) {
+                                  el.focus();
+                                  const newPos = pos + v.length;
+                                  el.setSelectionRange(newPos, newPos);
+                                  setMsgFieldCursors(prev => ({ ...prev, [fieldName]: newPos }));
+                                }
+                              }, 0);
                             }}
                             style={{
                               fontSize: "0.72rem",
@@ -1523,6 +1539,8 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                           }
                           variant="outlined"
                           margin="dense"
+                          onFocus={() => setFocusedMsgField("greetingMessage")}
+                          onSelect={(e) => setMsgFieldCursors(p => ({ ...p, greetingMessage: e.target.selectionStart }))}
                         />
                       </Grid>
 
@@ -1545,11 +1563,16 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                           }
                           variant="outlined"
                           margin="dense"
+                          onFocus={() => setFocusedMsgField("complationMessage")}
+                          onSelect={(e) => setMsgFieldCursors(p => ({ ...p, complationMessage: e.target.selectionStart }))}
                         />
                       </Grid>
 
                       {/* MENSAGEM DE FORA DE EXPEDIENTE */}
                       <Grid item xs={12} md={12} xl={12}>
+                        <Typography variant="caption" color="textSecondary" style={{ display: "block", marginTop: 8, marginBottom: 4 }}>
+                          ⏰ Este mensaje se enviará automáticamente cuando un cliente escriba <strong>fuera del horario de atención</strong>. Los horarios se configuran en la <strong>cola del ticket</strong> o en esta conexión (pestaña Horarios/Schedules de cada una). Si ambas están configuradas, prevalece la de la cola.
+                        </Typography>
                         <Field
                           as={TextField}
                           label={i18n.t("whatsappModal.form.outOfHoursMessage")}
@@ -1567,6 +1590,8 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                           }
                           variant="outlined"
                           margin="dense"
+                          onFocus={() => setFocusedMsgField("outOfHoursMessage")}
+                          onSelect={(e) => setMsgFieldCursors(p => ({ ...p, outOfHoursMessage: e.target.selectionStart }))}
                         />
                       </Grid>
                       {/* MENSAGEM DE FÉRIAS COLETIVAS */}
@@ -1593,6 +1618,8 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                           }
                           variant="outlined"
                           margin="dense"
+                          onFocus={() => setFocusedMsgField("collectiveVacationMessage")}
+                          onSelect={(e) => setMsgFieldCursors(p => ({ ...p, collectiveVacationMessage: e.target.selectionStart }))}
                         />
                       </Grid>
                       <Grid item xs={6}>

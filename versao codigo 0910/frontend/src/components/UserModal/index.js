@@ -27,7 +27,18 @@ import { AuthContext } from "../../context/Auth/AuthContext";
 import useWhatsApps from "../../hooks/useWhatsApps";
 
 import { Can } from "../Can";
-import { Avatar, Grid, Input, Paper, Tab, Tabs } from "@material-ui/core";
+import {
+  Avatar,
+  Grid,
+  Input,
+  Paper,
+  Tab,
+  Tabs,
+  Switch,
+  Typography,
+  Box,
+  Divider,
+} from "@material-ui/core";
 import { getBackendUrl } from "../../config";
 import TabPanel from "../TabPanel";
 import AvatarUploader from "../AvatarUpload";
@@ -129,6 +140,131 @@ const parseDateFromInput = (dateString) => {
   return dateString;
 };
 
+// Definición de los 14 permisos del agente con su descripción.
+// onValue/offValue mantienen los valores legacy esperados por el backend.
+const PERMISSIONS = [
+  {
+    key: "allTicket",
+    icon: "🎫",
+    title: "Ver todos los tickets",
+    desc: "Permite al agente ver tickets de TODOS los usuarios, no solo los suyos. Útil para supervisores o cuando un agente debe poder tomar tickets de cualquier cola.",
+    onValue: "enable",
+    offValue: "disable",
+  },
+  {
+    key: "allowGroup",
+    icon: "👥",
+    title: "Permitir grupos de WhatsApp",
+    desc: "Permite que este agente vea y atienda chats de grupos de WhatsApp. Si está deshabilitado, solo verá chats individuales (1 a 1).",
+    onValue: true,
+    offValue: false,
+  },
+  {
+    key: "allHistoric",
+    icon: "📜",
+    title: "Ver historial de tickets cerrados",
+    desc: "Cuando un cliente vuelve a escribir, el agente puede ver el historial de tickets cerrados anteriores. Útil para dar continuidad a la conversación.",
+    onValue: "enabled",
+    offValue: "disabled",
+  },
+  {
+    key: "allUserChat",
+    icon: "💬",
+    title: "Ver chats de todos los agentes",
+    desc: "Permite que este agente vea los chats internos entre TODOS los agentes (no solo en los que él participa). Generalmente solo para supervisores.",
+    onValue: "enabled",
+    offValue: "disabled",
+  },
+  {
+    key: "userClosePendingTicket",
+    icon: "✖️",
+    title: "Cerrar tickets pendientes",
+    desc: "Permite cerrar tickets que están en estado 'pendiente' (sin aceptar todavía). Útil para limpiar la cola de tickets sin respuesta.",
+    onValue: "enabled",
+    offValue: "disabled",
+  },
+  {
+    key: "allowSeeMessagesInPendingTickets",
+    icon: "👁️",
+    title: "Ver mensajes en tickets pendientes",
+    desc: "Permite ver el contenido de los mensajes de tickets que aún no han sido aceptados. Si está deshabilitado, solo se ve quién escribió pero no qué.",
+    onValue: "enabled",
+    offValue: "disabled",
+  },
+  {
+    key: "mobileNotifications",
+    icon: "🔔",
+    title: "Notificaciones push móvil",
+    desc: "Recibe notificaciones push en el celular/PWA cuando llegan nuevos mensajes. Por defecto está apagado para no saturar al agente.",
+    onValue: "enabled",
+    offValue: "disabled",
+  },
+  {
+    key: "allowConnections",
+    icon: "🔌",
+    title: "Acceso a Conexiones",
+    desc: "Permite ver y gestionar las conexiones de WhatsApp (agregar nuevas, configurar QR, editar, eliminar). Es un permiso administrativo.",
+    onValue: "enabled",
+    offValue: "disabled",
+  },
+  {
+    key: "showDashboard",
+    icon: "📊",
+    title: "Ver Dashboard",
+    desc: "Permite acceder al panel de métricas/estadísticas (tickets atendidos, tiempos de respuesta, etc.). Habilítalo para supervisores y gerentes.",
+    onValue: "enabled",
+    offValue: "disabled",
+  },
+  {
+    key: "allowRealTime",
+    icon: "⚡",
+    title: "Reportes en tiempo real",
+    desc: "Permite ver la sección 'En tiempo real' con tickets activos, agentes conectados y métricas live. Generalmente para supervisores.",
+    onValue: "enabled",
+    offValue: "disabled",
+  },
+  {
+    key: "showContacts",
+    icon: "📒",
+    title: "Acceso a Contactos",
+    desc: "Permite ver el listado de Contactos, agregar nuevos, editar, importar/exportar CSV y bloquear contactos.",
+    onValue: "enabled",
+    offValue: "disabled",
+  },
+  {
+    key: "showCampaign",
+    icon: "📣",
+    title: "Acceso a Campañas",
+    desc: "Permite crear y enviar campañas masivas de WhatsApp (broadcasts a varios contactos a la vez). Habilítalo para marketing.",
+    onValue: "enabled",
+    offValue: "disabled",
+  },
+  {
+    key: "showFlow",
+    icon: "🔀",
+    title: "Acceso a FlowBuilder",
+    desc: "Permite acceder al diseñador de flujos automáticos (chatbot visual). Solo para administradores que configuran la automatización.",
+    onValue: "enabled",
+    offValue: "disabled",
+  },
+  {
+    key: "finalizacaoComValorVendaAtiva",
+    icon: "💰",
+    title: "Cerrar ticket con valor de venta",
+    desc: "Al cerrar un ticket, pide al agente registrar el valor monetario de la venta concretada. Útil para medir conversión.",
+    onValue: "true",
+    offValue: "false",
+  },
+];
+
+// Helper: determina si un permiso está "activo" comparando su valor actual contra onValue
+const isPermissionOn = (value, perm) => {
+  if (value === undefined || value === null) return false;
+  // Booleano puro
+  if (typeof perm.onValue === "boolean") return value === true || value === "true";
+  // String legacy ("enable"/"enabled"/"true")
+  return String(value) === String(perm.onValue);
+};
 
 const UserModal = ({ open, onClose, userId }) => {
   const classes = useStyles();
@@ -340,7 +476,7 @@ const UserModal = ({ open, onClose, userId }) => {
             }, 400);
           }}
         >
-          {({ touched, errors, isSubmitting, setFieldValue }) => (
+          {({ values, touched, errors, isSubmitting, setFieldValue }) => (
             <Form>
               <Paper className={classes.mainPaper} elevation={1}>
                 <Tabs
@@ -686,488 +822,81 @@ const UserModal = ({ open, onClose, userId }) => {
                       perform="user-modal:editProfile"
                       yes={() => (
                         <>
-                          <Grid container spacing={1}>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.allTicket")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t("userModal.form.allTicket")}
-                                    name="allTicket"
-                                    type="allTicket"
-                                    required
+                          <Typography
+                            variant="caption"
+                            color="textSecondary"
+                            style={{ display: "block", marginBottom: 12 }}
+                          >
+                            Activa o desactiva el acceso del agente a cada función del sistema.
+                            Haz clic en el switch para cambiar.
+                          </Typography>
+                          {PERMISSIONS.map((perm, idx) => {
+                            const currentValue = values[perm.key];
+                            const isOn = isPermissionOn(currentValue, perm);
+                            return (
+                              <React.Fragment key={perm.key}>
+                                <Box
+                                  display="flex"
+                                  alignItems="flex-start"
+                                  py={1.5}
+                                  px={1}
+                                  style={{
+                                    gap: 12,
+                                    borderRadius: 8,
+                                    transition: "background 0.15s",
+                                  }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.background = "#F8FAFC")
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.background = "transparent")
+                                  }
+                                >
+                                  <Box
+                                    style={{
+                                      fontSize: "1.5rem",
+                                      minWidth: 32,
+                                      textAlign: "center",
+                                    }}
                                   >
-                                    <MenuItem value="enable">
-                                      {i18n.t("userModal.form.allTicketEnable")}
-                                    </MenuItem>
-                                    <MenuItem value="disable">
-                                      {i18n.t(
-                                        "userModal.form.allTicketDisable"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.allowGroup")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t("userModal.form.allowGroup")}
-                                    name="allowGroup"
-                                    type="allowGroup"
-                                    required
-                                  >
-                                    <MenuItem value={true}>
-                                      {i18n.t("userModal.form.allTicketEnable")}
-                                    </MenuItem>
-                                    <MenuItem value={false}>
-                                      {i18n.t(
-                                        "userModal.form.allTicketDisable"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                          </Grid>
-
-                          <Grid container spacing={1}>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.allHistoric")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t("userModal.form.allHistoric")}
-                                    name="allHistoric"
-                                    type="allHistoric"
-                                    required
-                                  >
-                                    <MenuItem value="disabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricDisabled"
-                                      )}
-                                    </MenuItem>
-                                    <MenuItem value="enabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricEnabled"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.allUserChat")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t("userModal.form.allUserChat")}
-                                    name="allUserChat"
-                                    type="allUserChat"
-                                    required
-                                  >
-                                    <MenuItem value="disabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricDisabled"
-                                      )}
-                                    </MenuItem>
-                                    <MenuItem value="enabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricEnabled"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                          </Grid>
-
-                          <Grid container spacing={1}>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t(
-                                      "userModal.form.userClosePendingTicket"
-                                    )}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t(
-                                      "userModal.form.userClosePendingTicket"
-                                    )}
-                                    name="userClosePendingTicket"
-                                    type="userClosePendingTicket"
-                                    required
-                                  >
-                                    <MenuItem value="disabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricDisabled"
-                                      )}
-                                    </MenuItem>
-                                    <MenuItem value="enabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricEnabled"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.allowSeeMessagesInPendingTickets")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t("userModal.form.allowSeeMessagesInPendingTickets")}
-                                    name="allowSeeMessagesInPendingTickets"
-                                    type="allowSeeMessagesInPendingTickets"
-                                    required
-                                  >
-                                    <MenuItem value="disabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricDisabled"
-                                      )}
-                                    </MenuItem>
-                                    <MenuItem value="enabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricEnabled"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.mobileNotifications")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t("userModal.form.mobileNotifications")}
-                                    name="mobileNotifications"
-                                    type="mobileNotifications"
-                                    required
-                                  >
-                                    <MenuItem value="disabled">
-                                      {i18n.t("userModal.form.allHistoricDisabled")}
-                                    </MenuItem>
-                                    <MenuItem value="enabled">
-                                      {i18n.t("userModal.form.allHistoricEnabled")}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                          </Grid>
-
-                          <Grid container spacing={1}>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.allowConnections")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t(
-                                      "userModal.form.allowConnections"
-                                    )}
-                                    name="allowConnections"
-                                    type="allowConnections"
-                                    required
-                                  >
-                                    <MenuItem value="disabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricDisabled"
-                                      )}
-                                    </MenuItem>
-                                    <MenuItem value="enabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricEnabled"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.showDashboard")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t(
-                                      "userModal.form.showDashboard"
-                                    )}
-                                    name="showDashboard"
-                                    type="showDashboard"
-                                    required
-                                  >
-                                    <MenuItem value="disabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricDisabled"
-                                      )}
-                                    </MenuItem>
-                                    <MenuItem value="enabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricEnabled"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                          </Grid>
-
-                          <Grid container spacing={1}>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.allowRealTime")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t(
-                                      "userModal.form.allowRealTime"
-                                    )}
-                                    name="allowRealTime"
-                                    type="allowRealTime"
-                                    required
-                                  >
-                                    <MenuItem value="disabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricDisabled"
-                                      )}
-                                    </MenuItem>
-                                    <MenuItem value="enabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricEnabled"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.showContacts")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t(
-                                      "userModal.form.showContacts"
-                                    )}
-                                    name="showContacts"
-                                    type="showContacts"
-                                    required
-                                  >
-                                    <MenuItem value="disabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricDisabled"
-                                      )}
-                                    </MenuItem>
-                                    <MenuItem value="enabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricEnabled"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                          </Grid>
-
-                          <Grid container spacing={1}>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.showCampaign")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t(
-                                      "userModal.form.showCampaign"
-                                    )}
-                                    name="showCampaign"
-                                    type="showCampaign"
-                                    required
-                                  >
-                                    <MenuItem value="disabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricDisabled"
-                                      )}
-                                    </MenuItem>
-                                    <MenuItem value="enabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricEnabled"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    {i18n.t("userModal.form.showFlow")}
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label={i18n.t("userModal.form.showFlow")}
-                                    name="showFlow"
-                                    type="showFlow"
-                                    required
-                                  >
-                                    <MenuItem value="disabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricDisabled"
-                                      )}
-                                    </MenuItem>
-                                    <MenuItem value="enabled">
-                                      {i18n.t(
-                                        "userModal.form.allHistoricEnabled"
-                                      )}
-                                    </MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                          </Grid>
-
-                          <Grid container spacing={1}>
-                            <Grid item xs={12} md={6} xl={6}>
-                              <FormControl
-                                variant="outlined"
-                                className={classes.maxWidth}
-                                margin="dense"
-                                fullWidth
-                              >
-                                <>
-                                  <InputLabel>
-                                    Finalização com Valor de Venda
-                                  </InputLabel>
-
-                                  <Field
-                                    as={Select}
-                                    label="Finalização com Valor de Venda"
-                                    name="finalizacaoComValorVendaAtiva"
-                                    type="finalizacaoComValorVendaAtiva"
-                                    required
-                                  >
-                                    <MenuItem value="false">
-                                      Desabilitado
-                                    </MenuItem>
-                                    <MenuItem value="true">Habilitado</MenuItem>
-                                  </Field>
-                                </>
-                              </FormControl>
-                            </Grid>
-                          </Grid>
+                                    {perm.icon}
+                                  </Box>
+                                  <Box flex={1}>
+                                    <Typography
+                                      style={{
+                                        fontSize: "0.92rem",
+                                        fontWeight: 600,
+                                        marginBottom: 2,
+                                      }}
+                                    >
+                                      {perm.title}
+                                    </Typography>
+                                    <Typography
+                                      variant="caption"
+                                      color="textSecondary"
+                                      style={{
+                                        fontSize: "0.78rem",
+                                        lineHeight: 1.35,
+                                      }}
+                                    >
+                                      {perm.desc}
+                                    </Typography>
+                                  </Box>
+                                  <Switch
+                                    checked={isOn}
+                                    onChange={(e) =>
+                                      setFieldValue(
+                                        perm.key,
+                                        e.target.checked ? perm.onValue : perm.offValue
+                                      )
+                                    }
+                                    color="primary"
+                                  />
+                                </Box>
+                                {idx < PERMISSIONS.length - 1 && <Divider />}
+                              </React.Fragment>
+                            );
+                          })}
                         </>
                       )}
                     />
