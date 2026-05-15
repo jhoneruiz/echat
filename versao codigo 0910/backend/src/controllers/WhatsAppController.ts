@@ -353,9 +353,7 @@ export const storeFacebook = async (
         });
 
         await subscribeApp(id, acessTokenPage);
-      }
-
-      if (!instagram_business_account) {
+      } else {
         pages.push({
           companyId,
           name,
