@@ -97,7 +97,8 @@ export class SendMessageWhatsappService extends BaseService<SendMessageWhatsApp>
   ) {
     try {
       const data: CreateSendMessageWhatsappDto = JSON.parse(dados_mensagem);
-      const regex = /^\+55\d{2}\d{8,9}$/;
+      // E.164 internacional: + seguido de 8 a 15 dígitos (cualquier país)
+      const regex = /^\+\d{8,15}$/;
 
       if (!data.to)
         throw new Error('Necessário informar o número do destinatario');
