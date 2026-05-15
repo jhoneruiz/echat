@@ -14,19 +14,31 @@ import {
   TableRow,
   IconButton,
   Select,
+  Typography,
+  Box,
+  Chip,
+  TableContainer,
+  Divider,
 } from "@material-ui/core";
 import { Formik, Form, Field } from "formik";
 import ButtonWithSpinner from "../ButtonWithSpinner";
 import ConfirmationModal from "../ConfirmationModal";
 
-import { Edit as EditIcon } from "@material-ui/icons";
+import {
+  Edit as EditIcon,
+  Business as BusinessIcon,
+  EventAvailable,
+  ListAlt,
+  CheckCircle,
+  Cancel,
+} from "@material-ui/icons";
 
 import { toast } from "react-toastify";
 import useCompanies from "../../hooks/useCompanies";
 import usePlans from "../../hooks/usePlans";
 import ModalUsers from "../ModalUsers";
 import api from "../../services/api";
-import { head, isArray, has } from "lodash";
+import { head, isArray } from "lodash";
 import { useDate } from "../../hooks/useDate";
 import ColorModeContext from "../../layout/themeContext";
 
@@ -35,41 +47,122 @@ import { i18n } from "../../translate/i18n";
 import { useTheme } from "@material-ui/core/styles";
 
 const useStyles = makeStyles((theme) => ({
-  root: {
+  container: {
     width: "100%",
-    padding: "2px"
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing(2.5),
   },
-  mainPaper: {
-    width: "100%",
-    flex: 1,
-    // padding: theme.spacing(2), //comentado para retirar o scroll do Empresas
+  sectionCard: {
+    padding: theme.spacing(3),
+    borderRadius: 14,
+    border: `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.background.paper,
+    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+    [theme.breakpoints.down("sm")]: {
+      padding: theme.spacing(2),
+      borderRadius: 10,
+    },
   },
-  fullWidth: {
-    width: "100%",
+  sectionHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1.5),
+    marginBottom: theme.spacing(2.5),
   },
-  tableContainer: {
-    width: "100%",
-    // overflowX: "scroll",
-    // ...theme.scrollbarStyles,
-    padding: "2px",
+  sectionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor:
+      theme.palette.type === "dark" ? "rgba(59,130,246,0.15)" : "#EBF5FF",
+    color: theme.palette.primary.main,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  textfield: {
-    width: "100%",
+  sectionTitle: {
+    fontSize: "1rem",
+    fontWeight: 600,
+    lineHeight: 1.2,
   },
-  textRight: {
-    textAlign: "right",
+  sectionSubtitle: {
+    fontSize: "0.8rem",
+    color: theme.palette.text.secondary,
+    marginTop: 2,
   },
-  row: {
-    // paddingTop: theme.spacing(2),
-    // paddingBottom: theme.spacing(2),
+  subSectionTitle: {
+    fontSize: "0.85rem",
+    fontWeight: 600,
+    margin: theme.spacing(2, 0, 1.5),
   },
-  control: {
-    // paddingRight: theme.spacing(1),
-    // paddingLeft: theme.spacing(1),
+  fullWidth: { width: "100%" },
+  buttonsRow: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: theme.spacing(1.25),
+    marginTop: theme.spacing(2),
+    flexWrap: "wrap",
   },
-  buttonContainer: {
-    textAlign: "right",
-    // padding: theme.spacing(1),
+  tableHead: {
+    "& .MuiTableCell-head": {
+      backgroundColor:
+        theme.palette.type === "dark" ? "rgba(255,255,255,0.04)" : "#F8FAFC",
+      fontWeight: 600,
+      fontSize: "0.78rem",
+      textTransform: "uppercase",
+      letterSpacing: "0.04em",
+      color: theme.palette.text.secondary,
+      borderBottom: `1px solid ${theme.palette.divider}`,
+      padding: theme.spacing(1.25, 1.5),
+    },
+  },
+  tableRow: {
+    cursor: "pointer",
+    transition: "background-color 0.15s ease",
+    "&:hover": {
+      backgroundColor:
+        theme.palette.type === "dark"
+          ? "rgba(59,130,246,0.06)"
+          : "#F8FAFC",
+    },
+    "& .MuiTableCell-body": {
+      padding: theme.spacing(1.25, 1.5),
+      fontSize: "0.85rem",
+    },
+  },
+  rowDueWarn: {
+    backgroundColor:
+      theme.palette.type === "dark"
+        ? "rgba(255,235,59,0.08)"
+        : "#FFFBEB !important",
+  },
+  rowDueExpired: {
+    backgroundColor:
+      theme.palette.type === "dark"
+        ? "rgba(244,67,54,0.12)"
+        : "#FEE2E2 !important",
+  },
+  badgeActive: {
+    height: 22,
+    fontSize: "0.7rem",
+    backgroundColor:
+      theme.palette.type === "dark" ? "rgba(76,175,80,0.18)" : "#E8F5E9",
+    color: theme.palette.type === "dark" ? "#81C784" : "#2E7D32",
+    fontWeight: 600,
+  },
+  badgeInactive: {
+    height: 22,
+    fontSize: "0.7rem",
+    backgroundColor:
+      theme.palette.type === "dark" ? "rgba(255,255,255,0.05)" : "#F1F5F9",
+    color: theme.palette.text.secondary,
+    fontWeight: 500,
+  },
+  emptyState: {
+    padding: theme.spacing(6, 2),
+    textAlign: "center",
+    color: theme.palette.text.secondary,
   },
 }));
 
@@ -86,7 +179,6 @@ export function CompanyForm(props) {
     phone: "",
     planId: "",
     status: true,
-    // campaignsEnabled: false,
     dueDate: "",
     recurrence: "",
     password: "",
@@ -112,10 +204,7 @@ export function CompanyForm(props) {
           "YYYY-MM-DD"
         );
       }
-      return {
-        ...prev,
-        ...initialValue,
-      };
+      return { ...prev, ...initialValue };
     });
   }, [initialValue]);
 
@@ -123,25 +212,8 @@ export function CompanyForm(props) {
     if (data.dueDate === "" || moment(data.dueDate).isValid() === false) {
       data.dueDate = null;
     }
-    console.log("Dados do formulário:", data);
     onSubmit(data);
     setRecord({ ...initialValue, dueDate: "", generateInvoice: true });
-  };
-
-  const handleOpenModalUsers = async () => {
-    try {
-      const { data } = await api.get("/users/list", {
-        params: {
-          companyId: initialValue.id,
-        },
-      });
-      if (isArray(data) && data.length) {
-        setFirstUser(head(data));
-      }
-      setModalUser(true);
-    } catch (e) {
-      toast.error(e);
-    }
   };
 
   const handleCloseModalUsers = () => {
@@ -152,34 +224,18 @@ export function CompanyForm(props) {
   const incrementDueDate = () => {
     const data = { ...record };
     if (data.dueDate !== "" && data.dueDate !== null) {
-      switch (data.recurrence) {
-        case "MENSAL":
-          data.dueDate = moment(data.dueDate)
-            .add(1, "month")
-            .format("YYYY-MM-DD");
-          break;
-        case "BIMESTRAL":
-          data.dueDate = moment(data.dueDate)
-            .add(2, "month")
-            .format("YYYY-MM-DD");
-          break;
-        case "TRIMESTRAL":
-          data.dueDate = moment(data.dueDate)
-            .add(3, "month")
-            .format("YYYY-MM-DD");
-          break;
-        case "SEMESTRAL":
-          data.dueDate = moment(data.dueDate)
-            .add(6, "month")
-            .format("YYYY-MM-DD");
-          break;
-        case "ANUAL":
-          data.dueDate = moment(data.dueDate)
-            .add(12, "month")
-            .format("YYYY-MM-DD");
-          break;
-        default:
-          break;
+      const monthsByRecurrence = {
+        MENSAL: 1,
+        BIMESTRAL: 2,
+        TRIMESTRAL: 3,
+        SEMESTRAL: 6,
+        ANUAL: 12,
+      };
+      const months = monthsByRecurrence[data.recurrence];
+      if (months) {
+        data.dueDate = moment(data.dueDate)
+          .add(months, "month")
+          .format("YYYY-MM-DD");
       }
     }
     setRecord(data);
@@ -195,7 +251,6 @@ export function CompanyForm(props) {
       />
       <Formik
         enableReinitialize
-        className={classes.fullWidth}
         initialValues={record}
         onSubmit={(values, { resetForm }) =>
           setTimeout(() => {
@@ -204,255 +259,218 @@ export function CompanyForm(props) {
           }, 500)
         }
       >
-        {(values, setValues) => (
+        {() => (
           <Form className={classes.fullWidth}>
-            <Grid spacing={1} justifyContent="center" container>
-              <Grid xs={12} sm={6} md={3} item>
-                <Field
-                  as={TextField}
-                  label={i18n.t("compaies.table.name")}
-                  name="name"
-                  variant="outlined"
-                  className={classes.fullWidth}
-                  margin="dense"
-                />
-              </Grid>
-              <Grid xs={12} sm={6} md={2} item>
-                <Field
-                  as={TextField}
-                  label={i18n.t("compaies.table.email")}
-                  name="email"
-                  variant="outlined"
-                  className={classes.fullWidth}
-                  margin="dense"
-                  required
-                />
-              </Grid>
-              <Grid xs={12} sm={6} md={2} item>
-                <Field
-                  as={TextField}
-                  label={i18n.t("compaies.table.password")}
-                  name="password"
-                  variant="outlined"
-                  className={classes.fullWidth}
-                  margin="dense"
-                />
-              </Grid>
-              <Grid xs={12} sm={6} md={2} item>
-                <Field
-                  as={TextField}
-                  label={i18n.t("compaies.table.phone")}
-                  name="phone"
-                  variant="outlined"
-                  className={classes.fullWidth}
-                  margin="dense"
-                />
-              </Grid>
-              <Grid xs={12} sm={6} md={2} item>
-                <FormControl margin="dense" variant="outlined" fullWidth>
-                  <InputLabel htmlFor="plan-selection">{i18n.t("compaies.table.plan")}</InputLabel>
+            <Paper elevation={0} className={classes.sectionCard}>
+              <div className={classes.sectionHeader}>
+                <div className={classes.sectionIcon}>
+                  <BusinessIcon fontSize="small" />
+                </div>
+                <Box>
+                  <Typography className={classes.sectionTitle}>
+                    {record.id ? "Editar empresa" : "Nueva empresa"}
+                  </Typography>
+                  <Typography className={classes.sectionSubtitle}>
+                    Datos de contacto, plan asignado y facturación.
+                  </Typography>
+                </Box>
+              </div>
+
+              {/* Datos básicos */}
+              <Grid spacing={2} container>
+                <Grid xs={12} sm={6} md={4} item>
                   <Field
-                    as={Select}
-                    id="plan-selection"
-                    label={i18n.t("compaies.table.plan")}
-                    labelId="plan-selection-label"
-                    name="planId"
-                    margin="dense"
+                    as={TextField}
+                    label={i18n.t("compaies.table.name")}
+                    name="name"
+                    variant="outlined"
+                    className={classes.fullWidth}
+                    size="small"
+                  />
+                </Grid>
+                <Grid xs={12} sm={6} md={4} item>
+                  <Field
+                    as={TextField}
+                    label={i18n.t("compaies.table.email")}
+                    name="email"
+                    variant="outlined"
+                    className={classes.fullWidth}
+                    size="small"
                     required
-                  >
-                    {plans.map((plan, key) => (
-                      <MenuItem key={key} value={plan.id}>
-                        {plan.name}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6} md={4} item>
+                  <Field
+                    as={TextField}
+                    label={i18n.t("compaies.table.phone")}
+                    name="phone"
+                    variant="outlined"
+                    className={classes.fullWidth}
+                    size="small"
+                  />
+                </Grid>
+                <Grid xs={12} sm={6} md={4} item>
+                  <Field
+                    as={TextField}
+                    label={i18n.t("compaies.table.password")}
+                    name="password"
+                    type="password"
+                    variant="outlined"
+                    className={classes.fullWidth}
+                    size="small"
+                  />
+                </Grid>
+                <Grid xs={12} sm={6} md={4} item>
+                  <Field
+                    as={TextField}
+                    label={i18n.t("compaies.table.document")}
+                    name="document"
+                    variant="outlined"
+                    className={classes.fullWidth}
+                    size="small"
+                  />
+                </Grid>
+              </Grid>
+
+              <Typography className={classes.subSectionTitle}>
+                Plan y estado
+              </Typography>
+              <Grid spacing={2} container>
+                <Grid xs={12} sm={6} md={4} item>
+                  <FormControl variant="outlined" fullWidth size="small">
+                    <InputLabel>{i18n.t("compaies.table.plan")}</InputLabel>
+                    <Field
+                      as={Select}
+                      label={i18n.t("compaies.table.plan")}
+                      name="planId"
+                      required
+                    >
+                      {plans.map((plan, key) => (
+                        <MenuItem key={key} value={plan.id}>
+                          {plan.name}
+                        </MenuItem>
+                      ))}
+                    </Field>
+                  </FormControl>
+                </Grid>
+                <Grid xs={6} sm={3} md={2} item>
+                  <FormControl variant="outlined" fullWidth size="small">
+                    <InputLabel>{i18n.t("compaies.table.active")}</InputLabel>
+                    <Field
+                      as={Select}
+                      label={i18n.t("compaies.table.active")}
+                      name="status"
+                    >
+                      <MenuItem value={true}>
+                        {i18n.t("compaies.table.yes")}
                       </MenuItem>
-                    ))}
-                  </Field>
-                </FormControl>
+                      <MenuItem value={false}>
+                        {i18n.t("compaies.table.no")}
+                      </MenuItem>
+                    </Field>
+                  </FormControl>
+                </Grid>
+                <Grid xs={6} sm={3} md={2} item>
+                  <FormControl variant="outlined" fullWidth size="small">
+                    <InputLabel>Generar factura</InputLabel>
+                    <Field
+                      as={Select}
+                      label="Generar factura"
+                      name="generateInvoice"
+                    >
+                      <MenuItem value={true}>Sí</MenuItem>
+                      <MenuItem value={false}>No</MenuItem>
+                    </Field>
+                  </FormControl>
+                </Grid>
               </Grid>
-              <Grid xs={12} sm={6} md={1} item>
-                <FormControl margin="dense" variant="outlined" fullWidth>
-                  <InputLabel htmlFor="status-selection">{i18n.t("compaies.table.active")}</InputLabel>
-                  <Field
-                    as={Select}
-                    id="status-selection"
-                    label={i18n.t("compaies.table.active")}
-                    labelId="status-selection-label"
-                    name="status"
-                    margin="dense"
-                  >
-                    <MenuItem value={true}>{i18n.t("compaies.table.yes")}</MenuItem>
-                    <MenuItem value={false}>{i18n.t("compaies.table.no")}</MenuItem>
-                  </Field>
-                </FormControl>
-              </Grid>              
-              {/* <Grid xs={12} sm={6} md={3} item>
-                <FormControl margin="dense" variant="outlined" fullWidth>
-                  <InputLabel htmlFor="payment-method-selection">
-                    Método de Pagamento
-                  </InputLabel>
-                  <Field
-                    as={Select}
-                    id="payment-method-selection"
-                    label="Método de Pagamento"
-                    labelId="payment-method-selection-label"
-                    name="paymentMethod"
-                    margin="dense"
-                  >
-                    <MenuItem value={"pix"}>PIX</MenuItem>
-                  </Field>
-                </FormControl>
-              </Grid> */}
-              <Grid xs={12} sm={6} md={2} item>
-                <Field
-                  as={TextField}
-                  label={i18n.t("compaies.table.document")}
-                  name="document"
-                  variant="outlined"
-                  className={classes.fullWidth}
-                  margin="dense"
-                />
-              </Grid>
-              {/* <Grid xs={12} sm={6} md={2} item>
-                <FormControl margin="dense" variant="outlined" fullWidth>
-                  <InputLabel htmlFor="status-selection">Campanhas</InputLabel>
-                  <Field
-                    as={Select}
-                    id="campaigns-selection"
-                    label="Campanhas"
-                    labelId="campaigns-selection-label"
-                    name="campaignsEnabled"
-                    margin="dense"
-                  >
-                    <MenuItem value={true}>Habilitadas</MenuItem>
-                    <MenuItem value={false}>Desabilitadas</MenuItem>
-                  </Field>
-                </FormControl>
-              </Grid> */}
-              <Grid xs={12} sm={6} md={2} item>
-                <FormControl variant="outlined" fullWidth>
+
+              <Typography className={classes.subSectionTitle}>
+                Vencimiento y recurrencia
+              </Typography>
+              <Grid spacing={2} container>
+                <Grid xs={12} sm={6} md={4} item>
                   <Field
                     as={TextField}
                     label={i18n.t("compaies.table.dueDate")}
                     type="date"
                     name="dueDate"
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
+                    InputLabelProps={{ shrink: true }}
                     variant="outlined"
                     fullWidth
-                    margin="dense"
+                    size="small"
                   />
-                </FormControl>
-              </Grid>
-              <Grid xs={12} sm={6} md={2} item>
-                <FormControl margin="dense" variant="outlined" fullWidth>
-                  <InputLabel htmlFor="recorrencia-selection">
-                  {i18n.t("compaies.table.recurrence")}
-                  </InputLabel>
-                  <Field
-                    as={Select}
-                    label="Recorrência"
-                    labelId="recorrencia-selection-label"
-                    id="recurrence"
-                    name="recurrence"
-                    margin="dense"
-                  >
-                    <MenuItem value="MENSAL">{i18n.t("compaies.table.monthly")}</MenuItem>
-                    <MenuItem value="BIMESTRAL">{i18n.t("compaies.table.bimonthly")}</MenuItem>
-                    <MenuItem value="TRIMESTRAL">{i18n.t("compaies.table.quarterly")}</MenuItem>
-                    <MenuItem value="SEMESTRAL">{i18n.t("compaies.table.semester")}</MenuItem>
-                    <MenuItem value="ANUAL">{i18n.t("compaies.table.yearly")}</MenuItem>
-                  </Field>
-                </FormControl>
-              </Grid>
-
-              <Grid xs={12} sm={6} md={2} item>
-                <FormControl margin="dense" variant="outlined" fullWidth>
-                  <InputLabel htmlFor="generate-invoice-selection">
-                    Gerar Fatura
-                  </InputLabel>
-                  <Field
-                    as={Select}
-                    id="generate-invoice-selection"
-                    label="Generar Factura"
-                    labelId="generate-invoice-selection-label"
-                    name="generateInvoice"
-                    margin="dense"
-                  >
-                    <MenuItem value={true}>Sí</MenuItem>
-                    <MenuItem value={false}>No</MenuItem>
-                  </Field>
-                </FormControl>
-              </Grid>
-
-              <Grid xs={12} item>
-                <Grid justifyContent="flex-end" spacing={1} container>
-                  <Grid xs={4} md={1} item>
-                    <ButtonWithSpinner
-                      className={classes.fullWidth}
-                      style={{ marginTop: 7 }}
-                      loading={loading}
-                      onClick={() => onCancel()}
-                      variant="contained"
+                </Grid>
+                <Grid xs={12} sm={6} md={4} item>
+                  <FormControl variant="outlined" fullWidth size="small">
+                    <InputLabel>Recurrencia</InputLabel>
+                    <Field
+                      as={Select}
+                      label="Recurrencia"
+                      name="recurrence"
                     >
-                      {i18n.t("compaies.table.clear")}
-                    </ButtonWithSpinner>
-                  </Grid>
-                  {record.id !== undefined ? (
-                    <>
-                      <Grid xs={6} md={1} item>
-                        <ButtonWithSpinner
-                          style={{ marginTop: 7 }}
-                          className={classes.fullWidth}
-                          loading={loading}
-                          onClick={() => onDelete(record)}
-                          variant="contained"
-                          color="secondary"
-                          disabled={record.id === 1}
-                        >
-                          {i18n.t("compaies.table.delete")}
-                        </ButtonWithSpinner>
-                      </Grid>
-                      <Grid xs={6} md={2} item>
-                        <ButtonWithSpinner
-                          style={{ marginTop: 7 }}
-                          className={classes.fullWidth}
-                          loading={loading}
-                          onClick={() => incrementDueDate()}
-                          variant="contained"
-                          color="primary"
-                        >
-                          {i18n.t("compaies.table.dueDate")}
-                        </ButtonWithSpinner>
-                      </Grid>
-                      {/* <Grid xs={6} md={1} item>
-                        <ButtonWithSpinner
-                          style={{ marginTop: 7 }}
-                          className={classes.fullWidth}
-                          loading={loading}
-                          onClick={() => handleOpenModalUsers()}
-                          variant="contained"
-                          color="primary"
-                        >
-                          {i18n.t("compaies.table.user")}
-                        </ButtonWithSpinner>
-                      </Grid> */}
-                    </>
-                  ) : null}
-                  <Grid xs={6} md={1} item>
-                    <ButtonWithSpinner
-                      className={classes.fullWidth}
-                      style={{ marginTop: 7 }}
-                      loading={loading}
-                      type="submit"
-                      variant="contained"
-                      color="primary"
-                    >
-                      {i18n.t("compaies.table.save")}
-                    </ButtonWithSpinner>
-                  </Grid>
+                      <MenuItem value="MENSAL">
+                        {i18n.t("compaies.table.monthly")}
+                      </MenuItem>
+                      <MenuItem value="BIMESTRAL">
+                        {i18n.t("compaies.table.bimonthly")}
+                      </MenuItem>
+                      <MenuItem value="TRIMESTRAL">
+                        {i18n.t("compaies.table.quarterly")}
+                      </MenuItem>
+                      <MenuItem value="SEMESTRAL">
+                        {i18n.t("compaies.table.semester")}
+                      </MenuItem>
+                      <MenuItem value="ANUAL">
+                        {i18n.t("compaies.table.yearly")}
+                      </MenuItem>
+                    </Field>
+                  </FormControl>
                 </Grid>
               </Grid>
-            </Grid>
+
+              <Divider style={{ margin: "20px 0 0" }} />
+
+              <div className={classes.buttonsRow}>
+                <ButtonWithSpinner
+                  loading={loading}
+                  onClick={() => onCancel()}
+                  variant="outlined"
+                >
+                  {i18n.t("compaies.table.clear")}
+                </ButtonWithSpinner>
+                {record.id !== undefined && (
+                  <>
+                    <ButtonWithSpinner
+                      loading={loading}
+                      onClick={() => onDelete(record)}
+                      variant="contained"
+                      color="secondary"
+                      disabled={record.id === 1}
+                    >
+                      {i18n.t("compaies.table.delete")}
+                    </ButtonWithSpinner>
+                    <ButtonWithSpinner
+                      loading={loading}
+                      onClick={() => incrementDueDate()}
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<EventAvailable />}
+                    >
+                      {i18n.t("compaies.table.dueDate")}
+                    </ButtonWithSpinner>
+                  </>
+                )}
+                <ButtonWithSpinner
+                  loading={loading}
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                >
+                  {i18n.t("compaies.table.save")}
+                </ButtonWithSpinner>
+              </div>
+            </Paper>
           </Form>
         )}
       </Formik>
@@ -464,124 +482,140 @@ export function CompaniesManagerGrid(props) {
   const { records, onSelect } = props;
   const classes = useStyles();
   const { dateToClient, datetimeToClient } = useDate();
-  const { mode } = useContext(ColorModeContext);
-  const theme = useTheme();
+  useContext(ColorModeContext);
+  useTheme();
 
-  const renderStatus = (row) => {
-    return row.status === false ? "No" : "Sí";
-  };
-
-  const renderPlan = (row) => {
-    return row.planId !== null ? row.plan.name : "-";
-  };
+  const renderPlan = (row) => (row.planId !== null ? row.plan?.name || "-" : "-");
 
   const renderPlanValue = (row) => {
-    return row.planId !== null ? row.plan.amount ? row.plan.amount.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) : '$0.00' : "-";
+    if (!row.planId || !row.plan) return "-";
+    return row.plan.amount
+      ? row.plan.amount.toLocaleString("es-MX", {
+          style: "currency",
+          currency: "MXN",
+        })
+      : "$0.00";
   };
 
-  // const renderCampaignsStatus = (row) => {
-  //   if (
-  //     has(row, "settings") &&
-  //     isArray(row.settings) &&
-  //     row.settings.length > 0
-  //   ) {
-  //     const setting = row.settings.find((s) => s.key === "campaignsEnabled");
-  //     if (setting) {
-  //       return setting.value === "true" ? "Habilitadas" : "Desabilitadas";
-  //     }
-  //   }
-  //   return "Desabilitadas";
-  // };
-
-  const rowStyle = (record) => {
+  const rowClass = (record) => {
     if (moment(record.dueDate).isValid()) {
-      const now = moment();
-      const dueDate = moment(record.dueDate);
-      const diff = dueDate.diff(now, "days");
-      if (diff >= 1 && diff <= 5) {
-        return { backgroundColor: "#fffead" };
-      }
-      if (diff <= 0) {
-        return { backgroundColor: "#fa8c8c" };
-      }
+      const diff = moment(record.dueDate).diff(moment(), "days");
+      if (diff <= 0) return classes.rowDueExpired;
+      if (diff <= 5) return classes.rowDueWarn;
     }
-    return {};
-  };
-  
-  const cellStyle = (record) => {
-    if (moment(record.dueDate).isValid()) {
-      const now = moment();
-      const dueDate = moment(record.dueDate);
-      const diff = dueDate.diff(now, "days");
-      if (diff >= 1 && diff <= 5) {
-        return { color: "#000" }; // Texto preto para fundo amarelo
-      }
-      if (diff <= 0) {
-        return { color: "#fff" }; // Texto branco para fundo vermelho
-      }
-    }
-    return {};
-  };
-
-  const iconStyle = (record) => {
-    if (moment(record.dueDate).isValid()) {
-      const now = moment();
-      const dueDate = moment(record.dueDate);
-      const diff = dueDate.diff(now, "days");
-      if (diff >= 1 && diff <= 5) {
-        return { color: "#000" }; // Ícone preto para fundo amarelo
-      }
-    }
-    return {};
+    return "";
   };
 
   return (
-    <Paper className={classes.tableContainer}>
-      <Table
-        className={classes.fullWidth}
-        // size="small"
-        padding="none"
-        aria-label="a dense table"
-      >
-        <TableHead>
-          <TableRow>
-            <TableCell align="center" style={{ width: "1%" }}>#</TableCell>
-            <TableCell align="left">{i18n.t("compaies.table.name")}</TableCell>
-            <TableCell align="left">{i18n.t("compaies.table.email")}</TableCell>
-            <TableCell align="center">{i18n.t("compaies.table.phone")}</TableCell>
-            <TableCell align="center">{i18n.t("compaies.table.plan")}</TableCell>
-            <TableCell align="center">{i18n.t("compaies.table.value")}</TableCell>
-            {/* <TableCell align="center">Campanhas</TableCell> */}
-            <TableCell align="center">{i18n.t("compaies.table.active")}</TableCell>
-            <TableCell align="center">{i18n.t("compaies.table.createdAt")}</TableCell>
-            <TableCell align="center">{i18n.t("compaies.table.dueDate")}</TableCell>
-            <TableCell align="center">{i18n.t("compaies.table.lastLogin")}</TableCell>
-            <TableCell align="center">{i18n.t("compaies.table.generateInvoice")}</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {records.map((row, key) => (
-            <TableRow style={rowStyle(row)} key={key}>
-              <TableCell style={{...cellStyle(row), width: "1%"}} align="center">
-                <IconButton style={iconStyle(row)} onClick={() => onSelect(row)} aria-label="delete">
-                  <EditIcon style={iconStyle(row)} />
-                </IconButton>
-              </TableCell>
-              <TableCell style={cellStyle(row)} align="left">{row.name || "-"}</TableCell>
-              <TableCell style={cellStyle(row)} align="left" size="small">{row.email || "-"}</TableCell>
-              <TableCell style={cellStyle(row)} align="center">{row.phone || "-"}</TableCell>
-              <TableCell style={cellStyle(row)} align="center">{renderPlan(row)}</TableCell>
-              <TableCell style={cellStyle(row)} align="center">{i18n.t("compaies.table.money")} {renderPlanValue(row)}</TableCell>
-              {/* <TableCell style={cellStyle(row)} align="center">{renderCampaignsStatus(row)}</TableCell> */}
-              <TableCell style={cellStyle(row)} align="center">{renderStatus(row)}</TableCell>
-              <TableCell style={cellStyle(row)} align="center">{dateToClient(row.createdAt)}</TableCell>
-              <TableCell style={cellStyle(row)} align="center">{dateToClient(row.dueDate)}<br /><span>{row.recurrence}</span></TableCell>
-              <TableCell style={cellStyle(row)} align="center">{datetimeToClient(row.lastLogin)}</TableCell>
-              <TableCell style={cellStyle(row)} align="center">{row.generateInvoice ? i18n.t("compaies.table.yes") : i18n.t("compaies.table.no")}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <Paper elevation={0} className={classes.sectionCard} style={{ padding: 0 }}>
+      <Box style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+        <div className={classes.sectionIcon}>
+          <ListAlt fontSize="small" />
+        </div>
+        <Box>
+          <Typography className={classes.sectionTitle}>
+            Empresas registradas
+          </Typography>
+          <Typography className={classes.sectionSubtitle}>
+            {records.length === 0
+              ? "Aún no hay empresas registradas."
+              : `${records.length} ${records.length === 1 ? "empresa" : "empresas"} en total.`}
+          </Typography>
+        </Box>
+      </Box>
+
+      {records.length === 0 ? (
+        <div className={classes.emptyState}>
+          <Typography variant="body2">
+            Crea una empresa en el formulario superior para comenzar.
+          </Typography>
+        </div>
+      ) : (
+        <TableContainer style={{ maxHeight: 600 }}>
+          <Table stickyHeader size="small">
+            <TableHead className={classes.tableHead}>
+              <TableRow>
+                <TableCell align="center" style={{ width: 50 }}></TableCell>
+                <TableCell align="left">{i18n.t("compaies.table.name")}</TableCell>
+                <TableCell align="left">{i18n.t("compaies.table.email")}</TableCell>
+                <TableCell align="center">{i18n.t("compaies.table.phone")}</TableCell>
+                <TableCell align="center">{i18n.t("compaies.table.plan")}</TableCell>
+                <TableCell align="center">{i18n.t("compaies.table.value")}</TableCell>
+                <TableCell align="center">{i18n.t("compaies.table.active")}</TableCell>
+                <TableCell align="center">{i18n.t("compaies.table.createdAt")}</TableCell>
+                <TableCell align="center">{i18n.t("compaies.table.dueDate")}</TableCell>
+                <TableCell align="center">{i18n.t("compaies.table.lastLogin")}</TableCell>
+                <TableCell align="center">{i18n.t("compaies.table.generateInvoice")}</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {records.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className={`${classes.tableRow} ${rowClass(row)}`}
+                  onClick={() => onSelect(row)}
+                >
+                  <TableCell align="center" style={{ width: 50 }}>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(row);
+                      }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                  <TableCell align="left" style={{ fontWeight: 600 }}>
+                    {row.name || "-"}
+                  </TableCell>
+                  <TableCell align="left">{row.email || "-"}</TableCell>
+                  <TableCell align="center">{row.phone || "-"}</TableCell>
+                  <TableCell align="center">{renderPlan(row)}</TableCell>
+                  <TableCell align="center">{renderPlanValue(row)}</TableCell>
+                  <TableCell align="center">
+                    {row.status !== false ? (
+                      <Chip
+                        size="small"
+                        label="Activa"
+                        icon={<CheckCircle style={{ fontSize: 14 }} />}
+                        className={classes.badgeActive}
+                      />
+                    ) : (
+                      <Chip
+                        size="small"
+                        label="Inactiva"
+                        icon={<Cancel style={{ fontSize: 14 }} />}
+                        className={classes.badgeInactive}
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell align="center">{dateToClient(row.createdAt)}</TableCell>
+                  <TableCell align="center">
+                    {dateToClient(row.dueDate)}
+                    {row.recurrence && (
+                      <>
+                        <br />
+                        <span style={{ fontSize: "0.7rem", opacity: 0.7 }}>
+                          {row.recurrence}
+                        </span>
+                      </>
+                    )}
+                  </TableCell>
+                  <TableCell align="center">
+                    {datetimeToClient(row.lastLogin)}
+                  </TableCell>
+                  <TableCell align="center">
+                    {row.generateInvoice
+                      ? i18n.t("compaies.table.yes")
+                      : i18n.t("compaies.table.no")}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
     </Paper>
   );
 }
@@ -599,34 +633,31 @@ export default function CompaniesManager() {
     phone: "",
     planId: "",
     status: true,
-    // campaignsEnabled: false,
     dueDate: "",
     recurrence: "",
     password: "",
     document: "",
     paymentMethod: "",
-    generateInvoice: true
+    generateInvoice: true,
   });
 
   useEffect(() => {
-    loadPlans();
+    loadCompanies();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadPlans = async () => {
+  const loadCompanies = async () => {
     setLoading(true);
     try {
       const companyList = await list();
-      console.log("Lista de empresas carregada:", companyList);
       setRecords(companyList);
     } catch (e) {
-      toast.error("No se pudo cargar la lista de registros.");
+      toast.error("No se pudo cargar la lista de empresas.");
     }
     setLoading(false);
   };
 
   const handleSubmit = async (data) => {
-    console.log("Dados enviados para o backend:", data);
     setLoading(true);
     try {
       if (data.id !== undefined) {
@@ -634,7 +665,7 @@ export default function CompaniesManager() {
       } else {
         await save(data);
       }
-      await loadPlans();
+      await loadCompanies();
       handleCancel();
       toast.success("Operación realizada con éxito.");
     } catch (e) {
@@ -642,7 +673,7 @@ export default function CompaniesManager() {
         e?.response?.data?.error ||
           e?.response?.data?.message ||
           e?.message ||
-          "No se pudo completar la operación. Verifica que no exista otra empresa con el mismo nombre o que los campos estén llenos correctamente."
+          "No se pudo completar la operación. Verifica que no exista otra empresa con el mismo nombre."
       );
     }
     setLoading(false);
@@ -652,53 +683,41 @@ export default function CompaniesManager() {
     setLoading(true);
     try {
       await remove(record.id);
-      await loadPlans();
+      await loadCompanies();
       handleCancel();
-      toast.success("Operación realizada con éxito.");
+      toast.success("Empresa eliminada con éxito.");
     } catch (e) {
       toast.error(
         e?.response?.data?.error ||
           e?.response?.data?.message ||
           e?.message ||
-          "No se pudo completar la operación."
+          "No se pudo eliminar la empresa."
       );
     }
     setLoading(false);
   };
 
-  const handleOpenDeleteDialog = () => {
-    setShowConfirmDialog(true);
-  };
+  const handleOpenDeleteDialog = () => setShowConfirmDialog(true);
 
   const handleCancel = () => {
     setRecord((prev) => ({
       ...prev,
+      id: undefined,
       name: "",
       email: "",
       phone: "",
       planId: "",
       status: true,
-      // campaignsEnabled: false,
       dueDate: "",
       recurrence: "",
       password: "",
       document: "",
       paymentMethod: "",
-      generateInvoice: true
+      generateInvoice: true,
     }));
   };
 
   const handleSelect = (data) => {
-    // let campaignsEnabled = false;
-
-    // const setting = data.settings.find(
-    //   (s) => s.key.indexOf("campaignsEnabled") > -1
-    // );
-    // if (setting) {
-    //   campaignsEnabled = setting.value === "true" || setting.value === "enabled";
-    // }
-
-    console.log("Dados da empresa selecionada:", data);
     setRecord((prev) => ({
       ...prev,
       id: data.id,
@@ -706,41 +725,35 @@ export default function CompaniesManager() {
       phone: data.phone || "",
       email: data.email || "",
       planId: data.planId || "",
-      status: data.status === false ? false : true,
-      // campaignsEnabled,
+      status: data.status !== false,
       dueDate: data.dueDate || "",
       recurrence: data.recurrence || "",
       password: "",
       document: data.document || "",
       paymentMethod: data.paymentMethod || "",
-      generateInvoice: data.generateInvoice !== undefined ? data.generateInvoice : true,
+      generateInvoice:
+        data.generateInvoice !== undefined ? data.generateInvoice : true,
     }));
   };
 
   return (
-    <Paper className={classes.mainPaper} elevation={0}>
-      <Grid spacing={2} container>
-        <Grid xs={12} item>
-          <CompanyForm
-            initialValue={record}
-            onDelete={handleOpenDeleteDialog}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            loading={loading}
-          />
-        </Grid>
-        <Grid xs={12} item>
-          <CompaniesManagerGrid records={records} onSelect={handleSelect} />
-        </Grid>
-      </Grid>
+    <div className={classes.container}>
+      <CompanyForm
+        initialValue={record}
+        onDelete={handleOpenDeleteDialog}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        loading={loading}
+      />
+      <CompaniesManagerGrid records={records} onSelect={handleSelect} />
       <ConfirmationModal
-        title="Exclusão de Registro"
+        title="Eliminar empresa"
         open={showConfirmDialog}
         onClose={() => setShowConfirmDialog(false)}
         onConfirm={() => handleDelete()}
       >
-        Deseja realmente excluir esse registro?
+        ¿Deseas eliminar esta empresa? Esta acción no se puede deshacer.
       </ConfirmationModal>
-    </Paper>
+    </div>
   );
 }
