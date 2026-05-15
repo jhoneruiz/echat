@@ -650,7 +650,7 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
             }, 400);
           }}
         >
-          {({ values, touched, errors, isSubmitting }) => (
+          {({ values, touched, errors, isSubmitting, setFieldValue }) => (
             <Form>
               <Paper className={classes.mainPaper} elevation={1}>
                 <Tabs
