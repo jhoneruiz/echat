@@ -1,9 +1,9 @@
 import { Logger } from '@nestjs/common';
-import { Channel, Connection, Message, connect } from 'amqplib';
+import { Channel, Message, connect } from 'amqplib';
 import { WhatsAppOficial } from 'src/@core/domain/entities/whatsappOficial.model';
 
 export class RabbitMQService {
-  private connection: Connection;
+  private connection: any;
   private channel: Channel;
   private url: string;
   private logger: Logger = new Logger(`${RabbitMQService.name}`);
