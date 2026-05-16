@@ -2042,190 +2042,237 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                   name={"chatbot"}
                 >
                   <DialogContent dividers>
-                    <Grid spacing={2} container>
-                      {/* TEMPO PARA CRIAR NOVO TICKET */}
-                      <Grid xs={6} md={3} item>
-                        <Field
-                          as={TextField}
-                          label={i18n.t(
-                            "whatsappModal.form.timeCreateNewTicket"
-                          )}
-                          fullWidth
-                          name="timeCreateNewTicket"
-                          variant="outlined"
-                          margin="dense"
-                          error={
-                            touched.timeCreateNewTicket &&
-                            Boolean(errors.timeCreateNewTicket)
-                          }
-                          helperText={
-                            touched.timeCreateNewTicket &&
-                            errors.timeCreateNewTicket
-                          }
-                        />
-                      </Grid>
-
-                      {/* QUANTIDADE MÁXIMA DE VEZES QUE O CHATBOT VAI SER ENVIADO */}
-                      <Grid xs={6} md={3} item>
-                        <Field
-                          as={TextField}
-                          label={i18n.t("whatsappModal.form.maxUseBotQueues")}
-                          fullWidth
-                          name="maxUseBotQueues"
-                          variant="outlined"
-                          margin="dense"
-                          error={
-                            touched.maxUseBotQueues &&
-                            Boolean(errors.maxUseBotQueues)
-                          }
-                          helperText={
-                            touched.maxUseBotQueues && errors.maxUseBotQueues
-                          }
-                        />
-                      </Grid>
-                      {/* TEMPO PARA ENVIO DO CHATBOT */}
-                      <Grid xs={6} md={3} item>
-                        <Field
-                          as={TextField}
-                          label={i18n.t("whatsappModal.form.timeUseBotQueues")}
-                          fullWidth
-                          name="timeUseBotQueues"
-                          variant="outlined"
-                          margin="dense"
-                          error={
-                            touched.timeUseBotQueues &&
-                            Boolean(errors.timeUseBotQueues)
-                          }
-                          helperText={
-                            touched.timeUseBotQueues && errors.timeUseBotQueues
-                          }
-                        />
-                      </Grid>
-                      {/* TEMPO PARA RETORNAR A FILA */}
-                      <Grid xs={6} md={3} item>
-                        <Field
-                          as={TextField}
-                          label={i18n.t("whatsappModal.form.timeToReturnQueue")}
-                          fullWidth
-                          name="timeToReturnQueue"
-                          variant="outlined"
-                          margin="dense"
-                          error={
-                            touched.timeToReturnQueue &&
-                            Boolean(errors.timeToReturnQueue)
-                          }
-                          helperText={
-                            touched.timeToReturnQueue &&
-                            errors.timeToReturnQueue
-                          }
-                        />
-                      </Grid>
-                    </Grid>
-                    <Grid spacing={2} container>
-                      {/* ENCERRAR CHATS ABERTOS APÓS X HORAS */}
-                      <Grid xs={6} md={6} item>
-                        <Field
-                          as={TextField}
-                          label={i18n.t("whatsappModal.form.expiresTicket")}
-                          fullWidth
-                          name="expiresTicket"
-                          required={values.timeInactiveMessage > 0}
-                          variant="outlined"
-                          margin="dense"
-                          error={
-                            touched.expiresTicket &&
-                            Boolean(errors.expiresTicket)
-                          }
-                          helperText={
-                            touched.expiresTicket && errors.expiresTicket
-                          }
-                        />
-                      </Grid>
-                      {/* TEMPO PARA ENVIO DO CHATBOT */}
-                      <Grid xs={6} md={6} item>
-                        <FormControl
-                          variant="outlined"
-                          margin="dense"
-                          fullWidth
-                        // className={classes.formControl}
-                        >
-                          <InputLabel id="whenExpiresTicket-selection-label">
-                            {i18n.t("whatsappModal.form.whenExpiresTicket")}
-                          </InputLabel>
+                    {/* === SECCIÓN: COMPORTAMIENTO DE TICKETS === */}
+                    <Box className={classes.sectionCard}>
+                      <Box className={classes.sectionHeader}>
+                        <Typography className={classes.sectionTitle}>
+                          ⏱ Comportamiento de tickets
+                        </Typography>
+                      </Box>
+                      <Typography className={classes.sectionDesc}>
+                        Reglas que controlan cuándo se crean tickets nuevos y
+                        cuándo un ticket vuelve a la cola si el agente no
+                        responde.
+                      </Typography>
+                      <Grid spacing={2} container>
+                        <Grid xs={12} md={6} item>
                           <Field
-                            as={Select}
+                            as={TextField}
                             label={i18n.t(
-                              "whatsappModal.form.whenExpiresTicket"
+                              "whatsappModal.form.timeCreateNewTicket"
                             )}
-                            placeholder={i18n.t(
-                              "whatsappModal.form.whenExpiresTicket"
+                            fullWidth
+                            name="timeCreateNewTicket"
+                            variant="outlined"
+                            margin="dense"
+                            error={
+                              touched.timeCreateNewTicket &&
+                              Boolean(errors.timeCreateNewTicket)
+                            }
+                            helperText={
+                              (touched.timeCreateNewTicket &&
+                                errors.timeCreateNewTicket) ||
+                              "Minutos. Si el cliente vuelve a escribir DESPUÉS de este tiempo del último ticket cerrado, se crea uno nuevo (con menú de bienvenida). Si escribe antes, se reabre el anterior. 0 = siempre reabrir."
+                            }
+                          />
+                        </Grid>
+                        <Grid xs={12} md={6} item>
+                          <Field
+                            as={TextField}
+                            label={i18n.t(
+                              "whatsappModal.form.timeToReturnQueue"
                             )}
-                            labelId="whenExpiresTicket-selection-label"
-                            id="whenExpiresTicket"
-                            name="whenExpiresTicket"
-                          >
-                            <MenuItem value={"0"}>
-                              {i18n.t(
-                                "whatsappModal.form.closeLastMessageOptions1"
-                              )}
-                            </MenuItem>
-                            <MenuItem value={"1"}>
-                              {i18n.t(
-                                "whatsappModal.form.closeLastMessageOptions2"
-                              )}
-                            </MenuItem>
-                          </Field>
-                        </FormControl>
+                            fullWidth
+                            name="timeToReturnQueue"
+                            variant="outlined"
+                            margin="dense"
+                            error={
+                              touched.timeToReturnQueue &&
+                              Boolean(errors.timeToReturnQueue)
+                            }
+                            helperText={
+                              (touched.timeToReturnQueue &&
+                                errors.timeToReturnQueue) ||
+                              "Minutos. Si un agente acepta un ticket y no responde, vuelve a la cola para que lo tome otro. 0 = nunca regresar automáticamente."
+                            }
+                          />
+                        </Grid>
                       </Grid>
-                    </Grid>
-                    {/* MENSAGEM POR INATIVIDADE*/}
-                    <div>
+                    </Box>
+
+                    {/* === SECCIÓN: MENÚ DEL CHATBOT === */}
+                    <Box className={classes.sectionCard}>
+                      <Box className={classes.sectionHeader}>
+                        <Typography className={classes.sectionTitle}>
+                          🤖 Menú de selección de cola
+                        </Typography>
+                      </Box>
+                      <Typography className={classes.sectionDesc}>
+                        Cuando esta conexión tiene <strong>más de una cola</strong>,
+                        el chatbot muestra un menú para que el cliente elija.
+                        Estos parámetros controlan cuántas veces y con qué
+                        intervalo se re-envía el menú si el cliente responde
+                        con una opción inválida.
+                      </Typography>
+                      <Grid spacing={2} container>
+                        <Grid xs={12} md={6} item>
+                          <Field
+                            as={TextField}
+                            label={i18n.t(
+                              "whatsappModal.form.maxUseBotQueues"
+                            )}
+                            fullWidth
+                            name="maxUseBotQueues"
+                            variant="outlined"
+                            margin="dense"
+                            error={
+                              touched.maxUseBotQueues &&
+                              Boolean(errors.maxUseBotQueues)
+                            }
+                            helperText={
+                              (touched.maxUseBotQueues &&
+                                errors.maxUseBotQueues) ||
+                              "Máximo de veces que el bot reenvía el menú si el cliente no elige una opción válida. Tras superarlo, el ticket pasa a la cola por defecto sin más intentos."
+                            }
+                          />
+                        </Grid>
+                        <Grid xs={12} md={6} item>
+                          <Field
+                            as={TextField}
+                            label={i18n.t(
+                              "whatsappModal.form.timeUseBotQueues"
+                            )}
+                            fullWidth
+                            name="timeUseBotQueues"
+                            variant="outlined"
+                            margin="dense"
+                            error={
+                              touched.timeUseBotQueues &&
+                              Boolean(errors.timeUseBotQueues)
+                            }
+                            helperText={
+                              (touched.timeUseBotQueues &&
+                                errors.timeUseBotQueues) ||
+                              "Minutos a esperar entre cada reenvío del menú. 0 = reenviar inmediatamente cada vez que el cliente responde algo inválido."
+                            }
+                          />
+                        </Grid>
+                      </Grid>
+                    </Box>
+
+                    {/* === SECCIÓN: CIERRE AUTOMÁTICO === */}
+                    <Box className={classes.sectionCard}>
+                      <Box className={classes.sectionHeader}>
+                        <Typography className={classes.sectionTitle}>
+                          🛑 Cierre automático de tickets
+                        </Typography>
+                      </Box>
+                      <Typography className={classes.sectionDesc}>
+                        Cierra automáticamente los tickets que llevan
+                        demasiadas horas sin actividad para mantener la lista
+                        de pendientes limpia. Útil cuando los clientes dejan
+                        conversaciones a medias y no se les pasa a "cerrado"
+                        manualmente.
+                      </Typography>
+                      <Grid spacing={2} container>
+                        <Grid xs={12} md={6} item>
+                          <Field
+                            as={TextField}
+                            label={i18n.t("whatsappModal.form.expiresTicket")}
+                            fullWidth
+                            name="expiresTicket"
+                            required={values.timeInactiveMessage > 0}
+                            variant="outlined"
+                            margin="dense"
+                            error={
+                              touched.expiresTicket &&
+                              Boolean(errors.expiresTicket)
+                            }
+                            helperText={
+                              (touched.expiresTicket &&
+                                errors.expiresTicket) ||
+                              "Horas. El ticket se cierra solo tras este tiempo de inactividad. 0 = nunca cerrar automáticamente."
+                            }
+                          />
+                        </Grid>
+                        <Grid xs={12} md={6} item>
+                          <FormControl
+                            variant="outlined"
+                            margin="dense"
+                            fullWidth
+                          >
+                            <InputLabel id="whenExpiresTicket-selection-label">
+                              {i18n.t("whatsappModal.form.whenExpiresTicket")}
+                            </InputLabel>
+                            <Field
+                              as={Select}
+                              label={i18n.t(
+                                "whatsappModal.form.whenExpiresTicket"
+                              )}
+                              labelId="whenExpiresTicket-selection-label"
+                              id="whenExpiresTicket"
+                              name="whenExpiresTicket"
+                            >
+                              <MenuItem value={"0"}>
+                                {i18n.t(
+                                  "whatsappModal.form.closeLastMessageOptions1"
+                                )}
+                              </MenuItem>
+                              <MenuItem value={"1"}>
+                                {i18n.t(
+                                  "whatsappModal.form.closeLastMessageOptions2"
+                                )}
+                              </MenuItem>
+                            </Field>
+                          </FormControl>
+                          <Typography className={classes.fieldHelper}>
+                            Decide desde qué mensaje se cuentan las horas: el
+                            último del cliente o el último del sistema/agente.
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                    {/* === SECCIÓN: SEGUIMIENTO POR INACTIVIDAD === */}
+                    <Box className={classes.sectionCard}>
+                      <Box className={classes.sectionHeader}>
+                        <Typography className={classes.sectionTitle}>
+                          💤 Seguimiento por inactividad del cliente
+                        </Typography>
+                      </Box>
+                      <Typography className={classes.sectionDesc}>
+                        Cuando un ticket está en curso y el cliente deja de
+                        responder, el sistema envía dos mensajes automáticos:
+                        primero un recordatorio para retomar la conversación, y
+                        si llega la hora de cierre, un aviso final antes de
+                        cerrar el ticket. Útil para no perder leads que se
+                        quedaron sin contestar.
+                      </Typography>
+
                       <Field
                         as={TextField}
                         label={i18n.t(
-                          "whatsappModal.form.expiresInactiveMessage"
+                          "whatsappModal.form.timeInactiveMessage"
                         )}
-                        multiline
-                        rows={4}
                         fullWidth
-                        name="expiresInactiveMessage"
-                        error={
-                          touched.expiresInactiveMessage &&
-                          Boolean(errors.expiresInactiveMessage)
-                        }
-                        helperText={
-                          touched.expiresInactiveMessage &&
-                          errors.expiresInactiveMessage
-                        }
+                        name="timeInactiveMessage"
                         variant="outlined"
                         margin="dense"
+                        error={
+                          touched.timeInactiveMessage &&
+                          Boolean(errors.timeInactiveMessage)
+                        }
+                        helperText={
+                          (touched.timeInactiveMessage &&
+                            errors.timeInactiveMessage) ||
+                          "Minutos sin actividad antes de mandar el mensaje recordatorio. 0 = no enviar recordatorio."
+                        }
                       />
-                    </div>
 
-                    {/* TEMPO PARA ENVIO DE MENSAGEM POR INATIVIDADE */}
-                    <Field
-                      as={TextField}
-                      label={i18n.t("whatsappModal.form.timeInactiveMessage")}
-                      fullWidth
-                      name="timeInactiveMessage"
-                      variant="outlined"
-                      margin="dense"
-                      error={
-                        touched.timeInactiveMessage &&
-                        Boolean(errors.timeInactiveMessage)
-                      }
-                      helperText={
-                        touched.timeInactiveMessage &&
-                        errors.timeInactiveMessage
-                      }
-                    />
-                    {/* MENSAGEM POR INATIVIDADE*/}
-                    <div>
                       <Field
                         as={TextField}
                         label={i18n.t("whatsappModal.form.inactiveMessage")}
                         multiline
-                        rows={4}
+                        rows={3}
                         fullWidth
                         name="inactiveMessage"
                         error={
@@ -2233,22 +2280,59 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                           Boolean(errors.inactiveMessage)
                         }
                         helperText={
-                          touched.inactiveMessage && errors.inactiveMessage
+                          (touched.inactiveMessage &&
+                            errors.inactiveMessage) ||
+                          "📨 Mensaje recordatorio que se envía al cliente cuando lleva el tiempo indicado arriba sin responder. Ejemplo: \"¿Sigues ahí? Avísanos si necesitas ayuda.\""
                         }
                         variant="outlined"
                         margin="dense"
                       />
-                    </div>
 
+                      <Field
+                        as={TextField}
+                        label={i18n.t(
+                          "whatsappModal.form.expiresInactiveMessage"
+                        )}
+                        multiline
+                        rows={3}
+                        fullWidth
+                        name="expiresInactiveMessage"
+                        error={
+                          touched.expiresInactiveMessage &&
+                          Boolean(errors.expiresInactiveMessage)
+                        }
+                        helperText={
+                          (touched.expiresInactiveMessage &&
+                            errors.expiresInactiveMessage) ||
+                          "🚪 Mensaje final antes de cerrar el ticket por la regla de horas de inactividad de arriba. Ejemplo: \"Como no hemos tenido respuesta, cerramos este chat. Escríbenos cuando gustes.\""
+                        }
+                        variant="outlined"
+                        margin="dense"
+                      />
+                    </Box>
 
-                    <Grid spacing={2} container>
-                      {user.showFlow === "enabled" && (
-                        <>
-                          {/* TEMPO PARA ENVIO DE MENSAGEM POR INATIVIDADE */}
-                          <Grid xs={6} md={4} item>
+                    {/* === SECCIÓN: FLUJO AUTOMÁTICO (FlowBuilder) === */}
+                    {user.showFlow === "enabled" && (
+                      <Box className={classes.sectionCard}>
+                        <Box className={classes.sectionHeader}>
+                          <Typography className={classes.sectionTitle}>
+                            🌐 Flujo automático por inactividad
+                          </Typography>
+                        </Box>
+                        <Typography className={classes.sectionDesc}>
+                          En lugar de un simple mensaje de texto, dispara un
+                          flujo completo de <strong>FlowBuilder</strong>
+                          {" "}(con menús, condiciones, integraciones) cuando el
+                          cliente deja de responder. Tiene prioridad sobre el
+                          mensaje de seguimiento si está configurado.
+                        </Typography>
+                        <Grid spacing={2} container>
+                          <Grid xs={12} md={4} item>
                             <Field
                               as={TextField}
-                              label={i18n.t("whatsappModal.form.flowInactiveTime")}
+                              label={i18n.t(
+                                "whatsappModal.form.flowInactiveTime"
+                              )}
                               fullWidth
                               name="flowInactiveTime"
                               variant="outlined"
@@ -2258,15 +2342,90 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                                 Boolean(errors.flowIdInactiveTime)
                               }
                               helperText={
-                                touched.flowIdInactiveTime &&
-                                errors.flowIdInactiveTime
+                                (touched.flowIdInactiveTime &&
+                                  errors.flowIdInactiveTime) ||
+                                "Minutos para disparar el flujo."
                               }
                             />
                           </Grid>
-                        </>
-                      )}
-                      {/* QUANTIDADE MÁXIMA DE VEZES QUE O FLOW DE INATIVIDADE VAI SER ENVIADO */}
-                      <Grid xs={6} md={4} item>
+                          <Grid xs={12} md={4} item>
+                            <Field
+                              as={TextField}
+                              label={i18n.t(
+                                "whatsappModal.form.maxUseInactiveTime"
+                              )}
+                              fullWidth
+                              name="maxUseInactiveTime"
+                              variant="outlined"
+                              margin="dense"
+                              error={
+                                touched.maxUseInactiveTime &&
+                                Boolean(errors.maxUseInactiveTime)
+                              }
+                              helperText={
+                                (touched.maxUseInactiveTime &&
+                                  errors.maxUseInactiveTime) ||
+                                "Máximo de disparos por ticket."
+                              }
+                            />
+                          </Grid>
+                          <Grid xs={12} md={4} item>
+                            <FormControl
+                              variant="outlined"
+                              margin="dense"
+                              fullWidth
+                            >
+                              <InputLabel id="flowIdInactiveTime-selection-label">
+                                Flujo a ejecutar
+                              </InputLabel>
+                              <Select
+                                name="flowIdInactiveTime"
+                                value={flowIdInactiveTime || ""}
+                                onChange={handleChangeFlowIdInactiveTime}
+                                id="flowIdInactiveTime"
+                                variant="outlined"
+                                margin="dense"
+                                label="Flujo a ejecutar"
+                                labelId="flowIdInactiveTime-selection-label"
+                              >
+                                <MenuItem value={null}>
+                                  — Deshabilitado —
+                                </MenuItem>
+                                {webhooks.map((webhook) => (
+                                  <MenuItem
+                                    key={webhook.id}
+                                    value={webhook.id}
+                                  >
+                                    {webhook.name}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+                            <Typography className={classes.fieldHelper}>
+                              Crea o edita flujos en{" "}
+                              <strong>FlowBuilder</strong>.
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    )}
+
+                    {/* Si maxUseInactiveTime está fuera de FlowBuilder porque
+                       también se usa para limitar reenvíos del mensaje
+                       inactiveMessage; lo dejamos accesible aquí cuando
+                       FlowBuilder está deshabilitado. */}
+                    {user.showFlow !== "enabled" && (
+                      <Box className={classes.sectionCard}>
+                        <Box className={classes.sectionHeader}>
+                          <Typography className={classes.sectionTitle}>
+                            🔁 Límite de reenvíos del mensaje de inactividad
+                          </Typography>
+                        </Box>
+                        <Typography className={classes.sectionDesc}>
+                          Máximo de veces que se reenvía el mensaje
+                          recordatorio si el cliente sigue sin responder. Tras
+                          superarlo, el sistema espera al cierre automático.
+                        </Typography>
                         <Field
                           as={TextField}
                           label={i18n.t(
@@ -2281,43 +2440,13 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                             Boolean(errors.maxUseInactiveTime)
                           }
                           helperText={
-                            touched.maxUseInactiveTime &&
-                            errors.maxUseInactiveTime
+                            (touched.maxUseInactiveTime &&
+                              errors.maxUseInactiveTime) ||
+                            "Ejemplo: 3 = mandará el recordatorio máximo 3 veces."
                           }
                         />
-                      </Grid>
-
-                      {user.showFlow === "enabled" && (
-                        <Grid xs={6} md={4} item>
-                          {/* FLUXO DE INATIVIDADE */}
-                          <div>
-                            <FormControl
-                              variant="outlined"
-                              margin="dense"
-                              className={classes.FormControl}
-                              fullWidth
-                            >
-                              <Select
-                                name="flowIdInactiveTime"
-                                value={flowIdInactiveTime || ""}
-                                onChange={handleChangeFlowIdInactiveTime}
-                                id="flowIdInactiveTime"
-                                variant="outlined"
-                                margin="dense"
-                                labelId="flowIdInactiveTime-selection-label"
-                              >
-                                <MenuItem value={null}>{"Desabilitado"}</MenuItem>
-                                {webhooks.map((webhook) => (
-                                  <MenuItem key={webhook.id} value={webhook.id}>
-                                    {webhook.name}
-                                  </MenuItem>
-                                ))}
-                              </Select>
-                            </FormControl>
-                          </div>
-                        </Grid>
-                      )}
-                    </Grid>
+                      </Box>
+                    )}
 
                     {/* <Grid spacing={2} container>
                       <Grid xs={6} md={4} item>
