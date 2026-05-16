@@ -26,7 +26,28 @@ const CronJob = require("cron").CronJob;
  */
 const processPendingTicketsAlerts = async (): Promise<void> => {
   try {
-    // Buscar tickets pending con cola que tenga timeout configurado
+    // PASO 1: Encontrar colas con timeout activo (cache pequeño)
+    const activeQueues = await Queue.findAll({
+      where: { pendingTimeoutMinutes: { [Op.gt]: 0 } as any },
+      include: [
+        {
+          model: User,
+          as: "users",
+          attributes: ["id"],
+          through: { attributes: [] },
+        },
+      ],
+    });
+
+    if (activeQueues.length === 0) return;
+
+    const queueMap = new Map<number, any>();
+    for (const q of activeQueues) {
+      queueMap.set(q.id, q);
+    }
+
+    // PASO 2: Trackings candidatos: queuedAt definido, alerta no enviada,
+    // ticket en pending, y cola activa.
     const candidates = await TicketTraking.findAll({
       where: {
         queuedAt: { [Op.ne]: null } as any,
@@ -35,27 +56,11 @@ const processPendingTicketsAlerts = async (): Promise<void> => {
       include: [
         {
           model: Ticket,
-          where: { status: "pending" },
+          where: {
+            status: "pending",
+            queueId: { [Op.in]: Array.from(queueMap.keys()) } as any,
+          },
           required: true,
-          include: [
-            {
-              model: Contact,
-              attributes: ["id", "name", "number"],
-            },
-            {
-              model: Queue,
-              where: { pendingTimeoutMinutes: { [Op.gt]: 0 } },
-              required: true,
-              include: [
-                {
-                  model: User,
-                  as: "users",
-                  attributes: ["id"],
-                  through: { attributes: [] },
-                },
-              ],
-            },
-          ],
         },
       ],
       limit: 200,
@@ -68,28 +73,39 @@ const processPendingTicketsAlerts = async (): Promise<void> => {
 
     for (const tracking of candidates) {
       const ticket: any = tracking.ticket;
-      if (!ticket || !ticket.queue) continue;
+      if (!ticket || !ticket.queueId) continue;
 
-      const queueTimeoutMs = ticket.queue.pendingTimeoutMinutes * 60 * 1000;
+      const queue: any = queueMap.get(ticket.queueId);
+      if (!queue) continue;
+
+      const queueTimeoutMs = queue.pendingTimeoutMinutes * 60 * 1000;
       const queuedAtTime = new Date(tracking.queuedAt).getTime();
       const elapsedMs = now - queuedAtTime;
 
       if (elapsedMs < queueTimeoutMs) continue;
 
       const elapsedMin = Math.floor(elapsedMs / 60000);
-      const userIds = (ticket.queue.users || []).map((u: any) => u.id);
+      const userIds = (queue.users || []).map((u: any) => u.id);
       if (userIds.length === 0) continue;
 
-      const contactName = ticket.contact?.name || "Cliente";
-      const queueName = ticket.queue.name;
+      // PASO 3: Cargar el contacto del ticket (separado para evitar JOIN complejo)
+      let contactName = "Cliente";
+      try {
+        const contact = await Contact.findByPk(ticket.contactId, {
+          attributes: ["id", "name", "number"],
+        });
+        if (contact?.name) contactName = contact.name;
+      } catch {
+        // ignorar, usar fallback
+      }
 
       try {
         await SendAlertPushNotificationService({
           userIds,
           companyId: tracking.companyId,
           title: "⚠️ Ticket pendiente sin atender",
-          body: `${contactName} lleva ${elapsedMin} min esperando en la cola ${queueName}`,
-          url: `/tickets/${ticket.uuid || ticket.id}`,
+          body: `${contactName} lleva ${elapsedMin} min esperando en la cola ${queue.name}`,
+          url: `/tickets/${(ticket as any).uuid || ticket.id}`,
           tag: `pending-alert-${ticket.id}`,
           data: {
             ticketId: ticket.id,
