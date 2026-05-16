@@ -13,6 +13,7 @@ import HelpsManager from "../../components/HelpsManager";
 import Options from "../../components/Settings/Options";
 import Whitelabel from "../../components/Settings/Whitelabel";
 import FinalizacaoAtendimento from "../../components/Settings/FinalizacaoAtendimento";
+import MonitoringPanel from "../../components/Settings/MonitoringPanel";
 
 import { i18n } from "../../translate/i18n";
 import { toast } from "react-toastify";
@@ -178,6 +179,9 @@ const SettingsCustom = () => {
               {isSuper() ? (
                 <Tab label="Whitelabel" value={"whitelabel"} />
               ) : null}
+              {isSuper() ? (
+                <Tab label="Monitoreo" value={"monitoring"} />
+              ) : null}
             </Tabs>
             <Paper className={classes.paper} elevation={0}>
               {/* Renderização condicional simples - apenas a aba ativa renderiza */}
@@ -212,6 +216,12 @@ const SettingsCustom = () => {
               {tab === "whitelabel" && isSuper() && (
                 <div className={classes.container}>
                   <Whitelabel settings={oldSettings} />
+                </div>
+              )}
+
+              {tab === "monitoring" && isSuper() && (
+                <div className={classes.container}>
+                  <MonitoringPanel />
                 </div>
               )}
 

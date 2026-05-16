@@ -6,6 +6,7 @@ import Contact from "../models/Contact";
 import User from "../models/User";
 import logger from "../utils/logger";
 import { getIO } from "../libs/socket";
+import { trackJob, registerJob } from "../utils/jobTracker";
 
 const CronJob = require("cron").CronJob;
 
@@ -140,9 +141,11 @@ const processPendingTicketsAlerts = async (): Promise<void> => {
 };
 
 export const startPendingTicketsAlertJob = () => {
+  registerJob("PendingTicketsAlertJob");
+
   const job = new CronJob(
     "0 */3 * * * *", // cada 3 minutos
-    processPendingTicketsAlerts,
+    () => trackJob("PendingTicketsAlertJob", processPendingTicketsAlerts),
     null,
     true,
     "America/Sao_Paulo"

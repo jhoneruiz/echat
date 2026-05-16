@@ -3,6 +3,7 @@ import { emitBirthdayEvents } from "../libs/socket"; //  NOVO IMPORT
 import logger from "../utils/logger";
 import Company from "../models/Company";
 import BirthdaySettings from "../models/BirthdaySettings";
+import { trackJob, registerJob } from "../utils/jobTracker";
 const CronJob = require("cron").CronJob;
 
 /**
@@ -10,22 +11,21 @@ const CronJob = require("cron").CronJob;
  * Executa todos os dias às 09:00
  */
 export const startBirthdayJob = () => {
+  registerJob("BirthdayJob");
+
   const birthdayJob = new CronJob(
     "0 0 9 * * *", // Todos os dias às 09:00
-    async () => {
-      logger.info(" Starting daily birthday processing job...");
+    () =>
+      trackJob("BirthdayJob", async () => {
+        logger.info(" Starting daily birthday processing job...");
 
-      try {
         await BirthdayService.processTodayBirthdays();
 
         //  NOVO: Emitir eventos via socket para todas as empresas após processamento
         await emitBirthdayEventsToAllCompanies();
 
         logger.info("🎉 Daily birthday processing job completed successfully");
-      } catch (error) {
-        logger.error("❌ Error in daily birthday processing job:", error);
-      }
-    },
+      }),
     null, // onComplete
     true, // start immediately
     "America/Sao_Paulo" // timezone
@@ -41,18 +41,16 @@ export const startBirthdayJob = () => {
  * Executa a cada 30 minutos durante o horário comercial para capturar novos logins
  */
 export const startBirthdayNotificationJob = () => {
+  registerJob("BirthdayNotificationJob");
+
   const notificationJob = new CronJob(
     "0 */30 8-18 * * 1-5", // A cada 30 minutos, das 8h às 18h, segunda a sexta
-    async () => {
-      logger.info(" Starting birthday notification check...");
-
-      try {
+    () =>
+      trackJob("BirthdayNotificationJob", async () => {
+        logger.info(" Starting birthday notification check...");
         await emitBirthdayEventsToAllCompanies();
         logger.info(" Birthday notification check completed");
-      } catch (error) {
-        logger.error("❌ Error in birthday notification check:", error);
-      }
-    },
+      }),
     null, // onComplete
     true, // start immediately
     "America/Sao_Paulo" // timezone

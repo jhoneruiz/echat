@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import Contact from "../models/Contact";
 import WhatsappLidMap from "../models/WhatsapplidMap";
 import logger from "../utils/logger";
+import { trackJob, registerJob } from "../utils/jobTracker";
 const CronJob = require("cron").CronJob;
 
 const lidSyncQueueJob = {
@@ -26,23 +27,24 @@ export default lidSyncQueueJob;
  * Busca contatos que já têm LID na tabela WhatsappLidMaps mas não na tabela Contacts
  */
 export const startLidSyncJob = () => {
+  registerJob("LidSyncJob");
+
   const lidSyncJob = new CronJob(
     "0 */5 * * * *",
-    async () => {
-      logger.info("[RDS-LID-SYNC] Iniciando job de sincronização de LIDs...");
-      
-      try {
+    () =>
+      trackJob("LidSyncJob", async () => {
+        logger.info("[RDS-LID-SYNC] Iniciando job de sincronização de LIDs...");
+
         const result = await syncContactLids();
         if (result.processed === 0) {
           logger.info("[RDS-LID-SYNC] Todos contatos já foram sincronizados!");
         } else {
-          logger.info(`[RDS-LID-SYNC] Job concluído: ${result.updated}/${result.processed} contatos sincronizados com sucesso`);
+          logger.info(
+            `[RDS-LID-SYNC] Job concluído: ${result.updated}/${result.processed} contatos sincronizados com sucesso`
+          );
         }
-      } catch (error) {
-        logger.error("[RDS-LID-SYNC] Erro no job de sincronização de LIDs:", error);
-      }
-    },
-    null, 
+      }),
+    null,
     true,
     "America/Sao_Paulo"
   );
