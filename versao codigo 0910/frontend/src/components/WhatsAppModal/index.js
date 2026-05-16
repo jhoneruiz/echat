@@ -37,7 +37,13 @@ import { i18n } from "../../translate/i18n";
 import toastError from "../../errors/toastError";
 import QueueSelect from "../QueueSelect";
 import TabPanel from "../TabPanel";
-import { Autorenew, FileCopy } from "@material-ui/icons";
+import {
+  Autorenew,
+  FileCopy,
+  WhatsApp as WhatsAppIcon,
+  Close as CloseIcon,
+  Info as InfoIcon,
+} from "@material-ui/icons";
 import useCompanySettings from "../../hooks/useSettings/companySettings";
 import SchedulesForm from "../SchedulesForm";
 import usePlans from "../../hooks/usePlans";
@@ -53,6 +59,36 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     flexWrap: "wrap",
     gap: 4,
+  },
+  dialogPaper: {
+    borderRadius: 16,
+  },
+  modalHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1.5),
+    padding: theme.spacing(2, 2.5),
+    borderBottom: `1px solid ${theme.palette.divider}`,
+  },
+  modalHeaderIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#22C55E",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalHeaderTitle: {
+    fontSize: "1.05rem",
+    fontWeight: 600,
+    lineHeight: 1.2,
+  },
+  modalHeaderSubtitle: {
+    fontSize: "0.78rem",
+    color: theme.palette.text.secondary,
+    marginTop: 2,
   },
 
   multFieldLine: {
@@ -95,9 +131,9 @@ const useStyles = makeStyles((theme) => ({
   },
   tokenRefresh: {
     minWidth: "auto",
-    display: "flex", // Torna o botão flexível para alinhar o conteúdo
-    alignItems: "center", // Alinha verticalmente ao centro
-    justifyContent: "center", // Alinha horizontalmente ao centro
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   colorAdorment: {
     width: 20,
@@ -105,10 +141,96 @@ const useStyles = makeStyles((theme) => ({
   },
   formControl: {
     width: 220,
-    // paddingTop: 14
   },
   colorField: {
     width: 150,
+  },
+
+  /* ------- Secciones modernizadas (General / Integraciones) ------- */
+  sectionCard: {
+    padding: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+    borderRadius: 12,
+    border: `1px solid ${
+      theme.palette.type === "dark" ? "rgba(255,255,255,0.08)" : "#E5E7EB"
+    }`,
+    backgroundColor:
+      theme.palette.type === "dark" ? "rgba(255,255,255,0.02)" : "#FAFAFA",
+  },
+  sectionHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1),
+    marginBottom: theme.spacing(0.5),
+  },
+  sectionTitle: {
+    fontSize: "0.95rem",
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+  },
+  sectionDesc: {
+    fontSize: "0.75rem",
+    color: theme.palette.text.secondary,
+    marginBottom: theme.spacing(1.5),
+    lineHeight: 1.4,
+  },
+  fieldHelper: {
+    fontSize: "0.72rem",
+    color: theme.palette.text.secondary,
+    marginTop: 4,
+    display: "block",
+    lineHeight: 1.35,
+  },
+  fieldGroupRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: theme.spacing(1),
+    alignItems: "flex-start",
+  },
+  switchRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: theme.spacing(1, 1.25),
+    borderRadius: 8,
+    backgroundColor:
+      theme.palette.type === "dark" ? "rgba(255,255,255,0.04)" : "#fff",
+    border: `1px solid ${
+      theme.palette.type === "dark" ? "rgba(255,255,255,0.06)" : "#E5E7EB"
+    }`,
+    marginBottom: theme.spacing(1),
+    [theme.breakpoints.down("xs")]: {
+      flexDirection: "column",
+      alignItems: "flex-start",
+      gap: theme.spacing(0.5),
+    },
+  },
+  switchLabel: {
+    display: "flex",
+    flexDirection: "column",
+    flex: 1,
+  },
+  metaCallout: {
+    padding: theme.spacing(1, 1.25),
+    backgroundColor: "rgba(34, 197, 94, 0.08)",
+    border: "1px solid rgba(34, 197, 94, 0.25)",
+    borderRadius: 8,
+    fontSize: "0.78rem",
+    color: theme.palette.text.primary,
+    marginBottom: theme.spacing(1.5),
+    lineHeight: 1.4,
+  },
+  tokenBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(0.5),
+    padding: theme.spacing(1),
+    borderRadius: 10,
+    border: `1px solid ${
+      theme.palette.type === "dark" ? "rgba(255,255,255,0.08)" : "#E5E7EB"
+    }`,
+    backgroundColor:
+      theme.palette.type === "dark" ? "rgba(255,255,255,0.02)" : "#fff",
   },
 }));
 
@@ -633,12 +755,34 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
         maxWidth="lg"
         fullWidth
         scroll="paper"
+        classes={{ paper: classes.dialogPaper }}
       >
-        <DialogTitle>
-          {whatsAppId
-            ? i18n.t("whatsappModal.title.edit")
-            : i18n.t("whatsappModal.title.add")}
-        </DialogTitle>
+        <Box className={classes.modalHeader}>
+          <Box
+            className={classes.modalHeaderIcon}
+            style={{
+              backgroundColor:
+                channel === "whatsapp_oficial" ? "#1877F2" : "#25D366",
+            }}
+          >
+            <WhatsAppIcon />
+          </Box>
+          <Box style={{ flex: 1, minWidth: 0 }}>
+            <Typography className={classes.modalHeaderTitle} noWrap>
+              {whatsAppId
+                ? i18n.t("whatsappModal.title.edit")
+                : i18n.t("whatsappModal.title.add")}
+            </Typography>
+            <Typography className={classes.modalHeaderSubtitle} noWrap>
+              {channel === "whatsapp_oficial"
+                ? "Canal oficial Meta Cloud API"
+                : "Canal Baileys (WhatsApp Web)"}
+            </Typography>
+          </Box>
+          <IconButton onClick={handleClose} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
         <Formik
           initialValues={whatsApp}
           enableReinitialize={true}
@@ -735,25 +879,37 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                         {i18n.t("userModal.buttons.addImage")}
                       </Button>
                     </div>
-                    {/* NOME E PADRAO */}
-                    <div className={classes.multFieldLine}>
+                    {/* === SECCIÓN: IDENTIDAD === */}
+                    <Box className={classes.sectionCard}>
+                      <Box className={classes.sectionHeader}>
+                        <Typography className={classes.sectionTitle}>
+                          🏷 Identidad de la conexión
+                        </Typography>
+                      </Box>
+                      <Typography className={classes.sectionDesc}>
+                        Nombre visible internamente, color de la etiqueta en la lista
+                        de tickets y comportamiento básico de la conexión.
+                      </Typography>
                       <Grid spacing={2} container>
-                        <Grid item>
+                        <Grid item xs={12} sm={6}>
                           <Field
                             as={TextField}
                             label={i18n.t("whatsappModal.form.name")}
                             autoFocus
                             name="name"
+                            fullWidth
                             error={touched.name && Boolean(errors.name)}
-                            helperText={touched.name && errors.name}
+                            helperText={
+                              (touched.name && errors.name) ||
+                              "Solo se ve en el panel; no aparece al cliente."
+                            }
                             variant="outlined"
                             margin="dense"
-                            className={classes.textField}
                           />
                         </Grid>
 
                         {/* COR */}
-                        <Grid item>
+                        <Grid item xs={12} sm={6}>
                           <Field
                             as={TextField}
                             label={i18n.t("connections.table.color")}
@@ -785,8 +941,12 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                             }}
                             variant="outlined"
                             margin="dense"
-                            className={classes.colorField}
+                            fullWidth
                           />
+                          <Typography className={classes.fieldHelper}>
+                            Color con el que se marca esta conexión en la lista
+                            de tickets para identificarla rápido.
+                          </Typography>
                           <ColorPicker
                             open={colorPickerModalOpen}
                             handleClose={() => setColorPickerModalOpen(false)}
@@ -798,54 +958,74 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                             }}
                           />
                         </Grid>
+                      </Grid>
 
-                        <Grid style={{ paddingTop: 15 }} item>
-                          <FormControlLabel
-                            control={
-                              <Field
-                                as={Switch}
-                                color="primary"
-                                name="isDefault"
-                                checked={values.isDefault}
-                              />
-                            }
-                            label={i18n.t("whatsappModal.form.default")}
+                      <Box mt={1.5}>
+                        <Box className={classes.switchRow}>
+                          <Box className={classes.switchLabel}>
+                            <Typography variant="body2" style={{ fontWeight: 500 }}>
+                              ⭐ Conexión predeterminada
+                            </Typography>
+                            <Typography className={classes.fieldHelper}>
+                              Conexión que se usa por defecto al enviar mensajes
+                              desde la API o cuando no hay otra conexión asignada.
+                              Solo una puede estar marcada como predeterminada.
+                            </Typography>
+                          </Box>
+                          <Field
+                            as={Switch}
+                            color="primary"
+                            name="isDefault"
+                            checked={values.isDefault}
                           />
-                          {useWhatsappOfficial &&
-                            channel === "whatsapp_oficial" && (
-                              <FormControlLabel
-                                style={{ marginRight: 7, color: "gray" }}
-                                label={i18n.t("whatsappModal.form.isOficial")}
-                                labelPlacement="end"
-                                control={
-                                  <Switch
-                                    size="medium"
-                                    checked={isOficial}
-                                    onChange={handleEnableIsOficial}
-                                    name="isOficial"
-                                    color="primary"
-                                  />
-                                }
-                              />
-                            )}
-                          <FormControlLabel
-                            control={
-                              <Field
-                                as={Switch}
+                        </Box>
+
+                        {useWhatsappOfficial &&
+                          channel === "whatsapp_oficial" && (
+                            <Box className={classes.switchRow}>
+                              <Box className={classes.switchLabel}>
+                                <Typography variant="body2" style={{ fontWeight: 500 }}>
+                                  ✅ Habilitar API oficial Meta
+                                </Typography>
+                                <Typography className={classes.fieldHelper}>
+                                  Activa los campos de credenciales (Phone Number
+                                  ID, WABA, Business, Token) para conectar
+                                  contra WhatsApp Cloud API en lugar de Baileys.
+                                </Typography>
+                              </Box>
+                              <Switch
+                                size="medium"
+                                checked={isOficial}
+                                onChange={handleEnableIsOficial}
+                                name="isOficial"
                                 color="primary"
-                                name="allowGroup"
-                                checked={values.allowGroup}
                               />
-                            }
-                            label={i18n.t("whatsappModal.form.group")}
+                            </Box>
+                          )}
+
+                        <Box className={classes.switchRow}>
+                          <Box className={classes.switchLabel}>
+                            <Typography variant="body2" style={{ fontWeight: 500 }}>
+                              👥 Permitir grupos
+                            </Typography>
+                            <Typography className={classes.fieldHelper}>
+                              Si está desactivado, los mensajes que llegan a
+                              grupos de WhatsApp se ignoran (no crean ticket).
+                            </Typography>
+                          </Box>
+                          <Field
+                            as={Switch}
+                            color="primary"
+                            name="allowGroup"
+                            checked={values.allowGroup}
                           />
-                        </Grid>
-                        <Grid xs={6} md={4} item>
+                        </Box>
+
+                        <Grid item xs={12}>
                           <FormControl
                             variant="outlined"
                             margin="dense"
                             fullWidth
-                            className={classes.formControl}
                           >
                             <InputLabel id="groupAsTicket-selection-label">
                               {i18n.t("whatsappModal.form.groupAsTicket")}
@@ -868,14 +1048,43 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                               </MenuItem>
                             </Field>
                           </FormControl>
+                          <Typography className={classes.fieldHelper}>
+                            "Habilitado" → cada grupo de WhatsApp se trata como
+                            un único ticket compartido. "Deshabilitado" → cada
+                            integrante del grupo abre su propio ticket.
+                          </Typography>
                         </Grid>
-                      </Grid>
-                    </div>
+                      </Box>
+                    </Box>
 
+                    {/* === SECCIÓN: CREDENCIALES META CLOUD API === */}
                     {isOficial && (
-                      <div className={classes.importMessage}>
-                        <Grid style={{ marginTop: 18 }} container spacing={1}>
-                          <Grid xs={12} md={6} xl={3} item>
+                      <Box className={classes.sectionCard}>
+                        <Box className={classes.sectionHeader}>
+                          <Typography className={classes.sectionTitle}>
+                            🌐 Credenciales WhatsApp Cloud API (Meta)
+                          </Typography>
+                        </Box>
+                        <Typography className={classes.sectionDesc}>
+                          Datos que tu app de Meta Business necesita para enviar y
+                          recibir mensajes. Los encuentras en Meta Business Manager →
+                          WhatsApp Manager.
+                        </Typography>
+                        <Box className={classes.metaCallout}>
+                          💡 ¿Dónde encontrarlos? En{" "}
+                          <a
+                            href="https://business.facebook.com/wa/manage/phone-numbers/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "#1877F2", fontWeight: 600 }}
+                          >
+                            Meta Business → WhatsApp → Números
+                          </a>
+                          . El System User Token se crea en Business Settings →
+                          Users → System Users.
+                        </Box>
+                        <Grid container spacing={1}>
+                          <Grid xs={12} md={6} item>
                             <Field
                               fullWidth
                               as={TextField}
@@ -883,167 +1092,181 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                                 "whatsappModal.form.phone_number_id"
                               )}
                               name="phone_number_id"
-                              InputLabelProps={{
-                                shrink: true,
-                              }}
+                              InputLabelProps={{ shrink: true }}
                               error={
                                 touched.phone_number_id &&
                                 Boolean(errors.phone_number_id)
                               }
                               helperText={
-                                touched.phone_number_id &&
-                                errors.phone_number_id
+                                (touched.phone_number_id &&
+                                  errors.phone_number_id) ||
+                                "ID del número de teléfono registrado en Meta (15+ dígitos)"
                               }
                               variant="outlined"
+                              margin="dense"
                               required={isOficial}
                             />
                           </Grid>
-                          <Grid xs={12} md={6} xl={3} item>
+                          <Grid xs={12} md={6} item>
                             <Field
                               fullWidth
                               as={TextField}
                               label={i18n.t("whatsappModal.form.waba_id")}
                               name="waba_id"
-                              InputLabelProps={{
-                                shrink: true,
-                              }}
+                              InputLabelProps={{ shrink: true }}
                               error={touched.waba_id && Boolean(errors.waba_id)}
-                              helperText={touched.waba_id && errors.waba_id}
+                              helperText={
+                                (touched.waba_id && errors.waba_id) ||
+                                "WhatsApp Business Account ID — controla plantillas y webhook"
+                              }
                               variant="outlined"
+                              margin="dense"
                               required={isOficial}
                             />
                           </Grid>
 
-                          <Grid xs={12} md={6} xl={3} item>
+                          <Grid xs={12} md={6} item>
                             <Field
                               fullWidth
                               as={TextField}
                               label={i18n.t("whatsappModal.form.business_id")}
                               name="business_id"
-                              InputLabelProps={{
-                                shrink: true,
-                              }}
+                              InputLabelProps={{ shrink: true }}
                               error={
                                 touched.business_id &&
                                 Boolean(errors.business_id)
                               }
                               helperText={
-                                touched.business_id && errors.business_id
+                                (touched.business_id && errors.business_id) ||
+                                "Business Manager ID — la cuenta de empresa en Meta"
                               }
                               variant="outlined"
+                              margin="dense"
                               required={isOficial}
                             />
                           </Grid>
-                          <Grid xs={12} md={6} xl={3} item>
+                          <Grid xs={12} md={6} item>
                             <Field
                               fullWidth
                               as={TextField}
                               label={i18n.t("whatsappModal.form.phone_number")}
                               name="phone_number"
-                              InputLabelProps={{
-                                shrink: true,
-                              }}
+                              InputLabelProps={{ shrink: true }}
                               error={
                                 touched.phone_number &&
                                 Boolean(errors.phone_number)
                               }
                               helperText={
-                                touched.phone_number && errors.phone_number
+                                (touched.phone_number &&
+                                  errors.phone_number) ||
+                                "Número en formato internacional (+52 1 55..., +54 9 11..., +1...)"
                               }
                               variant="outlined"
+                              margin="dense"
                               required={isOficial}
                             />
                           </Grid>
-                          <Grid xs={12} md={12} xl={12} item>
+                          <Grid xs={12} item>
                             <Field
                               fullWidth
                               as={TextField}
                               label={i18n.t("whatsappModal.form.send_token")}
                               name="send_token"
-                              InputLabelProps={{
-                                shrink: true,
-                              }}
+                              InputLabelProps={{ shrink: true }}
                               error={
                                 touched.send_token && Boolean(errors.send_token)
                               }
                               helperText={
-                                touched.send_token && errors.send_token
+                                (touched.send_token && errors.send_token) ||
+                                "System User Access Token (permanente). Empieza por 'EAA...' y debe tener permisos whatsapp_business_messaging + whatsapp_business_management."
                               }
                               variant="outlined"
+                              margin="dense"
                               required={isOficial}
                             />
                           </Grid>
                         </Grid>
-                      </div>
+                      </Box>
                     )}
                     {!isOficial && (
-                      <div className={classes.importMessage}>
-                        <div className={classes.multFieldLine}>
-                          <FormControlLabel
-                            style={{ marginRight: 7, color: "gray" }}
-                            label={i18n.t(
-                              "whatsappModal.form.importOldMessagesEnable"
-                            )}
-                            labelPlacement="end"
-                            control={
+                      <Box className={classes.sectionCard}>
+                        <Box className={classes.sectionHeader}>
+                          <Typography className={classes.sectionTitle}>
+                            📥 Importación de mensajes antiguos (Baileys)
+                          </Typography>
+                        </Box>
+                        <Typography className={classes.sectionDesc}>
+                          Al conectar por primera vez, importa el historial de
+                          conversaciones del teléfono. Solo disponible con el
+                          canal no oficial (Baileys); el canal Meta no lo
+                          permite.
+                        </Typography>
+
+                        <Box className={classes.switchRow}>
+                          <Box className={classes.switchLabel}>
+                            <Typography variant="body2" style={{ fontWeight: 500 }}>
+                              🔄 Importar mensajes antiguos
+                            </Typography>
+                            <Typography className={classes.fieldHelper}>
+                              Activa la importación. Aparecerán los campos para
+                              definir el rango de fechas.
+                            </Typography>
+                          </Box>
+                          <Switch
+                            size="medium"
+                            checked={enableImportMessage}
+                            onChange={handleEnableImportMessage}
+                            name="importOldMessagesEnable"
+                            color="primary"
+                          />
+                        </Box>
+
+                        {enableImportMessage && (
+                          <>
+                            <Box className={classes.switchRow}>
+                              <Box className={classes.switchLabel}>
+                                <Typography variant="body2" style={{ fontWeight: 500 }}>
+                                  👥 Incluir grupos en la importación
+                                </Typography>
+                                <Typography className={classes.fieldHelper}>
+                                  Si está apagado, solo se importan chats
+                                  individuales (no grupos).
+                                </Typography>
+                              </Box>
                               <Switch
                                 size="medium"
-                                checked={enableImportMessage}
-                                onChange={handleEnableImportMessage}
-                                name="importOldMessagesEnable"
+                                checked={importOldMessagesGroups}
+                                onChange={(e) =>
+                                  setImportOldMessagesGroups(e.target.checked)
+                                }
+                                name="importOldMessagesGroups"
                                 color="primary"
                               />
-                            }
-                          />
+                            </Box>
 
-                          {enableImportMessage ? (
-                            <>
-                              <FormControlLabel
-                                style={{ marginRight: 7, color: "gray" }}
-                                label={i18n.t(
-                                  "whatsappModal.form.importOldMessagesGroups"
-                                )}
-                                labelPlacement="end"
-                                control={
-                                  <Switch
-                                    size="medium"
-                                    checked={importOldMessagesGroups}
-                                    onChange={(e) =>
-                                      setImportOldMessagesGroups(
-                                        e.target.checked
-                                      )
-                                    }
-                                    name="importOldMessagesGroups"
-                                    color="primary"
-                                  />
+                            <Box className={classes.switchRow}>
+                              <Box className={classes.switchLabel}>
+                                <Typography variant="body2" style={{ fontWeight: 500 }}>
+                                  ✅ Cerrar tickets importados
+                                </Typography>
+                                <Typography className={classes.fieldHelper}>
+                                  Crea los tickets de la importación ya en
+                                  estado "cerrado" para no inundar la cola de
+                                  pendientes con conversaciones antiguas.
+                                </Typography>
+                              </Box>
+                              <Switch
+                                size="medium"
+                                checked={closedTicketsPostImported}
+                                onChange={(e) =>
+                                  setClosedTicketsPostImported(e.target.checked)
                                 }
+                                name="closedTicketsPostImported"
+                                color="primary"
                               />
-
-                              <FormControlLabel
-                                style={{ marginRight: 7, color: "gray" }}
-                                label={i18n.t(
-                                  "whatsappModal.form.closedTicketsPostImported"
-                                )}
-                                labelPlacement="end"
-                                control={
-                                  <Switch
-                                    size="medium"
-                                    checked={closedTicketsPostImported}
-                                    onChange={(e) =>
-                                      setClosedTicketsPostImported(
-                                        e.target.checked
-                                      )
-                                    }
-                                    name="closedTicketsPostImported"
-                                    color="primary"
-                                  />
-                                }
-                              />
-                            </>
-                          ) : (
-                            <></>
-                          )}
-                        </div>
+                            </Box>
+                          </>
+                        )}
 
                         {enableImportMessage ? (
                           <Grid style={{ marginTop: 18 }} container spacing={1}>
@@ -1157,58 +1380,88 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                                   ))}
                                 </Field>
                               </FormControl>
+                              <Typography className={classes.fieldHelper}>
+                                Cola donde se asignarán los tickets generados
+                                por la importación.
+                              </Typography>
                             </Grid>
                           </Grid>
-                        ) : null}
-                      </div>
-                    )}
-                    {enableImportMessage && (
-                      <span style={{ color: "red" }}>
-                        {i18n.t("whatsappModal.form.importAlert")}
-                      </span>
+                        )}
+                        {enableImportMessage && (
+                          <Typography
+                            className={classes.fieldHelper}
+                            style={{ color: "#DC2626", marginTop: 8 }}
+                          >
+                            ⚠ {i18n.t("whatsappModal.form.importAlert")}
+                          </Typography>
+                        )}
+                      </Box>
                     )}
 
-                    {/* TOKEN */}
-                    <Box display="flex" alignItems="center">
-                      <Grid xs={6} md={12} item>
+                    {/* === SECCIÓN: TOKEN DE API === */}
+                    <Box className={classes.sectionCard}>
+                      <Box className={classes.sectionHeader}>
+                        <Typography className={classes.sectionTitle}>
+                          🔑 Token de integración (API externa)
+                        </Typography>
+                      </Box>
+                      <Typography className={classes.sectionDesc}>
+                        Token que se usa para enviar mensajes desde sistemas
+                        externos a esta conexión vía{" "}
+                        <code>POST /api/messages/send</code>. También se usa
+                        como <code>verify_token</code> al configurar el webhook
+                        en Meta. ⚠ Manténlo en secreto.
+                      </Typography>
+                      <Box className={classes.tokenBox}>
                         <Field
                           as={TextField}
-                          label={i18n.t("whatsappModal.form.token")}
                           type="token"
                           fullWidth
-                          // name="token"
                           value={autoToken}
                           variant="outlined"
                           margin="dense"
                           disabled
+                          style={{ marginTop: 0, marginBottom: 0 }}
                         />
-                      </Grid>
-                      <Button
-                        onClick={handleRefreshToken}
-                        disabled={isSubmitting}
-                        className={classes.tokenRefresh}
-                        variant="text"
-                        startIcon={
-                          <Autorenew
-                            style={{ marginLeft: 5, color: "green" }}
-                          />
-                        }
-                      />
-                      <Button
-                        onClick={handleCopyToken}
-                        className={classes.tokenRefresh}
-                        variant="text"
-                        startIcon={
-                          <FileCopy
-                            style={{ color: copied ? "blue" : "inherit" }}
-                          />
-                        }
-                      />
+                        <Button
+                          onClick={handleRefreshToken}
+                          disabled={isSubmitting}
+                          className={classes.tokenRefresh}
+                          variant="text"
+                          title="Regenerar token"
+                          startIcon={
+                            <Autorenew style={{ color: "#22C55E" }} />
+                          }
+                        />
+                        <Button
+                          onClick={handleCopyToken}
+                          className={classes.tokenRefresh}
+                          variant="text"
+                          title="Copiar token al portapapeles"
+                          startIcon={
+                            <FileCopy
+                              style={{ color: copied ? "#1877F2" : "inherit" }}
+                            />
+                          }
+                        />
+                      </Box>
+                      <Typography className={classes.fieldHelper}>
+                        {copied
+                          ? "✓ Token copiado al portapapeles"
+                          : "Al regenerar, los integraciones que usen el token anterior dejarán de funcionar hasta actualizarlas."}
+                      </Typography>
                     </Box>
 
-                    <div>
-                      <h3>{i18n.t("whatsappModal.form.queueRedirection")}</h3>
-                      <p>{i18n.t("whatsappModal.form.queueRedirectionDesc")}</p>
+                    {/* === SECCIÓN: REENVÍO AUTOMÁTICO === */}
+                    <Box className={classes.sectionCard}>
+                      <Box className={classes.sectionHeader}>
+                        <Typography className={classes.sectionTitle}>
+                          ➡ Reenvío automático a cola
+                        </Typography>
+                      </Box>
+                      <Typography className={classes.sectionDesc}>
+                        {i18n.t("whatsappModal.form.queueRedirectionDesc")}
+                      </Typography>
                       <Grid spacing={2} container>
                         <Grid xs={6} md={6} item>
                           <FormControl
@@ -1242,7 +1495,7 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                           </FormControl>
                         </Grid>
 
-                        <Grid xs={6} md={6} item>
+                        <Grid xs={12} md={6} item>
                           <Field
                             as={TextField}
                             label={i18n.t("whatsappModal.form.timeSendQueue")}
@@ -1255,12 +1508,14 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                               Boolean(errors.timeSendQueue)
                             }
                             helperText={
-                              touched.timeSendQueue && errors.timeSendQueue
+                              (touched.timeSendQueue &&
+                                errors.timeSendQueue) ||
+                              "Minutos de espera. 0 = no aplicar reenvío automático."
                             }
                           />
                         </Grid>
                       </Grid>
-                    </div>
+                    </Box>
                   </DialogContent>
                 </TabPanel>
                 <TabPanel
@@ -1269,12 +1524,43 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                   name={"integrations"}
                 >
                   <DialogContent dividers>
-                    <QueueSelect
-                      selectedQueueIds={selectedQueueIds}
-                      onChange={(selectedIds) => handleChangeQueue(selectedIds)}
-                    />
+                    {/* === SECCIÓN: COLAS ASIGNADAS === */}
+                    <Box className={classes.sectionCard}>
+                      <Box className={classes.sectionHeader}>
+                        <Typography className={classes.sectionTitle}>
+                          👥 Colas asignadas
+                        </Typography>
+                      </Box>
+                      <Typography className={classes.sectionDesc}>
+                        Selecciona a qué colas se enrutan los tickets que llegan
+                        a este número. El cliente verá un menú para elegir cuando
+                        haya más de una; con una sola cola, los tickets se
+                        asignan directamente.
+                      </Typography>
+                      <QueueSelect
+                        selectedQueueIds={selectedQueueIds}
+                        onChange={(selectedIds) => handleChangeQueue(selectedIds)}
+                      />
+                      <Typography className={classes.fieldHelper}>
+                        ℹ Asignar al menos una cola permite que los agentes vean
+                        los tickets. Sin cola asignada, los mensajes quedan
+                        huérfanos.
+                      </Typography>
+                    </Box>
+
+                    {/* === SECCIÓN: LLAMADAS WAVOIP (opcional) === */}
                     {showWavoipCall && (
-                      <div>
+                      <Box className={classes.sectionCard}>
+                        <Box className={classes.sectionHeader}>
+                          <Typography className={classes.sectionTitle}>
+                            📞 Llamadas de voz (Wavoip)
+                          </Typography>
+                        </Box>
+                        <Typography className={classes.sectionDesc}>
+                          Servicio externo de pago que permite hacer y recibir
+                          llamadas de WhatsApp desde el panel. Solo necesario si
+                          tu plan tiene esta función habilitada.
+                        </Typography>
                         <Field
                           as={TextField}
                           label="Token Wavoip"
@@ -1289,146 +1575,194 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                                 href="https://app.wavoip.com"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                style={{ color: "#1877F2", fontWeight: 600 }}
                               >
                                 wavoip.com
-                              </a>{" "}
-                              (servicio externo de pago). Sin token no funcionarán las llamadas.
+                              </a>
+                              . Sin token no funcionarán las llamadas; el resto
+                              de mensajería sigue normal.
                             </span>
                           }
                         />
-                      </div>
+                      </Box>
                     )}
+
+                    {/* === SECCIÓN: INTEGRACIÓN AL INICIO (chatbot externo) === */}
                     {showIntegrations && (
-                      <FormControl
-                        variant="outlined"
-                        margin="dense"
-                        className={classes.FormControl}
-                        fullWidth
-                      >
-                        <InputLabel id="integrationId-selection-label">
-                          {i18n.t("queueModal.form.integrationId")}
-                        </InputLabel>
-                        <Field
-                          as={Select}
-                          label={i18n.t("queueModal.form.integrationId")}
-                          name="integrationId"
-                          id="integrationId"
-                          variant="outlined"
-                          margin="dense"
-                          placeholder={i18n.t("queueModal.form.integrationId")}
-                          labelId="integrationId-selection-label"
-                        >
-                          <MenuItem value={null}>{"Desabilitado"}</MenuItem>
-                          {integrations.map((integration) => (
-                            <MenuItem
-                              key={integration.id}
-                              value={integration.id}
-                            >
-                              {integration.name}
-                            </MenuItem>
-                          ))}
-                        </Field>
-                      </FormControl>
-                    )}
-                    {showOpenAi && (
-                      <FormControl margin="dense" variant="outlined" fullWidth>
-                        <InputLabel>
-                          {i18n.t("whatsappModal.form.prompt")}
-                        </InputLabel>
-                        <Select
-                          labelId="dialog-select-prompt-label"
-                          id="dialog-select-prompt"
-                          name="promptId"
-                          value={selectedPrompt || ""}
-                          onChange={handleChangePrompt}
-                          label={i18n.t("whatsappModal.form.prompt")}
-                          fullWidth
-                          MenuProps={{
-                            anchorOrigin: {
-                              vertical: "bottom",
-                              horizontal: "left",
-                            },
-                            transformOrigin: {
-                              vertical: "top",
-                              horizontal: "left",
-                            },
-                            getContentAnchorEl: null,
-                          }}
-                        >
-                          {prompts.map((prompt) => (
-                            <MenuItem key={prompt.id} value={prompt.id}>
-                              {prompt.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    )}
-                    <Grid spacing={3} container>
-                      <Grid xs={12} item>
+                      <Box className={classes.sectionCard}>
+                        <Box className={classes.sectionHeader}>
+                          <Typography className={classes.sectionTitle}>
+                            🔌 Integración al inicio del chat (chatbot externo)
+                          </Typography>
+                        </Box>
+                        <Typography className={classes.sectionDesc}>
+                          Cuando llega un mensaje nuevo, antes de pasar a la
+                          cola, el ticket se enruta primero a esta integración
+                          (n8n, Typebot, Dialogflow…). Útil para preguntas
+                          frecuentes automáticas, calificación previa o
+                          enrutamiento inteligente. Configura las integraciones
+                          en{" "}
+                          <strong>
+                            Configuración → Integraciones de cola
+                          </strong>
+                          .
+                        </Typography>
                         <FormControl
                           variant="outlined"
                           margin="dense"
-                          className={classes.FormControl}
                           fullWidth
                         >
-                          <InputLabel id="triggerIntegrationOnClose-selection-label">
-                            {i18n.t(
-                              "whatsappModal.form.triggerIntegrationOnClose"
-                            )}
+                          <InputLabel id="integrationId-selection-label">
+                            Integración a ejecutar al iniciar conversación
                           </InputLabel>
-
                           <Field
-                            onChange={handleChange}
-                            value={triggerIntegrationOnClose}
                             as={Select}
-                            label={i18n.t(
-                              "whatsappModal.form.triggerIntegrationOnClose"
-                            )}
-                            name="triggerIntegrationOnClose"
-                            id="triggerIntegrationOnClose"
+                            label="Integración a ejecutar al iniciar conversación"
+                            name="integrationId"
+                            id="integrationId"
                             variant="outlined"
                             margin="dense"
-                            placeholder={i18n.t(
-                              "whatsappModal.form.triggerIntegrationOnClose"
-                            )}
-                            labelId="triggerIntegrationOnClose-selection-label"
+                            labelId="integrationId-selection-label"
                           >
-                            <MenuItem value={false}>
-                              {i18n.t("whatsappModal.menuItem.disabled")}
+                            <MenuItem value={null}>
+                              — Deshabilitado (ir directo a la cola) —
                             </MenuItem>
-                            <MenuItem value={true}>
-                              {i18n.t("whatsappModal.menuItem.enabled")}
-                            </MenuItem>
+                            {integrations.map((integration) => (
+                              <MenuItem
+                                key={integration.id}
+                                value={integration.id}
+                              >
+                                {integration.name} ({integration.type})
+                              </MenuItem>
+                            ))}
                           </Field>
                         </FormControl>
-                      </Grid>
+                      </Box>
+                    )}
+
+                    {/* === SECCIÓN: AGENTE DE IA (OpenAI) === */}
+                    {showOpenAi && (
+                      <Box className={classes.sectionCard}>
+                        <Box className={classes.sectionHeader}>
+                          <Typography className={classes.sectionTitle}>
+                            🤖 Agente de IA
+                          </Typography>
+                        </Box>
+                        <Typography className={classes.sectionDesc}>
+                          Asigna un Agente de IA (configurado en{" "}
+                          <strong>Configuración → Agentes IA</strong>) que
+                          responderá automáticamente a los mensajes entrantes en
+                          esta conexión. Tiene prioridad sobre la integración
+                          externa de arriba. Al seleccionar un agente, se
+                          deselecciona la cola — el agente la gestiona.
+                        </Typography>
+                        <FormControl margin="dense" variant="outlined" fullWidth>
+                          <InputLabel>
+                            {i18n.t("whatsappModal.form.prompt")}
+                          </InputLabel>
+                          <Select
+                            labelId="dialog-select-prompt-label"
+                            id="dialog-select-prompt"
+                            name="promptId"
+                            value={selectedPrompt || ""}
+                            onChange={handleChangePrompt}
+                            label={i18n.t("whatsappModal.form.prompt")}
+                            fullWidth
+                            MenuProps={{
+                              anchorOrigin: {
+                                vertical: "bottom",
+                                horizontal: "left",
+                              },
+                              transformOrigin: {
+                                vertical: "top",
+                                horizontal: "left",
+                              },
+                              getContentAnchorEl: null,
+                            }}
+                          >
+                            <MenuItem value="">
+                              — Sin agente —
+                            </MenuItem>
+                            {prompts.map((prompt) => (
+                              <MenuItem key={prompt.id} value={prompt.id}>
+                                🤖 {prompt.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <Typography className={classes.fieldHelper}>
+                          💡 El agente usa su propia API Key de OpenAI y la base
+                          de conocimiento que tenga configurada.
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* === SECCIÓN: TRIGGER AL CERRAR === */}
+                    <Box className={classes.sectionCard}>
+                      <Box className={classes.sectionHeader}>
+                        <Typography className={classes.sectionTitle}>
+                          🔚 Integración al cerrar el ticket
+                        </Typography>
+                      </Box>
+                      <Typography className={classes.sectionDesc}>
+                        Cuando el agente cierra un ticket, dispara una
+                        integración externa (por ejemplo, registrar en CRM,
+                        enviar encuesta NPS, sincronizar con base de datos…).
+                        Solo se permiten integraciones de tipo n8n o Typebot
+                        para esta acción.
+                      </Typography>
+                      <FormControl
+                        variant="outlined"
+                        margin="dense"
+                        fullWidth
+                      >
+                        <InputLabel id="triggerIntegrationOnClose-selection-label">
+                          ¿Disparar integración al cerrar?
+                        </InputLabel>
+                        <Field
+                          onChange={handleChange}
+                          value={triggerIntegrationOnClose}
+                          as={Select}
+                          label="¿Disparar integración al cerrar?"
+                          name="triggerIntegrationOnClose"
+                          id="triggerIntegrationOnClose"
+                          variant="outlined"
+                          margin="dense"
+                          labelId="triggerIntegrationOnClose-selection-label"
+                        >
+                          <MenuItem value={false}>
+                            ✕ No disparar nada al cerrar
+                          </MenuItem>
+                          <MenuItem value={true}>
+                            ✓ Sí, ejecutar una integración
+                          </MenuItem>
+                        </Field>
+                      </FormControl>
 
                       {triggerIntegrationOnClose && (
-                        <Grid xs={12} item>
+                        <Box mt={1}>
                           <FormControl
                             variant="outlined"
                             margin="dense"
-                            className={classes.FormControl}
                             fullWidth
                           >
                             <InputLabel id="integrationType-selection-label">
-                              {i18n.t("queueModal.form.integrationId")}
+                              Integración a ejecutar
                             </InputLabel>
                             <Field
                               as={Select}
-                              label={i18n.t("queueModal.form.integrationId")}
+                              label="Integración a ejecutar"
                               name="integrationType"
                               id="integrationType"
                               variant="outlined"
                               margin="dense"
-                              placeholder={i18n.t(
-                                "queueModal.form.integrationId"
-                              )}
                               labelId="integrationType-selection-label"
                               value={integrationTypeId}
                               onChange={handleIntegrationTypeChange}
                             >
-                              <MenuItem value={null}>{"Desabilitado"}</MenuItem>
+                              <MenuItem value={null}>
+                                — Selecciona una integración —
+                              </MenuItem>
                               {integrations
                                 .filter(
                                   (integration) =>
@@ -1440,14 +1774,18 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                                     key={integration.id}
                                     value={integration.id}
                                   >
-                                    {integration.name}
+                                    {integration.name} ({integration.type})
                                   </MenuItem>
                                 ))}
                             </Field>
                           </FormControl>
-                        </Grid>
+                          <Typography className={classes.fieldHelper}>
+                            Se enviará un webhook con los datos del ticket
+                            (cliente, agente, fecha, motivo de cierre).
+                          </Typography>
+                        </Box>
                       )}
-                    </Grid>
+                    </Box>
                   </DialogContent>
                 </TabPanel>
                 <TabPanel
