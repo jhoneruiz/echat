@@ -4,7 +4,7 @@ import * as Yup from "yup";
 import { Formik, FieldArray, Form, Field } from "formik";
 import { toast } from "react-toastify";
 
-import { Box, FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Paper, Select, Tab, Tabs, Typography } from "@material-ui/core";
+import { Box, FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Paper, Select, Tab, Tabs } from "@material-ui/core";
 
 import { makeStyles } from "@material-ui/core/styles";
 import { green } from "@material-ui/core/colors";
