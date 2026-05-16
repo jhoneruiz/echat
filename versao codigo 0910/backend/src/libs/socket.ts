@@ -57,10 +57,11 @@ export const initIO = (httpServer: Server): SocketIO => {
           return socket.disconnect();
         }
       } catch (error) {
+        // Rechazar SIEMPRE — incluyendo "jwt expired". El frontend está obligado
+        // a llamar /auth/refresh_token antes de reconectar el socket cuando el
+        // access token venció (ver SocketWorker.connect_error handler).
         logger.error(JSON.stringify(error), "Error decoding token");
-        if (error.message !== "jwt expired") {
-          return socket.disconnect();
-        }
+        return socket.disconnect();
       }
     } else {
       logger.info(`Client connected namespace ${socket.nsp.name}`);

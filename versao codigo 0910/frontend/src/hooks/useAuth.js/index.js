@@ -8,7 +8,14 @@ import { i18n } from "../../translate/i18n";
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
 import { socketConnection } from "../../services/socket";
+import SocketWorker from "../../services/SocketWorker";
 import moment from "moment";
+
+// Throttle del refresh proactivo en visibilitychange/online: no llamar más
+// de una vez cada 2 minutos para evitar martillar al backend al cambiar
+// rápido entre pestañas.
+const PROACTIVE_REFRESH_MIN_INTERVAL_MS = 2 * 60 * 1000;
+let lastProactiveRefresh = 0;
 
 const useAuth = () => {
   const history = useHistory();
@@ -48,6 +55,16 @@ const useAuth = () => {
         if (data) {
           localStorage.setItem("token", JSON.stringify(data.token));
           api.defaults.headers.Authorization = `Bearer ${data.token}`;
+          // Sincronizar el socket con el nuevo token para que no se quede
+          // con un token expirado en la próxima reconexión.
+          try {
+            const u = data.user || {};
+            if (u.companyId && u.id) {
+              SocketWorker(u.companyId, u.id).updateToken(data.token);
+            }
+          } catch (e) {
+            // no bloquear el flujo del request original
+          }
         }
         return api(originalRequest);
       }
@@ -78,11 +95,15 @@ const useAuth = () => {
     })();
   }, []);
 
-  // Effect para configuração do socket
+  // Effect para configuração do socket + heartbeat + recuperación al volver
   useEffect(() => {
+    let heartbeatInterval = null;
+    let visibilityHandler = null;
+    let onlineHandler = null;
+
     if (Object.keys(user).length && user.id > 0) {
       console.log("Configurando socket para user", user.id, "company", user.companyId);
-      
+
       // Limpar listeners anteriores
       if (socket) {
         listenersRef.current.forEach(eventName => {
@@ -98,14 +119,14 @@ const useAuth = () => {
         companyId: user.companyId,
         id: user.id }
       });
-      
+
       if (socketInstance) {
         setSocket(socketInstance);
 
         // Aguardar um pouco para garantir que o socket está configurado
         setTimeout(() => {
           const eventName = `company-${user.companyId}-user`;
-          
+
           const handleUserUpdate = (data) => {
             if (data.action === "update" && data.user.id === user.id) {
               setUser(data.user);
@@ -121,6 +142,53 @@ const useAuth = () => {
             console.error("Socket instance não tem método 'on'", socketInstance);
           }
         }, 100);
+
+        // Heartbeat cada 25s: el backend espera < 30s para marcar offline.
+        // Mantiene presencia online y detecta sockets muertos pronto.
+        heartbeatInterval = setInterval(() => {
+          try {
+            if (typeof socketInstance.emit === "function") {
+              socketInstance.emit("heartbeat");
+            }
+          } catch (err) {
+            // silencioso
+          }
+        }, 25000);
+
+        // Refresh proactivo al volver al foco / recuperar red.
+        // Caso típico: laptop suspendido → al despertar el access token venció
+        // pero la cookie de refresh aún es válida. Renovamos antes de que
+        // axios o el socket disparen un connect_error / 403.
+        const tryProactiveRefresh = async () => {
+          const now = Date.now();
+          if (now - lastProactiveRefresh < PROACTIVE_REFRESH_MIN_INTERVAL_MS) {
+            return;
+          }
+          lastProactiveRefresh = now;
+          try {
+            const { data } = await api.post("/auth/refresh_token");
+            if (data?.token) {
+              localStorage.setItem("token", JSON.stringify(data.token));
+              api.defaults.headers.Authorization = `Bearer ${data.token}`;
+              if (typeof socketInstance.updateToken === "function") {
+                socketInstance.updateToken(data.token);
+              }
+            }
+          } catch (err) {
+            // El interceptor 401 se encarga del logout si el refresh
+            // también está vencido.
+          }
+        };
+
+        visibilityHandler = () => {
+          if (document.visibilityState === "visible") {
+            tryProactiveRefresh();
+          }
+        };
+        onlineHandler = () => tryProactiveRefresh();
+
+        document.addEventListener("visibilitychange", visibilityHandler);
+        window.addEventListener("online", onlineHandler);
       }
     }
 
@@ -134,6 +202,15 @@ const useAuth = () => {
           }
         });
         listenersRef.current.clear();
+      }
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+      }
+      if (visibilityHandler) {
+        document.removeEventListener("visibilitychange", visibilityHandler);
+      }
+      if (onlineHandler) {
+        window.removeEventListener("online", onlineHandler);
       }
     };
   }, [user.id, user.companyId]); // Dependências específicas
