@@ -12,7 +12,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { makeStyles } from "@material-ui/core/styles";
 import { grey, blue } from "@material-ui/core/colors";
 
-import { Tab, Tabs, TextField } from "@material-ui/core";
+import { Tab, Tabs, TextField, Switch as MuiSwitch } from "@material-ui/core";
 import {
   Tune as TuneIcon,
   Forum as ForumIcon,
@@ -91,6 +91,47 @@ const useStyles = makeStyles((theme) => ({
   alignRight: { textAlign: "right" },
   fullWidth: { width: "100%" },
   selectContainer: { width: "100%", textAlign: "left" },
+  // Estilos para SwitchOption (toggle moderno)
+  switchOption: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: theme.spacing(1.5),
+    padding: theme.spacing(1.25, 1.5),
+    borderRadius: 10,
+    border: `1px solid ${theme.palette.divider}`,
+    background:
+      theme.palette.type === "dark"
+        ? "rgba(255,255,255,0.02)"
+        : "rgba(248,250,252,0.5)",
+    transition: "all 0.15s ease",
+    height: "100%",
+    "&:hover": {
+      borderColor: theme.palette.primary.main,
+      background:
+        theme.palette.type === "dark"
+          ? "rgba(255,255,255,0.04)"
+          : "rgba(248,250,252,0.9)",
+    },
+  },
+  switchLabel: {
+    fontSize: "0.86rem",
+    fontWeight: 600,
+    lineHeight: 1.3,
+    color: theme.palette.text.primary,
+  },
+  switchHint: {
+    fontSize: "0.72rem",
+    color: theme.palette.text.secondary,
+    marginTop: 2,
+    lineHeight: 1.3,
+  },
+  switchLoading: {
+    fontSize: "0.7rem",
+    fontStyle: "italic",
+    color: theme.palette.primary.main,
+    marginTop: 2,
+  },
   tab: {
     backgroundColor: theme.mode === "light" ? "#f2f2f2" : "#7f7f7f",
     borderRadius: 4,
@@ -111,6 +152,35 @@ const SectionCard = ({ title, subtitle, icon, children, classes }) => (
     {children}
   </div>
 );
+
+/**
+ * SwitchOption: toggle moderno con label + descripción y switch al lado derecho.
+ * Reemplaza el patrón Select "Habilitado/Deshabilitado" en toda la pantalla de Settings.
+ * `value` y `onChange` siguen usando strings "enabled"/"disabled" para conservar
+ * compatibilidad con el backend sin tocar la API.
+ */
+const SwitchOption = ({ label, hint, value, onChange, loading, classes, disabled, booleanMode = false }) => {
+  const isOn = value === "enabled" || value === true || value === "true";
+  return (
+    <div className={classes.switchOption}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className={classes.switchLabel}>{label}</div>
+        {hint && <div className={classes.switchHint}>{hint}</div>}
+        {loading && <div className={classes.switchLoading}>Actualizando…</div>}
+      </div>
+      <MuiSwitch
+        checked={isOn}
+        onChange={(e) => {
+          const checked = e.target.checked;
+          // booleanMode envía true/false. Default envía "enabled"/"disabled".
+          onChange(booleanMode ? checked : (checked ? "enabled" : "disabled"));
+        }}
+        color="primary"
+        disabled={disabled || loading}
+      />
+    </div>
+  );
+};
 
 export default function Options(props) {
   const { oldSettings, settings, scheduleTypeChanged, user } = props;
@@ -751,32 +821,17 @@ async function handleCopyContactPrefix(value) {
       >
       <Grid spacing={3} container>
 
-        {/* CRIAÇÃO DE COMPANY/USERS */}
+        {/* CREACIÓN DE EMPRESA/USUARIOS (solo super-admin) */}
         {isSuper() ?
           <Grid xs={12} sm={6} md={4} item>
-            <FormControl className={classes.selectContainer}>
-              <InputLabel id="UserCreation-label">
-                {i18n.t("settings.settings.options.creationCompanyUser")}
-              </InputLabel>
-              <Select
-                labelId="UserCreation-label"
-                value={userCreation}
-                onChange={async (e) => {
-                  handleChangeUserCreation(e.target.value);
-                }}
-              >
-                <MenuItem value={"disabled"}>
-                  {i18n.t("settings.settings.options.disabled")}
-                </MenuItem>
-                <MenuItem value={"enabled"}>
-                  {i18n.t("settings.settings.options.enabled")}
-                </MenuItem>
-              </Select>
-              <FormHelperText>
-                {loadingUserCreation &&
-                  i18n.t("settings.settings.options.updating")}
-              </FormHelperText>
-            </FormControl>
+            <SwitchOption
+              classes={classes}
+              label={i18n.t("settings.settings.options.creationCompanyUser")}
+              hint="Permite que se creen nuevas empresas y usuarios desde el frontend."
+              value={userCreation}
+              loading={loadingUserCreation}
+              onChange={handleChangeUserCreation}
+            />
           </Grid>
           : null}
 
@@ -844,28 +899,16 @@ async function handleCopyContactPrefix(value) {
           : null
         } */}
 
-        {/* AVALIAÇÕES */}
+        {/* EVALUACIONES NPS al cerrar ticket */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="ratings-label">{i18n.t("settings.settings.options.evaluations")}</InputLabel>
-            <Select
-              labelId="ratings-label"
-              value={userRating}
-              onChange={async (e) => {
-                handleChangeUserRating(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>
-                {i18n.t("settings.settings.options.disabled")}
-              </MenuItem>
-              <MenuItem value={"enabled"}>
-                {i18n.t("settings.settings.options.enabled")}
-              </MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingUserRating && i18n.t("settings.settings.options.evaluations")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.evaluations")}
+            hint="Al cerrar un ticket envía una encuesta de satisfacción al cliente."
+            value={userRating}
+            loading={loadingUserRating}
+            onChange={handleChangeUserRating}
+          />
         </Grid>
 
         {/* AGENDAMENTO DE EXPEDIENTE */}
@@ -892,82 +935,40 @@ async function handleCopyContactPrefix(value) {
           </FormControl>
         </Grid>
 
-        {/* ENVIAR SAUDAÇÃO AO ACEITAR O TICKET */}
+        {/* SALUDO AL ACEPTAR EL TICKET */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="sendGreetingAccepted-label">
-              {i18n.t("settings.settings.options.sendGreetingAccepted")}
-            </InputLabel>
-            <Select
-              labelId="sendGreetingAccepted-label"
-              value={SendGreetingAccepted}
-              onChange={async (e) => {
-                handleSendGreetingAccepted(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>
-                {i18n.t("settings.settings.options.disabled")}
-              </MenuItem>
-              <MenuItem value={"enabled"}>
-                {i18n.t("settings.settings.options.enabled")}
-              </MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingSendGreetingAccepted && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.sendGreetingAccepted")}
+            hint="Envía un saludo automático al cliente cuando el agente acepta su ticket."
+            value={SendGreetingAccepted}
+            loading={loadingSendGreetingAccepted}
+            onChange={handleSendGreetingAccepted}
+          />
         </Grid>
 
-        {/* ESCOLHER OPERADOR ALEATORIO */}
+        {/* ELEGIR OPERADOR ALEATORIO */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="userRandom-label">
-              {i18n.t("settings.settings.options.userRandom")}
-            </InputLabel>
-            <Select
-              labelId="userRandom-label"
-              value={UserRandom}
-              onChange={async (e) => {
-                handleUserRandom(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>
-                {i18n.t("settings.settings.options.disabled")}
-              </MenuItem>
-              <MenuItem value={"enabled"}>
-                {i18n.t("settings.settings.options.enabled")}
-              </MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingUserRandom && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.userRandom")}
+            hint="Asigna los tickets de la cola a un agente al azar (round-robin)."
+            value={UserRandom}
+            loading={loadingUserRandom}
+            onChange={handleUserRandom}
+          />
         </Grid>
 
-        {/* ENVIAR MENSAGEM DE TRANSFERENCIA DE SETOR/ATENDENTE */}
+        {/* MENSAJE DE TRANSFERENCIA DE COLA/AGENTE */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="sendMsgTransfTicket-label">
-              {i18n.t("settings.settings.options.sendMsgTransfTicket")}
-            </InputLabel>
-            <Select
-              labelId="sendMsgTransfTicket-label"
-              value={SettingsTransfTicket}
-              onChange={async (e) => {
-                handleSettingsTransfTicket(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>
-                {i18n.t("settings.settings.options.disabled")}
-              </MenuItem>
-              <MenuItem value={"enabled"}>
-                {i18n.t("settings.settings.options.enabled")}
-              </MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingSettingsTransfTicket && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.sendMsgTransfTicket")}
+            hint="Avisa al cliente cuando su ticket es transferido a otro agente o cola."
+            value={SettingsTransfTicket}
+            loading={loadingSettingsTransfTicket}
+            onChange={handleSettingsTransfTicket}
+          />
         </Grid>
 
         {/* TIPO DO BOT */}
@@ -989,251 +990,138 @@ async function handleCopyContactPrefix(value) {
           </FormControl>
         </Grid>
 
-        {/* AVISO SOBRE LIGAÇÃO DO WHATSAPP */}
+        {/* AVISO DE LLAMADA WHATSAPP */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="acceptCallWhatsapp-label">
-              {i18n.t("settings.settings.options.acceptCallWhatsapp")}
-            </InputLabel>
-            <Select
-              labelId="acceptCallWhatsapp-label"
-              value={AcceptCallWhatsapp}
-              onChange={async (e) => {
-                handleAcceptCallWhatsapp(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>
-                {i18n.t("settings.settings.options.disabled")}
-              </MenuItem>
-              <MenuItem value={"enabled"}>
-                {i18n.t("settings.settings.options.enabled")}
-              </MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingAcceptCallWhatsapp && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.acceptCallWhatsapp")}
+            hint="Cuando un cliente llama por WhatsApp, le envía un aviso de que no se aceptan llamadas."
+            value={AcceptCallWhatsapp}
+            loading={loadingAcceptCallWhatsapp}
+            onChange={handleAcceptCallWhatsapp}
+          />
         </Grid>
 
-        {/* HABILITAR PARA O ATENDENTE RETIRAR O ASSINATURA */}
+        {/* PERMITIR QUITAR FIRMA AL AGENTE */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="sendSignMessage-label">
-              {i18n.t("settings.settings.options.sendSignMessage")}
-            </InputLabel>
-            <Select
-              labelId="sendSignMessage-label"
-              value={sendSignMessage}
-              onChange={async (e) => {
-                handleSendSignMessage(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>
-                {i18n.t("settings.settings.options.disabled")}
-              </MenuItem>
-              <MenuItem value={"enabled"}>
-                {i18n.t("settings.settings.options.enabled")}
-              </MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingSendSignMessage && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.sendSignMessage")}
+            hint="Permite al agente decidir si su nombre aparece o no antes de cada mensaje enviado."
+            value={sendSignMessage}
+            loading={loadingSendSignMessage}
+            onChange={handleSendSignMessage}
+          />
         </Grid>
 
-        {/* ENVIAR SAUDAÇÃO QUANDO HOUVER SOMENTE 1 FILA */}
+        {/* ENVIAR SALUDO SI HAY UNA SOLA COLA */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="sendGreetingMessageOneQueues-label">
-              {i18n.t("settings.settings.options.sendGreetingMessageOneQueues")}
-            </InputLabel>
-            <Select
-              labelId="sendGreetingMessageOneQueues-label"
-              value={sendGreetingMessageOneQueues}
-              onChange={async (e) => {
-                handleSendGreetingMessageOneQueues(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>
-                {i18n.t("settings.settings.options.disabled")}
-              </MenuItem>
-              <MenuItem value={"enabled"}>
-                {i18n.t("settings.settings.options.enabled")}
-              </MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingSendGreetingMessageOneQueues && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.sendGreetingMessageOneQueues")}
+            hint="Si solo hay una cola, envía el saludo directamente sin pedir al cliente que la elija."
+            value={sendGreetingMessageOneQueues}
+            loading={loadingSendGreetingMessageOneQueues}
+            onChange={handleSendGreetingMessageOneQueues}
+          />
         </Grid>
 
-        {/* ENVIAR MENSAGEM COM A POSIÇÃO DA FILA */}
+        {/* AVISAR LA POSICIÓN EN LA COLA */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="sendQueuePosition-label">
-              {i18n.t("settings.settings.options.sendQueuePosition")}
-            </InputLabel>
-            <Select
-              labelId="sendQueuePosition-label"
-              value={sendQueuePosition}
-              onChange={async (e) => {
-                handleSendQueuePosition(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>
-                {i18n.t("settings.settings.options.disabled")}
-              </MenuItem>
-              <MenuItem value={"enabled"}>
-                {i18n.t("settings.settings.options.enabled")}
-              </MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingSendQueuePosition && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.sendQueuePosition")}
+            hint="Avisa al cliente su posición en la cola mientras espera ser atendido."
+            value={sendQueuePosition}
+            loading={loadingSendQueuePosition}
+            onChange={handleSendQueuePosition}
+          />
         </Grid>
 
-        {/* ENVIAR MENSAGEM DE DESPEDIDA NO AGUARDANDO */}
+        {/* MENSAJE DE DESPEDIDA AL ESPERAR */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="sendFarewellWaitingTicket-label">
-              {i18n.t("settings.settings.options.sendFarewellWaitingTicket")}
-            </InputLabel>
-            <Select
-              labelId="sendFarewellWaitingTicket-label"
-              value={sendFarewellWaitingTicket}
-              onChange={async (e) => {
-                handleSendFarewellWaitingTicket(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>
-                {i18n.t("settings.settings.options.disabled")}
-              </MenuItem>
-              <MenuItem value={"enabled"}>
-                {i18n.t("settings.settings.options.enabled")}
-              </MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingSendFarewellWaitingTicket && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
-        </Grid>
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="acceptAudioMessageContact-label">
-              {i18n.t("settings.settings.options.acceptAudioMessageContact")}
-            </InputLabel>
-            <Select
-              labelId="acceptAudioMessageContact-label"
-              value={acceptAudioMessageContact}
-              onChange={async (e) => {
-                handleAcceptAudioMessageContact(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>
-                {i18n.t("settings.settings.options.disabled")}
-              </MenuItem>
-              <MenuItem value={"enabled"}>
-                {i18n.t("settings.settings.options.enabled")}
-              </MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingAcceptAudioMessageContact && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.sendFarewellWaitingTicket")}
+            hint="Envía mensaje de despedida automático cuando se cierra un ticket sin atender."
+            value={sendFarewellWaitingTicket}
+            loading={loadingSendFarewellWaitingTicket}
+            onChange={handleSendFarewellWaitingTicket}
+          />
         </Grid>
 
+        {/* ACEPTAR MENSAJES DE AUDIO DEL CONTACTO */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="enableLGPD-label"> {i18n.t("settings.settings.options.enableLGPD")}</InputLabel>
-            <Select
-              labelId="enableLGPD-label"
-              value={enableLGPD}
-              onChange={async (e) => {
-                handleEnableLGPD(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>{i18n.t("settings.settings.options.disabled")}</MenuItem>
-              <MenuItem value={"enabled"}>{i18n.t("settings.settings.options.enabled")}</MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingEnableLGPD && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.acceptAudioMessageContact")}
+            hint="Si está apagado, descarta los audios entrantes y avisa al contacto que no se aceptan."
+            value={acceptAudioMessageContact}
+            loading={loadingAcceptAudioMessageContact}
+            onChange={handleAcceptAudioMessageContact}
+          />
         </Grid>
 
+        {/* HABILITAR LGPD (Protección de Datos) */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="requiredTag-label"> {i18n.t("settings.settings.options.requiredTag")}</InputLabel>
-            <Select
-              labelId="requiredTag-label"
-              value={requiredTag}
-              onChange={async (e) => {
-                handleRequiredTag(e.target.value);
-              }}
-            >
-              <MenuItem value={"disabled"}>{i18n.t("settings.settings.options.disabled")}</MenuItem>
-              <MenuItem value={"enabled"}>{i18n.t("settings.settings.options.enabled")}</MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingRequiredTag && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
-        </Grid>
-        <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="closeTicketOnTransfer-label"> {i18n.t("settings.settings.options.closeTicketOnTransfer")}</InputLabel>
-            <Select
-              labelId="closeTicketOnTransfer-label"
-              value={closeTicketOnTransfer}
-              onChange={async (e) => {
-                handleCloseTicketOnTransfer(e.target.value);
-              }}
-            >
-              <MenuItem value={false}>{i18n.t("settings.settings.options.disabled")}</MenuItem>
-              <MenuItem value={true}>{i18n.t("settings.settings.options.enabled")}</MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingCloseTicketOnTransfer && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.enableLGPD")}
+            hint="Activa el cumplimiento de protección de datos: consentimiento, ocultar números y borrado de mensajes."
+            value={enableLGPD}
+            loading={loadingEnableLGPD}
+            onChange={handleEnableLGPD}
+          />
         </Grid>
 
+        {/* ETIQUETA OBLIGATORIA AL CERRAR TICKET */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="showNotificationPending-label"> {i18n.t("settings.settings.options.showNotificationPending")}</InputLabel>
-            <Select
-              labelId="showNotificationPending-label"
-              value={showNotificationPending}
-              onChange={async (e) => {
-                handleShowNotificationPending(e.target.value);
-              }}
-            >
-              <MenuItem value={false}>{i18n.t("settings.settings.options.disabled")}</MenuItem>
-              <MenuItem value={true}>{i18n.t("settings.settings.options.enabled")}</MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingShowNotificationPending && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            label={i18n.t("settings.settings.options.requiredTag")}
+            hint="Obliga al agente a poner una etiqueta antes de cerrar el ticket."
+            value={requiredTag}
+            loading={loadingRequiredTag}
+            onChange={handleRequiredTag}
+          />
         </Grid>
+        {/* CERRAR TICKET AL TRANSFERIR */}
         <Grid xs={12} sm={6} md={4} item>
-          <FormControl className={classes.selectContainer}>
-            <InputLabel id="DirectTicketsToWallets-label"> {i18n.t("settings.settings.options.DirectTicketsToWallets")}</InputLabel>
-            <Select
-              labelId="DirectTicketsToWallets-label"
-              value={directTicketsToWallets}
-              onChange={async (e) => {
-                handleDirectTicketsToWallets(e.target.value);
-              }}
-            >
-              <MenuItem value={false}>{i18n.t("settings.settings.options.disabled")}</MenuItem>
-              <MenuItem value={true}>{i18n.t("settings.settings.options.enabled")}</MenuItem>
-            </Select>
-            <FormHelperText>
-              {loadingDirectTicketsToWallets && i18n.t("settings.settings.options.updating")}
-            </FormHelperText>
-          </FormControl>
+          <SwitchOption
+            classes={classes}
+            booleanMode
+            label={i18n.t("settings.settings.options.closeTicketOnTransfer")}
+            hint="Cuando un agente transfiere un ticket a otra cola/usuario, el original se cierra automáticamente."
+            value={closeTicketOnTransfer}
+            loading={loadingCloseTicketOnTransfer}
+            onChange={handleCloseTicketOnTransfer}
+          />
+        </Grid>
+
+        {/* MOSTRAR NOTIFICACIONES DE TICKETS PENDIENTES */}
+        <Grid xs={12} sm={6} md={4} item>
+          <SwitchOption
+            classes={classes}
+            booleanMode
+            label={i18n.t("settings.settings.options.showNotificationPending")}
+            hint="Los agentes reciben notificaciones de mensajes nuevos en tickets que aún no han sido aceptados."
+            value={showNotificationPending}
+            loading={loadingShowNotificationPending}
+            onChange={handleShowNotificationPending}
+          />
+        </Grid>
+
+        {/* WALLETS: enrutar contactos a su agente asignado */}
+        <Grid xs={12} sm={6} md={4} item>
+          <SwitchOption
+            classes={classes}
+            booleanMode
+            label={i18n.t("settings.settings.options.DirectTicketsToWallets")}
+            hint="Si un contacto tiene un agente preferido (wallet), sus tickets nuevos van directamente a él/ella."
+            value={directTicketsToWallets}
+            loading={loadingDirectTicketsToWallets}
+            onChange={handleDirectTicketsToWallets}
+          />
         </Grid>
       </Grid>
       </SectionCard>
@@ -1318,66 +1206,38 @@ async function handleCopyContactPrefix(value) {
                 </FormHelperText>
               </FormControl>
             </Grid>
-            {/* LGPD Manter ou nao mensagem deletada pelo contato */}
+            {/* LGPD: ocultar contenido de mensajes eliminados por el contacto */}
             <Grid xs={12} sm={6} md={4} item>
-              <FormControl className={classes.selectContainer}>
-                <InputLabel id="lgpdDeleteMessage-label">{i18n.t("settings.settings.LGPD.obfuscateMessageDelete")}</InputLabel>
-                <Select
-                  labelId="lgpdDeleteMessage-label"
-                  value={lgpdDeleteMessage}
-                  onChange={async (e) => {
-                    handleLGPDDeleteMessage(e.target.value);
-                  }}
-                >
-                  <MenuItem value={"disabled"}>{i18n.t("settings.settings.LGPD.disabled")}</MenuItem>
-                  <MenuItem value={"enabled"}>{i18n.t("settings.settings.LGPD.enabled")}</MenuItem>
-                </Select>
-                <FormHelperText>
-                  {loadingLGPDDeleteMessage && i18n.t("settings.settings.options.updating")}
-                </FormHelperText>
-              </FormControl>
+              <SwitchOption
+                classes={classes}
+                label={i18n.t("settings.settings.LGPD.obfuscateMessageDelete")}
+                hint="Cuando un contacto borra un mensaje, muestra al agente solo 'Mensaje eliminado' en vez del contenido original."
+                value={lgpdDeleteMessage}
+                loading={loadingLGPDDeleteMessage}
+                onChange={handleLGPDDeleteMessage}
+              />
             </Grid>
-            {/* LGPD Sempre solicitar confirmaçao / conscentimento dos dados */}
+            {/* LGPD: pedir consentimiento al cliente para tratar sus datos */}
             <Grid xs={12} sm={6} md={4} item>
-              <FormControl className={classes.selectContainer}>
-                <InputLabel id="lgpdConsent-label">
-                  {i18n.t("settings.settings.LGPD.alwaysConsent")}
-                </InputLabel>
-                <Select
-                  labelId="lgpdConsent-label"
-                  value={lgpdConsent}
-                  onChange={async (e) => {
-                    handleLGPDConsent(e.target.value);
-                  }}
-                >
-                  <MenuItem value={"disabled"}>{i18n.t("settings.settings.LGPD.disabled")}</MenuItem>
-                  <MenuItem value={"enabled"}>{i18n.t("settings.settings.LGPD.enabled")}</MenuItem>
-                </Select>
-                <FormHelperText>
-                  {loadingLGPDConsent && i18n.t("settings.settings.options.updating")}
-                </FormHelperText>
-              </FormControl>
+              <SwitchOption
+                classes={classes}
+                label={i18n.t("settings.settings.LGPD.alwaysConsent")}
+                hint="Antes de empezar a chatear, pide al cliente que acepte los términos de tratamiento de datos."
+                value={lgpdConsent}
+                loading={loadingLGPDConsent}
+                onChange={handleLGPDConsent}
+              />
             </Grid>
-            {/* LGPD Ofuscar número telefone para usuários */}
+            {/* LGPD: ocultar el número de teléfono a los usuarios */}
             <Grid xs={12} sm={6} md={4} item>
-              <FormControl className={classes.selectContainer}>
-                <InputLabel id="lgpdHideNumber-label">
-                  {i18n.t("settings.settings.LGPD.obfuscatePhoneUser")}
-                </InputLabel>
-                <Select
-                  labelId="lgpdHideNumber-label"
-                  value={lgpdHideNumber}
-                  onChange={async (e) => {
-                    handleLGPDHideNumber(e.target.value);
-                  }}
-                >
-                  <MenuItem value={"disabled"}>{i18n.t("settings.settings.LGPD.disabled")}</MenuItem>
-                  <MenuItem value={"enabled"}>{i18n.t("settings.settings.LGPD.enabled")}</MenuItem>
-                </Select>
-                <FormHelperText>
-                  {loadingLGPDHideNumber && i18n.t("settings.settings.options.updating")}
-                </FormHelperText>
-              </FormControl>
+              <SwitchOption
+                classes={classes}
+                label={i18n.t("settings.settings.LGPD.obfuscatePhoneUser")}
+                hint="Oculta parcialmente el número de teléfono del cliente en la vista del agente (ej: 55****1234)."
+                value={lgpdHideNumber}
+                loading={loadingLGPDHideNumber}
+                onChange={handleLGPDHideNumber}
+              />
             </Grid>
           </Grid>
         </SectionCard>
