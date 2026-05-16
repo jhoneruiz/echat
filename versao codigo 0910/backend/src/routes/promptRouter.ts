@@ -32,6 +32,16 @@ promptRoutes.post(
   upload.single("file"),
   PromptKnowledgeController.store
 );
+promptRoutes.put(
+  "/prompt/:promptId/knowledge/:itemId",
+  isAuth,
+  PromptKnowledgeController.update
+);
+promptRoutes.post(
+  "/prompt/:promptId/knowledge/from-quick-message",
+  isAuth,
+  PromptKnowledgeController.importFromQuickMessage
+);
 promptRoutes.delete(
   "/prompt/:promptId/knowledge/:itemId",
   isAuth,
