@@ -5,7 +5,6 @@ import Queue from "../models/Queue";
 import Contact from "../models/Contact";
 import User from "../models/User";
 import logger from "../utils/logger";
-import SendAlertPushNotificationService from "../services/MobileNotification/SendAlertPushNotificationService";
 import { getIO } from "../libs/socket";
 
 const CronJob = require("cron").CronJob;
@@ -112,31 +111,13 @@ const processPendingTicketsAlerts = async (): Promise<void> => {
       };
 
       try {
-        // 1) Push mobile (PWA) — solo llega si el user tiene UserPushSubscription
-        await SendAlertPushNotificationService({
-          userIds,
-          companyId: tracking.companyId,
-          title: "⚠️ Ticket pendiente sin atender",
-          body: `${contactName} lleva ${elapsedMin} min esperando en la cola ${queue.name}`,
-          url: alertPayload.url,
-          tag: `pending-alert-${ticket.id}`,
-          data: alertPayload,
-        });
-
-        // 2) Socket event in-app — llega al navegador/PWA abierto aunque
-        //    no tenga push subscription. El frontend lo escucha y muestra toast.
-        try {
-          const io = getIO();
-          io.of(String(tracking.companyId)).emit(
-            `company-${tracking.companyId}-pendingTicketAlert`,
-            alertPayload
-          );
-        } catch (sockErr) {
-          logger.warn(
-            { sockErr, ticketId: ticket.id },
-            "[PendingTicketsAlertJob] Socket emit failed (continuing)"
-          );
-        }
+        // Solo socket event: el frontend muestra Notification del SO
+        // (sin push PWA ni toast in-app para no duplicar con la primera notificación).
+        const io = getIO();
+        io.of(String(tracking.companyId)).emit(
+          `company-${tracking.companyId}-pendingTicketAlert`,
+          alertPayload
+        );
 
         await tracking.update({ pendingAlertSentAt: new Date() });
         alertsSent += 1;
