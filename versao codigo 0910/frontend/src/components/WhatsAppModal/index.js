@@ -1878,7 +1878,10 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                           variant="outlined"
                           margin="dense"
                           onFocus={() => setFocusedMsgField("greetingMessage")}
-                          onSelect={(e) => setMsgFieldCursors(p => ({ ...p, greetingMessage: e.target.selectionStart }))}
+                          onSelect={(e) => {
+                            const pos = e?.target?.selectionStart;
+                            if (pos != null) setMsgFieldCursors(p => ({ ...p, greetingMessage: pos }));
+                          }}
                         />
                       </Grid>
 
@@ -1902,7 +1905,10 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                           variant="outlined"
                           margin="dense"
                           onFocus={() => setFocusedMsgField("complationMessage")}
-                          onSelect={(e) => setMsgFieldCursors(p => ({ ...p, complationMessage: e.target.selectionStart }))}
+                          onSelect={(e) => {
+                            const pos = e?.target?.selectionStart;
+                            if (pos != null) setMsgFieldCursors(p => ({ ...p, complationMessage: pos }));
+                          }}
                         />
                       </Grid>
 
@@ -1929,7 +1935,10 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                           variant="outlined"
                           margin="dense"
                           onFocus={() => setFocusedMsgField("outOfHoursMessage")}
-                          onSelect={(e) => setMsgFieldCursors(p => ({ ...p, outOfHoursMessage: e.target.selectionStart }))}
+                          onSelect={(e) => {
+                            const pos = e?.target?.selectionStart;
+                            if (pos != null) setMsgFieldCursors(p => ({ ...p, outOfHoursMessage: pos }));
+                          }}
                         />
                       </Grid>
                       {/* MENSAGEM DE FÉRIAS COLETIVAS */}
@@ -1957,7 +1966,10 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                           variant="outlined"
                           margin="dense"
                           onFocus={() => setFocusedMsgField("collectiveVacationMessage")}
-                          onSelect={(e) => setMsgFieldCursors(p => ({ ...p, collectiveVacationMessage: e.target.selectionStart }))}
+                          onSelect={(e) => {
+                            const pos = e?.target?.selectionStart;
+                            if (pos != null) setMsgFieldCursors(p => ({ ...p, collectiveVacationMessage: pos }));
+                          }}
                         />
                       </Grid>
                       <Grid item xs={6}>
