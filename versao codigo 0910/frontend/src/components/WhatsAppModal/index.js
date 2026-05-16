@@ -1268,7 +1268,7 @@ const WhatsAppModal = ({ open, onClose, whatsAppId, channel }) => {
                           </>
                         )}
 
-                        {enableImportMessage ? (
+                        {enableImportMessage && (
                           <Grid style={{ marginTop: 18 }} container spacing={1}>
                             <Grid item xs={6}>
                               <Field
