@@ -6,6 +6,7 @@ import Contact from "../models/Contact";
 import User from "../models/User";
 import logger from "../utils/logger";
 import SendAlertPushNotificationService from "../services/MobileNotification/SendAlertPushNotificationService";
+import { getIO } from "../libs/socket";
 
 const CronJob = require("cron").CronJob;
 
@@ -99,20 +100,43 @@ const processPendingTicketsAlerts = async (): Promise<void> => {
         // ignorar, usar fallback
       }
 
+      const alertPayload = {
+        ticketId: ticket.id,
+        ticketUuid: (ticket as any).uuid,
+        queueId: ticket.queueId,
+        queueName: queue.name,
+        contactName,
+        elapsedMinutes: elapsedMin,
+        userIds, // qué usuarios deben verla
+        url: `/tickets/${(ticket as any).uuid || ticket.id}`,
+      };
+
       try {
+        // 1) Push mobile (PWA) — solo llega si el user tiene UserPushSubscription
         await SendAlertPushNotificationService({
           userIds,
           companyId: tracking.companyId,
           title: "⚠️ Ticket pendiente sin atender",
           body: `${contactName} lleva ${elapsedMin} min esperando en la cola ${queue.name}`,
-          url: `/tickets/${(ticket as any).uuid || ticket.id}`,
+          url: alertPayload.url,
           tag: `pending-alert-${ticket.id}`,
-          data: {
-            ticketId: ticket.id,
-            queueId: ticket.queueId,
-            elapsedMinutes: elapsedMin,
-          },
+          data: alertPayload,
         });
+
+        // 2) Socket event in-app — llega al navegador/PWA abierto aunque
+        //    no tenga push subscription. El frontend lo escucha y muestra toast.
+        try {
+          const io = getIO();
+          io.of(String(tracking.companyId)).emit(
+            `company-${tracking.companyId}-pendingTicketAlert`,
+            alertPayload
+          );
+        } catch (sockErr) {
+          logger.warn(
+            { sockErr, ticketId: ticket.id },
+            "[PendingTicketsAlertJob] Socket emit failed (continuing)"
+          );
+        }
 
         await tracking.update({ pendingAlertSentAt: new Date() });
         alertsSent += 1;

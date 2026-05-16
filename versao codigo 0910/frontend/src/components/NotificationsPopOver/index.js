@@ -22,6 +22,7 @@ import alertSound from "../../assets/sound.mp3";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { i18n } from "../../translate/i18n";
 import toastError from "../../errors/toastError";
+import { toast } from "react-toastify";
 import useCompanySettings from "../../hooks/useSettings/companySettings";
 import Favicon from "react-favicon";
 import { getBackendUrl } from "../../config";
@@ -229,14 +230,71 @@ const onCompanyAppMessageNotificationsPopover = (data) => {
     }
 }
 
+			// Listener para alertas de tickets pendientes sin atender (job cron).
+			// Llega aunque el usuario no tenga push subscription, pero solo si
+			// el ticket pertenece a una cola del usuario actual.
+			const onPendingTicketAlert = (data) => {
+				try {
+					const myQueueIds = user?.queues?.map(q => q.id) || [];
+					const targetUserIds = Array.isArray(data?.userIds) ? data.userIds : [];
+
+					const isForMe =
+						targetUserIds.includes(user?.id) ||
+						myQueueIds.includes(data?.queueId);
+
+					if (!isForMe) return;
+
+					const title = "⚠️ Ticket pendiente sin atender";
+					const body = `${data.contactName} lleva ${data.elapsedMinutes} min esperando en ${data.queueName}`;
+
+					// Toast en la app
+					toast.warn(`${title}\n${body}`, {
+						autoClose: 8000,
+						onClick: () => {
+							if (data.url) history.push(data.url);
+						}
+					});
+
+					// Notificación desktop si tiene permiso y la pestaña está oculta
+					if (
+						typeof Notification !== "undefined" &&
+						Notification.permission === "granted" &&
+						document.visibilityState !== "visible"
+					) {
+						try {
+							const notif = new Notification(title, {
+								body,
+								icon: "/apple-touch-icon.png",
+								tag: `pending-alert-${data.ticketId}`,
+								renotify: true,
+							});
+							notif.onclick = () => {
+								window.focus();
+								if (data.url) history.push(data.url);
+								notif.close();
+							};
+						} catch (e) { /* ignore */ }
+					}
+
+					// Reproducir el sonido de notificación que ya usa el sistema
+					try {
+						if (soundAlertRef && soundAlertRef.current) {
+							soundAlertRef.current();
+						}
+					} catch (e) { /* ignore */ }
+				} catch (e) { /* ignore */ }
+			};
+
 			socket.on("connect", onConnectNotificationsPopover);
 			socket.on(`company-${companyId}-ticket`, onCompanyTicketNotificationsPopover);
 			socket.on(`company-${companyId}-appMessage`, onCompanyAppMessageNotificationsPopover);
+			socket.on(`company-${companyId}-pendingTicketAlert`, onPendingTicketAlert);
 
 			return () => {
 				socket.off("connect", onConnectNotificationsPopover);
 				socket.off(`company-${companyId}-ticket`, onCompanyTicketNotificationsPopover);
 				socket.off(`company-${companyId}-appMessage`, onCompanyAppMessageNotificationsPopover);
+				socket.off(`company-${companyId}-pendingTicketAlert`, onPendingTicketAlert);
 			};
 		}
 		return undefined;
